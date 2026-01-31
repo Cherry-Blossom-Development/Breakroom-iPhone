@@ -6,7 +6,7 @@ struct BlockWidgetView: View {
     var body: some View {
         switch block.type {
         case .chat:
-            ChatWidgetPlaceholder(block: block)
+            ChatWidget(block: block)
         case .updates:
             UpdatesWidgetPlaceholder(block: block)
         case .calendar:
@@ -24,29 +24,6 @@ struct BlockWidgetView: View {
 }
 
 // MARK: - Widget Placeholders
-
-struct ChatWidgetPlaceholder: View {
-    let block: BreakroomBlock
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.largeTitle)
-                .foregroundStyle(.blue)
-
-            if let roomName = block.contentName {
-                Text(roomName)
-                    .font(.headline)
-            }
-
-            Text("Chat widget coming soon")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 120)
-        .padding()
-    }
-}
 
 struct UpdatesWidgetPlaceholder: View {
     let block: BreakroomBlock

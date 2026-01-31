@@ -23,6 +23,7 @@
 		9CB6DD631C40F07AC1A7B9EA /* BreakroomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */; };
 		A548310E89878F6952E2B87C /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 013B71C54903F120BD58452A /* Preview Assets.xcassets */; };
 		A74769456CE90C1D9159FBF9 /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED8FDFB3748D4E3B76B622F /* ChatListView.swift */; };
+		AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */; };
 		B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
@@ -57,6 +58,7 @@
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		DED8FDFB3748D4E3B76B622F /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
 		EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -147,6 +149,7 @@
 			children = (
 				C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */,
 				664D6C1E857ACE07479BED4B /* BreakroomView.swift */,
+				EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */,
 			);
 			path = Breakroom;
 			sourceTree = "<group>";
@@ -256,6 +259,7 @@
 				44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */,
 				762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */,
 				FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */,
+				AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */,
 				0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */,
 				355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */,
 				0F3C797B8A50E4E0BC1D37EB /* LoginView.swift in Sources */,
