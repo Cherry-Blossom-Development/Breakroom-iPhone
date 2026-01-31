@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ChatListView: View {
-    @Environment(AuthViewModel.self) private var authViewModel
     @State private var chatViewModel = ChatViewModel()
     @State private var selectedRoom: ChatRoom?
 
@@ -37,13 +36,6 @@ struct ChatListView: View {
             .navigationTitle("Chat")
             .navigationDestination(for: ChatRoom.self) { room in
                 ChatRoomView(room: room, chatViewModel: chatViewModel)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Logout") {
-                        Task { await authViewModel.logout() }
-                    }
-                }
             }
             .task {
                 await chatViewModel.loadRooms()
