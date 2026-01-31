@@ -25,6 +25,7 @@ struct ChatMessage: Codable, Identifiable {
     let handle: String?
     let message: String?
     let imagePath: String?
+    let videoPath: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -34,9 +35,26 @@ struct ChatMessage: Codable, Identifiable {
         case handle
         case message
         case imagePath = "image_path"
+        case videoPath = "video_path"
         case createdAt = "created_at"
     }
 }
+
+// MARK: - API Response Wrappers
+
+struct ChatRoomsResponse: Decodable {
+    let rooms: [ChatRoom]
+}
+
+struct ChatMessagesResponse: Decodable {
+    let messages: [ChatMessage]
+}
+
+struct ChatMessageResponse: Decodable {
+    let message: ChatMessage
+}
+
+// MARK: - Request Types
 
 struct SendMessageRequest: Encodable {
     let message: String

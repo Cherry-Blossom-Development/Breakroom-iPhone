@@ -2,7 +2,8 @@ import Foundation
 
 enum ChatAPIService {
     static func getRooms() async throws -> [ChatRoom] {
-        try await APIClient.shared.request("/api/chat/rooms")
+        let response: ChatRoomsResponse = try await APIClient.shared.request("/api/chat/rooms")
+        return response.rooms
     }
 
     static func getMessages(roomId: Int, limit: Int = 50, before: Int? = nil) async throws -> [ChatMessage] {
@@ -10,16 +11,18 @@ enum ChatAPIService {
         if let before {
             path += "&before=\(before)"
         }
-        return try await APIClient.shared.request(path)
+        let response: ChatMessagesResponse = try await APIClient.shared.request(path)
+        return response.messages
     }
 
     static func sendMessage(roomId: Int, message: String) async throws -> ChatMessage {
         let body = SendMessageRequest(message: message)
-        return try await APIClient.shared.request(
+        let response: ChatMessageResponse = try await APIClient.shared.request(
             "/api/chat/rooms/\(roomId)/messages",
             method: "POST",
             body: body
         )
+        return response.message
     }
 
     static func createRoom(name: String, description: String?) async throws -> ChatRoom {
