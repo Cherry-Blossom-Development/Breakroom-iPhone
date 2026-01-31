@@ -26,6 +26,20 @@ struct ChatRoomView: View {
                 }
             }
 
+            if !chatViewModel.typingUsers.isEmpty {
+                HStack {
+                    Text(chatViewModel.typingUsers.joined(separator: ", ")
+                         + (chatViewModel.typingUsers.count == 1 ? " is" : " are")
+                         + " typing...")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .italic()
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 2)
+            }
+
             Divider()
 
             // Message input
@@ -36,6 +50,9 @@ struct ChatRoomView: View {
                     .padding(10)
                     .background(.fill.tertiary)
                     .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .onChange(of: chatViewModel.messageText) {
+                        chatViewModel.handleTypingChanged()
+                    }
 
                 Button {
                     Task { await chatViewModel.sendMessage() }

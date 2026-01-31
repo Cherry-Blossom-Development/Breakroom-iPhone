@@ -2,11 +2,14 @@ import SwiftUI
 
 struct ChatWidget: View {
     let block: BreakroomBlock
+    @Environment(ChatSocketManager.self) private var socketManager
     @State private var messages: [ChatMessage] = []
     @State private var messageText = ""
     @State private var isLoading = true
     @State private var isSending = false
     @State private var error: String?
+    @State private var typingUsers: [String] = []
+    @State private var typingStopTask: Task<Void, Never>?
 
     private var roomId: Int? { block.contentId }
 
@@ -21,13 +24,50 @@ struct ChatWidget: View {
     private func chatContent(roomId: Int) -> some View {
         VStack(spacing: 0) {
             messageList
+            if !typingUsers.isEmpty {
+                typingIndicator
+            }
             Divider()
             messageInput(roomId: roomId)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
         .task {
             await loadMessages(roomId: roomId)
+            socketManager.joinRoom(roomId)
+            socketManager.onNewMessage = { message in
+                if message.roomId == roomId || message.roomId == nil {
+                    if !messages.contains(where: { $0.id == message.id }) {
+                        messages.append(message)
+                    }
+                }
+            }
+            socketManager.onUserTyping = { eventRoomId, user, isTyping in
+                guard eventRoomId == roomId else { return }
+                if isTyping {
+                    if !typingUsers.contains(user) {
+                        typingUsers.append(user)
+                    }
+                } else {
+                    typingUsers.removeAll { $0 == user }
+                }
+            }
         }
+        .onDisappear {
+            socketManager.leaveRoom(roomId)
+        }
+    }
+
+    private var typingIndicator: some View {
+        let text = typingUsers.joined(separator: ", ")
+            + (typingUsers.count == 1 ? " is" : " are")
+            + " typing..."
+        return Text(text)
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .italic()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 2)
     }
 
     private var messageList: some View {
@@ -70,6 +110,16 @@ struct ChatWidget: View {
                 .padding(.vertical, 6)
                 .background(.fill.tertiary)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                .onChange(of: messageText) {
+                    guard !messageText.isEmpty else { return }
+                    socketManager.startTyping(roomId: roomId)
+                    typingStopTask?.cancel()
+                    typingStopTask = Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        guard !Task.isCancelled else { return }
+                        socketManager.stopTyping(roomId: roomId)
+                    }
+                }
 
             Button {
                 Task { await sendMessage(roomId: roomId) }
@@ -120,12 +170,24 @@ struct ChatWidget: View {
         isSending = true
         messageText = ""
 
-        do {
-            let sent = try await ChatAPIService.sendMessage(roomId: roomId, message: text)
-            messages.append(sent)
-        } catch {
-            messageText = text
-            self.error = error.localizedDescription
+        // Stop typing indicator
+        typingStopTask?.cancel()
+        socketManager.stopTyping(roomId: roomId)
+
+        if socketManager.connectionState == .connected {
+            // Send via socket — message comes back via new_message event
+            socketManager.sendMessage(roomId: roomId, message: text)
+        } else {
+            // Fallback to REST when socket is disconnected
+            do {
+                let sent = try await ChatAPIService.sendMessage(roomId: roomId, message: text)
+                if !messages.contains(where: { $0.id == sent.id }) {
+                    messages.append(sent)
+                }
+            } catch {
+                messageText = text
+                self.error = error.localizedDescription
+            }
         }
 
         isSending = false

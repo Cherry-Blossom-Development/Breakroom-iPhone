@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(ChatSocketManager.self) private var socketManager
 
     var body: some View {
         Group {
@@ -9,6 +10,13 @@ struct ContentView: View {
                 MainTabView()
             } else {
                 LoginView()
+            }
+        }
+        .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                socketManager.connect()
+            } else {
+                socketManager.disconnect()
             }
         }
     }

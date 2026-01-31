@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ChatListView: View {
+    @Environment(ChatSocketManager.self) private var socketManager
     @State private var chatViewModel = ChatViewModel()
     @State private var selectedRoom: ChatRoom?
 
@@ -38,6 +39,7 @@ struct ChatListView: View {
                 ChatRoomView(room: room, chatViewModel: chatViewModel)
             }
             .task {
+                chatViewModel.socketManager = socketManager
                 await chatViewModel.loadRooms()
                 chatViewModel.connectSocket()
             }
