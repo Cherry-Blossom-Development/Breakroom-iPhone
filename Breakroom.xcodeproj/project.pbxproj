@@ -12,9 +12,11 @@
 		1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */; };
 		2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */; };
 		30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */; };
+		315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */; };
 		315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */; };
 		355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */; };
 		36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB57CE1D061C3414AF0E0CD /* SignupView.swift */; };
+		3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13784734C91770B11F74CE8D /* InviteUsersView.swift */; };
 		446345F21ED087B5741FA337 /* SocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */; };
 		44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B4B3CB776F4FF533F31177 /* ChatModels.swift */; };
 		4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 05BB53121E6C9220E5091E05 /* SocketIO */; };
@@ -26,6 +28,7 @@
 		A74769456CE90C1D9159FBF9 /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED8FDFB3748D4E3B76B622F /* ChatListView.swift */; };
 		AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */; };
 		B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */; };
+		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
 		E1BB88F8C63629EF1D14D03F /* BreakroomAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */; };
@@ -38,6 +41,7 @@
 		013B71C54903F120BD58452A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0A8D398682165173267FE358 /* Breakroom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Breakroom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		130DAB511D587688461B04EE /* ChatRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomView.swift; sourceTree = "<group>"; };
+		13784734C91770B11F74CE8D /* InviteUsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteUsersView.swift; sourceTree = "<group>"; };
 		1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomViewModel.swift; sourceTree = "<group>"; };
 		1D9AC9F72B4CED61F085EAD7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomAPIService.swift; sourceTree = "<group>"; };
@@ -46,7 +50,9 @@
 		2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomApp.swift; sourceTree = "<group>"; };
 		3AA0A819B1816531F0433D4C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoomView.swift; sourceTree = "<group>"; };
 		4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomModels.swift; sourceTree = "<group>"; };
+		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		664D6C1E857ACE07479BED4B /* BreakroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomView.swift; sourceTree = "<group>"; };
 		711606DB3235C27FE38591F0 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -152,6 +158,9 @@
 			children = (
 				DED8FDFB3748D4E3B76B622F /* ChatListView.swift */,
 				130DAB511D587688461B04EE /* ChatRoomView.swift */,
+				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
+				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
+				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -278,6 +287,9 @@
 				FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */,
 				AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */,
 				0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */,
+				315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */,
+				B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */,
+				3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */,
 				355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */,
 				0F3C797B8A50E4E0BC1D37EB /* LoginView.swift in Sources */,
 				36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */,

@@ -10,6 +10,13 @@ struct User: Codable, Identifiable {
     let country: String?
     let timezone: String?
     let profilePhotoPath: String?
+    let firstName: String?
+    let lastName: String?
+
+    var displayName: String {
+        let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? handle : parts.joined(separator: " ")
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -21,5 +28,7 @@ struct User: Codable, Identifiable {
         case country
         case timezone
         case profilePhotoPath = "profile_photo_path"
+        case firstName = "first_name"
+        case lastName = "last_name"
     }
 }

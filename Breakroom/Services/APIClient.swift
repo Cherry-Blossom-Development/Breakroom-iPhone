@@ -108,6 +108,63 @@ final class APIClient: @unchecked Sendable {
         }
     }
 
+    func uploadMultipart<T: Decodable>(
+        _ path: String,
+        fileData: Data,
+        fieldName: String,
+        filename: String,
+        mimeType: String,
+        authenticated: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingError(error)
+            }
+        case 401, 403:
+            throw APIError.unauthorized
+        default:
+            if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
+                throw APIError.serverError(errorResponse.displayMessage)
+            }
+            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+        }
+    }
+
     func requestVoid(
         _ path: String,
         method: String = "GET",
