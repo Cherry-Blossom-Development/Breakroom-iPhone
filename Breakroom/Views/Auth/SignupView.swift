@@ -4,7 +4,8 @@ struct SignupView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var handle = ""
-    @State private var name = ""
+    @State private var firstName = ""
+    @State private var lastName = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -14,7 +15,7 @@ struct SignupView: View {
     }
 
     private var formValid: Bool {
-        !handle.isEmpty && !name.isEmpty && !email.isEmpty && passwordsMatch
+        !handle.isEmpty && !firstName.isEmpty && !lastName.isEmpty && !email.isEmpty && passwordsMatch
     }
 
     var body: some View {
@@ -34,8 +35,14 @@ struct SignupView: View {
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                    TextField("Name", text: $name)
-                        .textContentType(.name)
+                    TextField("First Name", text: $firstName)
+                        .textContentType(.givenName)
+                        .padding()
+                        .background(.fill.tertiary)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    TextField("Last Name", text: $lastName)
+                        .textContentType(.familyName)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -79,7 +86,8 @@ struct SignupView: View {
                     Task {
                         await authViewModel.signup(
                             handle: handle,
-                            name: name,
+                            firstName: firstName,
+                            lastName: lastName,
                             email: email,
                             password: password
                         )

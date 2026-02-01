@@ -7,10 +7,20 @@ struct LoginRequest: Encodable {
 
 struct SignupRequest: Encodable {
     let handle: String
-    let name: String
+    let firstName: String
+    let lastName: String
     let email: String
     let hash: String
     let salt: String
+
+    enum CodingKeys: String, CodingKey {
+        case handle
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case email
+        case hash
+        case salt
+    }
 }
 
 struct AuthResponse: Decodable {

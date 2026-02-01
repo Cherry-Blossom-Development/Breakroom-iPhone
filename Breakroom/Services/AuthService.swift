@@ -20,13 +20,14 @@ enum AuthService {
         return me
     }
 
-    static func signup(handle: String, name: String, email: String, password: String) async throws -> MeResponse {
+    static func signup(handle: String, firstName: String, lastName: String, email: String, password: String) async throws -> MeResponse {
         let salt = generateSalt()
         let hash = hashPassword(password, salt: salt)
 
         let signupRequest = SignupRequest(
             handle: handle,
-            name: name,
+            firstName: firstName,
+            lastName: lastName,
             email: email,
             hash: hash,
             salt: salt
