@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import AVKit
 
 struct ChatRoomView: View {
     let room: ChatRoom
@@ -143,8 +142,6 @@ struct MessageBubble: View {
         return message.userId == currentUserId
     }
 
-    private static let baseURL = "https://www.prosaurus.com"
-
     var body: some View {
         HStack {
             if isCurrentUser { Spacer(minLength: 60) }
@@ -158,32 +155,12 @@ struct MessageBubble: View {
 
                 // Image attachment
                 if let imagePath = message.imagePath, !imagePath.isEmpty {
-                    AsyncImage(url: URL(string: "\(Self.baseURL)/api/uploads/\(imagePath)")) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(maxWidth: 240, maxHeight: 240)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                        case .failure:
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 100, height: 100)
-                        default:
-                            ProgressView()
-                                .frame(width: 100, height: 100)
-                        }
-                    }
+                    AuthenticatedImage(path: imagePath)
                 }
 
                 // Video attachment
                 if let videoPath = message.videoPath, !videoPath.isEmpty {
-                    if let url = URL(string: "\(Self.baseURL)/api/uploads/\(videoPath)") {
-                        VideoPlayer(player: AVPlayer(url: url))
-                            .frame(width: 240, height: 180)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
+                    AuthenticatedVideoPlayer(path: videoPath)
                 }
 
                 // Text message

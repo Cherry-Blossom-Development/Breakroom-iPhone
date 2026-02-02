@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import AVKit
 
 struct ChatWidget: View {
     let block: BreakroomBlock
@@ -274,19 +275,13 @@ struct ChatWidgetMessageRow: View {
     @ViewBuilder
     private var messageContent: some View {
         if let imagePath = message.imagePath, !imagePath.isEmpty {
-            AsyncImage(url: imageURL(imagePath)) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                default:
-                    EmptyView()
-                }
-            }
-            .padding(.top, 2)
+            AuthenticatedImage(path: imagePath, maxWidth: .infinity, maxHeight: 100, cornerRadius: 8)
+                .padding(.top, 2)
+        }
+
+        if let videoPath = message.videoPath, !videoPath.isEmpty {
+            AuthenticatedVideoPlayer(path: videoPath, width: 200, height: 120, cornerRadius: 8)
+                .padding(.top, 2)
         }
 
         if let text = message.message, !text.isEmpty {
@@ -294,10 +289,6 @@ struct ChatWidgetMessageRow: View {
                 .font(.caption)
                 .padding(.top, 2)
         }
-    }
-
-    private func imageURL(_ path: String) -> URL? {
-        URL(string: "\(APIClient.shared.baseURL)/uploads/\(path)")
     }
 
     private var formattedTime: String {
@@ -326,5 +317,114 @@ struct ChatWidgetMessageRow: View {
         }
 
         return timeFormatter.string(from: date)
+    }
+}
+
+// MARK: - Authenticated Media (sends JWT with image/video requests)
+
+struct AuthenticatedImage: View {
+    let path: String
+    var maxWidth: CGFloat = 240
+    var maxHeight: CGFloat = 240
+    var cornerRadius: CGFloat = 12
+
+    @State private var image: UIImage?
+    @State private var failed = false
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: maxWidth, maxHeight: maxHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            } else if failed {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 60, height: 60)
+            } else {
+                ProgressView()
+                    .frame(width: 60, height: 60)
+            }
+        }
+        .task(id: path) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        guard let url = URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(path)") else {
+            failed = true
+            return
+        }
+
+        var request = URLRequest(url: url)
+        if let token = KeychainManager.bearerToken {
+            request.setValue(token, forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
+            if let uiImage = UIImage(data: data) {
+                self.image = uiImage
+            } else {
+                failed = true
+            }
+        } catch {
+            failed = true
+        }
+    }
+}
+
+struct AuthenticatedVideoPlayer: View {
+    let path: String
+    var width: CGFloat = 240
+    var height: CGFloat = 180
+    var cornerRadius: CGFloat = 12
+
+    @State private var localURL: URL?
+    @State private var failed = false
+
+    var body: some View {
+        Group {
+            if let localURL {
+                VideoPlayer(player: AVPlayer(url: localURL))
+                    .frame(width: width, height: height)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            } else if failed {
+                Image(systemName: "video.slash")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 60, height: 60)
+            } else {
+                ProgressView()
+                    .frame(width: 60, height: 60)
+            }
+        }
+        .task(id: path) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        guard let url = URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(path)") else {
+            failed = true
+            return
+        }
+
+        var request = URLRequest(url: url)
+        if let token = KeychainManager.bearerToken {
+            request.setValue(token, forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let tempFile = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString + ".mp4")
+            try data.write(to: tempFile)
+            self.localURL = tempFile
+        } catch {
+            failed = true
+        }
     }
 }
