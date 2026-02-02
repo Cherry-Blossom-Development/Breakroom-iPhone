@@ -45,7 +45,7 @@ struct BreakroomView: View {
 
     private var blockList: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            VStack(spacing: 12) {
                 ForEach(viewModel.blocks) { block in
                     BlockCard(
                         block: block,

@@ -10,7 +10,7 @@ struct BlockWidgetView: View {
         case .updates:
             UpdatesWidgetPlaceholder(block: block)
         case .calendar:
-            CalendarWidgetPlaceholder(block: block)
+            CalendarWidget(block: block)
         case .weather:
             WeatherWidget(block: block)
         case .news:
@@ -43,34 +43,295 @@ struct UpdatesWidgetPlaceholder: View {
     }
 }
 
-struct CalendarWidgetPlaceholder: View {
+// MARK: - Calendar Widget
+
+private struct TimezoneOption: Identifiable {
+    let id: String
+    let label: String
+    init(_ id: String, _ label: String) { self.id = id; self.label = label }
+}
+
+private let commonTimezones: [TimezoneOption] = [
+    TimezoneOption("America/New_York", "Eastern Time (New York)"),
+    TimezoneOption("America/Chicago", "Central Time (Chicago)"),
+    TimezoneOption("America/Denver", "Mountain Time (Denver)"),
+    TimezoneOption("America/Los_Angeles", "Pacific Time (Los Angeles)"),
+    TimezoneOption("America/Anchorage", "Alaska Time"),
+    TimezoneOption("Pacific/Honolulu", "Hawaii Time"),
+    TimezoneOption("America/Phoenix", "Arizona (No DST)"),
+    TimezoneOption("America/Toronto", "Toronto"),
+    TimezoneOption("America/Vancouver", "Vancouver"),
+    TimezoneOption("America/Mexico_City", "Mexico City"),
+    TimezoneOption("America/Sao_Paulo", "Sao Paulo"),
+    TimezoneOption("Europe/London", "London (GMT/BST)"),
+    TimezoneOption("Europe/Paris", "Paris (CET)"),
+    TimezoneOption("Europe/Berlin", "Berlin (CET)"),
+    TimezoneOption("Europe/Moscow", "Moscow"),
+    TimezoneOption("Asia/Dubai", "Dubai"),
+    TimezoneOption("Asia/Kolkata", "India (IST)"),
+    TimezoneOption("Asia/Singapore", "Singapore"),
+    TimezoneOption("Asia/Shanghai", "China (CST)"),
+    TimezoneOption("Asia/Tokyo", "Tokyo (JST)"),
+    TimezoneOption("Asia/Seoul", "Seoul (KST)"),
+    TimezoneOption("Australia/Sydney", "Sydney (AEST)"),
+    TimezoneOption("Australia/Perth", "Perth (AWST)"),
+    TimezoneOption("Pacific/Auckland", "Auckland (NZST)"),
+    TimezoneOption("UTC", "UTC"),
+]
+
+private struct CalendarDay: Identifiable {
+    let id: Int // unique index within the grid
+    let day: Int
+    let currentMonth: Bool
+    let isToday: Bool
+}
+
+struct CalendarWidget: View {
     let block: BreakroomBlock
+
     @State private var currentTime = Date()
+    @State private var selectedTimezone: String = TimeZone.current.identifier
+    @State private var showTimezonePicker = false
+    @State private var isSaving = false
+
+    private var effectiveTimeZone: TimeZone {
+        TimeZone(identifier: selectedTimezone) ?? .current
+    }
+
+    private var calendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = effectiveTimeZone
+        return cal
+    }
+
+    // MARK: - Formatted strings
+
+    private var formattedTime: String {
+        let f = DateFormatter()
+        f.timeZone = effectiveTimeZone
+        f.dateFormat = "h:mm:ss a"
+        return f.string(from: currentTime)
+    }
+
+    private var formattedDate: String {
+        let f = DateFormatter()
+        f.timeZone = effectiveTimeZone
+        f.dateFormat = "EEEE, MMMM d, yyyy"
+        return f.string(from: currentTime)
+    }
+
+    private var timezoneAbbr: String {
+        effectiveTimeZone.abbreviation(for: currentTime) ?? effectiveTimeZone.identifier
+    }
+
+    // MARK: - Calendar data
+
+    private var monthYearTitle: String {
+        let f = DateFormatter()
+        f.timeZone = effectiveTimeZone
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: currentTime)
+    }
+
+    private var calendarWeeks: [[CalendarDay]] {
+        let cal = self.calendar
+        let comps = cal.dateComponents([.year, .month, .day], from: currentTime)
+        let year = comps.year!
+        let month = comps.month!
+        let today = comps.day!
+
+        let firstOfMonth = cal.date(from: DateComponents(year: year, month: month, day: 1))!
+        let startWeekday = cal.component(.weekday, from: firstOfMonth) // 1=Sun
+        let daysInMonth = cal.range(of: .day, in: .month, for: firstOfMonth)!.count
+        let prevMonthDays = cal.range(of: .day, in: .month,
+            for: cal.date(byAdding: .month, value: -1, to: firstOfMonth)!)!.count
+
+        var weeks: [[CalendarDay]] = []
+        var dayNum = 1
+        var nextMonthDay = 1
+        var cellIndex = 0
+
+        for _ in 0..<6 {
+            var week: [CalendarDay] = []
+            for col in 0..<7 {
+                if weeks.isEmpty && col < startWeekday - 1 {
+                    let d = prevMonthDays - (startWeekday - 2) + col
+                    week.append(CalendarDay(id: cellIndex, day: d, currentMonth: false, isToday: false))
+                } else if dayNum > daysInMonth {
+                    week.append(CalendarDay(id: cellIndex, day: nextMonthDay, currentMonth: false, isToday: false))
+                    nextMonthDay += 1
+                } else {
+                    week.append(CalendarDay(id: cellIndex, day: dayNum, currentMonth: true, isToday: dayNum == today))
+                    dayNum += 1
+                }
+                cellIndex += 1
+            }
+            weeks.append(week)
+            if dayNum > daysInMonth && weeks.count >= 5 { break }
+        }
+        return weeks
+    }
+
+    // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text(currentTime, style: .time)
-                .font(.system(size: 32, weight: .light, design: .rounded))
-
-            Text(currentTime, format: .dateTime.weekday(.wide).month(.wide).day().year())
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 100)
-        .padding()
-        .background(
+        ZStack {
             LinearGradient(
-                colors: [.purple.opacity(0.15), .indigo.opacity(0.1)],
+                colors: [Color(red: 0.4, green: 0.494, blue: 0.918),
+                         Color(red: 0.463, green: 0.294, blue: 0.635)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-        )
+
+            VStack(spacing: 6) {
+                timeSection
+                calendarSection
+            }
+            .padding(8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 260)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .task {
+            await fetchTimezone()
+        }
+        .task(id: "timer") {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
                 currentTime = Date()
             }
         }
+    }
+
+    // MARK: - Time Section
+
+    private var timeSection: some View {
+        VStack(spacing: 2) {
+            Text(formattedTime)
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+
+            Text(formattedDate)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.9))
+
+            timezoneButton
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var timezoneButton: some View {
+        Menu {
+            ForEach(commonTimezones) { tz in
+                Button {
+                    Task { await saveTimezone(tz.id) }
+                } label: {
+                    if tz.id == selectedTimezone {
+                        Label(tz.label, systemImage: "checkmark")
+                    } else {
+                        Text(tz.label)
+                    }
+                }
+            }
+        } label: {
+            Text(timezoneAbbr)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.white.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+        }
+        .padding(.top, 2)
+    }
+
+    // MARK: - Calendar Section
+
+    private var calendarSection: some View {
+        VStack(spacing: 4) {
+            // Month header
+            Text(monthYearTitle)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 3)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(.white.opacity(0.2))
+                        .frame(height: 1)
+                }
+
+            // Weekday headers
+            weekdayHeader
+
+            // Day grid
+            ForEach(calendarWeeks, id: \.first?.id) { week in
+                weekRow(week)
+            }
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(.white.opacity(0.15))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private var weekdayHeader: some View {
+        HStack(spacing: 0) {
+            ForEach(["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"], id: \.self) { day in
+                Text(day)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func weekRow(_ days: [CalendarDay]) -> some View {
+        HStack(spacing: 0) {
+            ForEach(days) { day in
+                Text("\(day.day)")
+                    .font(.system(size: 11, weight: day.isToday ? .bold : .regular))
+                    .foregroundStyle(day.isToday
+                        ? Color(red: 0.463, green: 0.294, blue: 0.635)
+                        : .white.opacity(day.currentMonth ? 1 : 0.4))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 3)
+                    .background(
+                        Circle()
+                            .fill(day.isToday ? .white : .clear)
+                    )
+            }
+        }
+    }
+
+    // MARK: - Data
+
+    private func fetchTimezone() async {
+        do {
+            let response: ProfileResponse = try await APIClient.shared.request("/api/profile")
+            if let tz = response.user.timezone, !tz.isEmpty,
+               TimeZone(identifier: tz) != nil {
+                selectedTimezone = tz
+            }
+        } catch {
+            // Use device timezone as fallback
+        }
+    }
+
+    private func saveTimezone(_ tz: String) async {
+        isSaving = true
+        do {
+            let body = ["timezone": tz]
+            let _: [String: String] = try await APIClient.shared.request(
+                "/api/profile/timezone",
+                method: "PUT",
+                body: body
+            )
+            selectedTimezone = tz
+        } catch {
+            // Silently fail, keep previous timezone
+        }
+        isSaving = false
     }
 }
 
@@ -89,6 +350,7 @@ private struct ProfileUserPayload: Decodable {
     let city: String?
     let latitude: Double?
     let longitude: Double?
+    let timezone: String?
 }
 
 private struct ProfileResponse: Decodable {

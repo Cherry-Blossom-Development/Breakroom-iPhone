@@ -107,6 +107,7 @@ struct ChatWidget: View {
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 300)
+            .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.bottom)
             .onChange(of: messages.count) {
                 if let last = messages.last {
