@@ -25,11 +25,15 @@ struct ContentView: View {
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
+    @State private var showBlogManagement = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
                 BreakroomView()
+                    .navigationDestination(isPresented: $showBlogManagement) {
+                        BlogManagementView()
+                    }
                     .navigationTitle("Breakroom")
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -39,7 +43,9 @@ struct MainTabView: View {
                                     selectedTab = 1
                                 }
                                 Button("Friends", systemImage: "person.2") { }
-                                Button("Blog", systemImage: "doc.richtext") { }
+                                Button("Blog", systemImage: "doc.richtext") {
+                                    showBlogManagement = true
+                                }
                                 Divider()
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                                     Task { await authViewModel.logout() }

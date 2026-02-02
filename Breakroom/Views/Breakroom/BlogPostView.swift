@@ -4,10 +4,20 @@ import WebKit
 struct BlogPostView: View {
     let post: BlogPost
 
+    @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(\.dismiss) private var dismiss
+
     @State private var fullPost: BlogPost?
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
 
     private var displayPost: BlogPost {
         fullPost ?? post
+    }
+
+    private var isOwnPost: Bool {
+        guard let currentUserId = authViewModel.currentUserId else { return false }
+        return displayPost.authorId == currentUserId
     }
 
     var body: some View {
@@ -25,6 +35,38 @@ struct BlogPostView: View {
         }
         .navigationTitle("Post")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if isOwnPost {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 16) {
+                        NavigationLink {
+                            BlogEditorView(existingPost: displayPost) { savedPost in
+                                fullPost = savedPost
+                            }
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(isDeleting)
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete Post",
+            isPresented: $showDeleteConfirmation
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await deletePost() }
+            }
+        } message: {
+            Text("Are you sure you want to delete \"\(displayPost.title)\"?")
+        }
         .task {
             await loadFullPost()
         }
@@ -95,6 +137,17 @@ struct BlogPostView: View {
             fullPost = try await BlogAPIService.viewPost(id: post.id)
         } catch {
             // Keep using the feed data passed in
+        }
+    }
+
+    private func deletePost() async {
+        isDeleting = true
+        do {
+            try await BlogAPIService.deletePost(id: post.id)
+            dismiss()
+        } catch {
+            // Stay on page if delete fails
+            isDeleting = false
         }
     }
 }

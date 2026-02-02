@@ -140,3 +140,69 @@ struct BlogFeedResponse: Decodable {
 struct BlogViewResponse: Decodable {
     let post: BlogPost
 }
+
+// MARK: - Blog Management Response Types
+
+struct BlogPostsResponse: Decodable {
+    let posts: [BlogPost]
+}
+
+struct BlogPostResponse: Decodable {
+    let post: BlogPost
+}
+
+struct BlogDeleteResponse: Decodable {
+    let message: String?
+}
+
+struct BlogImageUploadResponse: Decodable {
+    let url: String
+}
+
+// MARK: - Blog Settings
+
+struct BlogSettings: Codable, Identifiable {
+    let id: Int
+    let blogUrl: String
+    let blogName: String
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case blogUrl = "blog_url"
+        case blogName = "blog_name"
+        case createdAt = "created_at"
+    }
+}
+
+struct BlogSettingsResponse: Decodable {
+    let settings: BlogSettings?
+}
+
+struct BlogURLCheckResponse: Decodable {
+    let available: Bool
+}
+
+// MARK: - Blog Request Types
+
+struct CreateBlogPostRequest: Encodable {
+    let title: String
+    let content: String
+    let isPublished: Bool
+}
+
+struct UpdateBlogPostRequest: Encodable {
+    let title: String
+    let content: String
+    let isPublished: Bool
+}
+
+struct SaveBlogSettingsRequest: Encodable {
+    let blogUrl: String
+    let blogName: String
+
+    enum CodingKeys: String, CodingKey {
+        case blogUrl = "blog_url"
+        case blogName = "blog_name"
+    }
+}

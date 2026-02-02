@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04CC645E800401B901D9696F /* BlogSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */; };
 		0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22966EA63DE25C92D69E99DD /* ContentView.swift */; };
 		0F3C797B8A50E4E0BC1D37EB /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C0D64D533BB2A875C97D1 /* LoginView.swift */; };
 		1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */; };
@@ -18,11 +19,13 @@
 		355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */; };
 		36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB57CE1D061C3414AF0E0CD /* SignupView.swift */; };
 		3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13784734C91770B11F74CE8D /* InviteUsersView.swift */; };
+		4106D7529283A4856C0F5980 /* BlogManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4278DCD1E69862C0582F1090 /* BlogManagementView.swift */; };
 		446345F21ED087B5741FA337 /* SocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */; };
 		44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B4B3CB776F4FF533F31177 /* ChatModels.swift */; };
 		4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE02A450FDF8385DEF3420E /* BlogPostView.swift */; };
 		4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 05BB53121E6C9220E5091E05 /* SocketIO */; };
 		4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA0A819B1816531F0433D4C /* AuthService.swift */; };
+		5024134194D17D5AAF64B2BC /* BlogEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3620C9CA4480F805E75A34A /* BlogEditorView.swift */; };
 		5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77C18853F8F4E57876C8998 /* BlogAPIService.swift */; };
 		62668FF4CE7AB705BA98C472 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93641ABA680BAA7434EC3C66 /* Assets.xcassets */; };
 		762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130DAB511D587688461B04EE /* ChatRoomView.swift */; };
@@ -45,6 +48,7 @@
 		0A8D398682165173267FE358 /* Breakroom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Breakroom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		130DAB511D587688461B04EE /* ChatRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomView.swift; sourceTree = "<group>"; };
 		13784734C91770B11F74CE8D /* InviteUsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteUsersView.swift; sourceTree = "<group>"; };
+		1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogSettingsView.swift; sourceTree = "<group>"; };
 		1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomViewModel.swift; sourceTree = "<group>"; };
 		1D9AC9F72B4CED61F085EAD7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomAPIService.swift; sourceTree = "<group>"; };
@@ -55,6 +59,7 @@
 		3AA0A819B1816531F0433D4C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoomView.swift; sourceTree = "<group>"; };
 		40740E66D14A56BE618FCEB7 /* BlogModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogModels.swift; sourceTree = "<group>"; };
+		4278DCD1E69862C0582F1090 /* BlogManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogManagementView.swift; sourceTree = "<group>"; };
 		4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomModels.swift; sourceTree = "<group>"; };
 		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
@@ -64,6 +69,7 @@
 		741C0D64D533BB2A875C97D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAPIService.swift; sourceTree = "<group>"; };
 		93641ABA680BAA7434EC3C66 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A3620C9CA4480F805E75A34A /* BlogEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogEditorView.swift; sourceTree = "<group>"; };
 		A77C18853F8F4E57876C8998 /* BlogAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogAPIService.swift; sourceTree = "<group>"; };
 		AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
@@ -90,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				6624944EE960DAF195368039 /* Auth */,
+				E2DF196B5E353D644DD9FDE9 /* Blog */,
 				8CD871E9860C7645C09AE129 /* Breakroom */,
 				8AE094EB25F9EBB7F753CE91 /* Chat */,
 			);
@@ -203,6 +210,16 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		E2DF196B5E353D644DD9FDE9 /* Blog */ = {
+			isa = PBXGroup;
+			children = (
+				A3620C9CA4480F805E75A34A /* BlogEditorView.swift */,
+				4278DCD1E69862C0582F1090 /* BlogManagementView.swift */,
+				1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */,
+			);
+			path = Blog;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -285,8 +302,11 @@
 				EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */,
 				1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */,
 				5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */,
+				5024134194D17D5AAF64B2BC /* BlogEditorView.swift in Sources */,
+				4106D7529283A4856C0F5980 /* BlogManagementView.swift in Sources */,
 				176BD8B512E79E2AD17DFE45 /* BlogModels.swift in Sources */,
 				4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */,
+				04CC645E800401B901D9696F /* BlogSettingsView.swift in Sources */,
 				E1BB88F8C63629EF1D14D03F /* BreakroomAPIService.swift in Sources */,
 				30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */,
 				315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */,
