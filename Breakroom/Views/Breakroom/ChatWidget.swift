@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ChatWidget: View {
     let block: BreakroomBlock
@@ -10,6 +11,8 @@ struct ChatWidget: View {
     @State private var error: String?
     @State private var typingUsers: [String] = []
     @State private var typingStopTask: Task<Void, Never>?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isUploadingMedia: Bool = false
 
     private var roomId: Int? { block.contentId }
 
@@ -28,6 +31,18 @@ struct ChatWidget: View {
                 typingIndicator
             }
             Divider()
+            if isUploadingMedia {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Uploading...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+            }
             messageInput(roomId: roomId)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
@@ -91,6 +106,7 @@ struct ChatWidget: View {
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 300)
+            .defaultScrollAnchor(.bottom)
             .onChange(of: messages.count) {
                 if let last = messages.last {
                     withAnimation {
@@ -103,6 +119,13 @@ struct ChatWidget: View {
 
     private func messageInput(roomId: Int) -> some View {
         HStack(spacing: 8) {
+            PhotosPicker(selection: $selectedPhoto, matching: .any(of: [.images, .videos])) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .disabled(isUploadingMedia)
+
             TextField("Message", text: $messageText)
                 .textFieldStyle(.plain)
                 .font(.caption)
@@ -136,6 +159,11 @@ struct ChatWidget: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .onChange(of: selectedPhoto) {
+            guard let item = selectedPhoto else { return }
+            selectedPhoto = nil
+            Task { await handlePickedMedia(item, roomId: roomId) }
+        }
     }
 
     private var noRoomView: some View {
@@ -161,6 +189,27 @@ struct ChatWidget: View {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private func handlePickedMedia(_ item: PhotosPickerItem, roomId: Int) async {
+        isUploadingMedia = true
+        defer { isUploadingMedia = false }
+
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+
+        do {
+            let message: ChatMessage
+            if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                message = try await ChatAPIService.uploadVideo(roomId: roomId, videoData: data, filename: "video.mp4")
+            } else {
+                message = try await ChatAPIService.uploadImage(roomId: roomId, imageData: data, filename: "image.jpg")
+            }
+            if !messages.contains(where: { $0.id == message.id }) {
+                messages.append(message)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     private func sendMessage(roomId: Int) async {

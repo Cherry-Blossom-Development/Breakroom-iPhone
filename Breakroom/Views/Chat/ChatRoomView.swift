@@ -22,6 +22,7 @@ struct ChatRoomView: View {
                     }
                     .padding()
                 }
+                .defaultScrollAnchor(.bottom)
                 .onChange(of: chatViewModel.messages.count) {
                     if let lastMessage = chatViewModel.messages.last {
                         withAnimation {
