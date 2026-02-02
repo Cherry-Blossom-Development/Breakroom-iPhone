@@ -1,6 +1,6 @@
 import Foundation
 
-struct BlogPost: Codable, Identifiable {
+struct BlogPost: Codable, Identifiable, Hashable {
     let id: Int
     let title: String
     let content: String?
@@ -12,6 +12,7 @@ struct BlogPost: Codable, Identifiable {
     let authorFirstName: String?
     let authorLastName: String?
     let authorPhoto: String?
+    let authorBio: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, content
@@ -23,6 +24,15 @@ struct BlogPost: Codable, Identifiable {
         case authorFirstName = "author_first_name"
         case authorLastName = "author_last_name"
         case authorPhoto = "author_photo"
+        case authorBio = "author_bio"
+    }
+
+    static func == (lhs: BlogPost, rhs: BlogPost) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 
     var authorDisplayName: String {
@@ -64,6 +74,30 @@ struct BlogPost: Codable, Identifiable {
         }
     }
 
+    var formattedDate: String {
+        guard let dateString = updatedAt ?? createdAt else { return "" }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var date = formatter.date(from: dateString)
+
+        if date == nil {
+            formatter.formatOptions = [.withInternetDateTime]
+            date = formatter.date(from: dateString)
+        }
+
+        guard let date else { return "" }
+
+        let f = DateFormatter()
+        f.dateFormat = "MMMM d, yyyy"
+        return f.string(from: date)
+    }
+
+    var authorPhotoURL: URL? {
+        guard let authorPhoto, !authorPhoto.isEmpty else { return nil }
+        return URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(authorPhoto)")
+    }
+
     var relativeDate: String {
         guard let dateString = updatedAt ?? createdAt else { return "" }
 
@@ -101,4 +135,8 @@ struct BlogPost: Codable, Identifiable {
 
 struct BlogFeedResponse: Decodable {
     let posts: [BlogPost]
+}
+
+struct BlogViewResponse: Decodable {
+    let post: BlogPost
 }

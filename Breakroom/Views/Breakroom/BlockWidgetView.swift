@@ -756,6 +756,9 @@ struct BlogWidget: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 120)
+        .navigationDestination(for: BlogPost.self) { post in
+            BlogPostView(post: post)
+        }
         .task {
             await fetchPosts()
         }
@@ -825,7 +828,10 @@ struct BlogWidget: View {
     private var blogPostsList: some View {
         VStack(spacing: 0) {
             ForEach(Array(posts.prefix(5))) { post in
-                blogPostRow(post)
+                NavigationLink(value: post) {
+                    blogPostRow(post)
+                }
+                .buttonStyle(.plain)
                 if post.id != posts.prefix(5).last?.id {
                     Divider()
                         .padding(.leading, 12)

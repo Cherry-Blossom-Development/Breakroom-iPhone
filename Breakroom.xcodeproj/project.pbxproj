@@ -20,6 +20,7 @@
 		3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13784734C91770B11F74CE8D /* InviteUsersView.swift */; };
 		446345F21ED087B5741FA337 /* SocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */; };
 		44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B4B3CB776F4FF533F31177 /* ChatModels.swift */; };
+		4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE02A450FDF8385DEF3420E /* BlogPostView.swift */; };
 		4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 05BB53121E6C9220E5091E05 /* SocketIO */; };
 		4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA0A819B1816531F0433D4C /* AuthService.swift */; };
 		5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77C18853F8F4E57876C8998 /* BlogAPIService.swift */; };
@@ -58,6 +59,7 @@
 		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		664D6C1E857ACE07479BED4B /* BreakroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomView.swift; sourceTree = "<group>"; };
+		6CE02A450FDF8385DEF3420E /* BlogPostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogPostView.swift; sourceTree = "<group>"; };
 		711606DB3235C27FE38591F0 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		741C0D64D533BB2A875C97D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAPIService.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 			isa = PBXGroup;
 			children = (
 				C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */,
+				6CE02A450FDF8385DEF3420E /* BlogPostView.swift */,
 				664D6C1E857ACE07479BED4B /* BreakroomView.swift */,
 				EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */,
 			);
@@ -283,6 +286,7 @@
 				1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */,
 				5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */,
 				176BD8B512E79E2AD17DFE45 /* BlogModels.swift in Sources */,
+				4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */,
 				E1BB88F8C63629EF1D14D03F /* BreakroomAPIService.swift in Sources */,
 				30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */,
 				315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */,
