@@ -16,7 +16,7 @@ struct BlockWidgetView: View {
         case .news:
             NewsWidgetPlaceholder(block: block)
         case .blog:
-            BlogWidgetPlaceholder(block: block)
+            BlogWidget(block: block)
         case .placeholder:
             GenericWidgetPlaceholder(block: block)
         }
@@ -734,21 +734,183 @@ struct NewsWidgetPlaceholder: View {
     }
 }
 
-struct BlogWidgetPlaceholder: View {
+// MARK: - Blog Widget
+
+struct BlogWidget: View {
     let block: BreakroomBlock
 
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "doc.richtext")
-                .font(.largeTitle)
-                .foregroundStyle(.green)
+    @State private var posts: [BlogPost] = []
+    @State private var isLoading = true
+    @State private var error: String?
 
-            Text("Blog feed coming soon")
+    var body: some View {
+        VStack(spacing: 0) {
+            if isLoading {
+                blogLoadingView
+            } else if let error {
+                blogErrorView(error)
+            } else if posts.isEmpty {
+                blogEmptyView
+            } else {
+                blogPostsList
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .task {
+            await fetchPosts()
+        }
+    }
+
+    // MARK: - Loading
+
+    private var blogLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("Loading posts...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
         .padding()
+    }
+
+    // MARK: - Error
+
+    private func blogErrorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                Task {
+                    error = nil
+                    isLoading = true
+                    await fetchPosts()
+                }
+            } label: {
+                Text("Retry")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.1))
+                    .foregroundStyle(.green)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - Empty
+
+    private var blogEmptyView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "doc.richtext")
+                .font(.largeTitle)
+                .foregroundStyle(.green)
+            Text("No blog posts yet")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - Posts List
+
+    private var blogPostsList: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(posts.prefix(5))) { post in
+                blogPostRow(post)
+                if post.id != posts.prefix(5).last?.id {
+                    Divider()
+                        .padding(.leading, 12)
+                }
+            }
+        }
+    }
+
+    private func blogPostRow(_ post: BlogPost) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            // Green accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.green)
+                .frame(width: 3)
+
+            // Text content
+            VStack(alignment: .leading, spacing: 4) {
+                // Author + date
+                HStack(spacing: 4) {
+                    Text(post.authorDisplayName)
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                        .lineLimit(1)
+
+                    if !post.relativeDate.isEmpty {
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(post.relativeDate)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                // Title
+                Text(post.title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+
+                // Preview
+                if !post.plainTextPreview.isEmpty {
+                    Text(post.plainTextPreview)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            // Thumbnail
+            if let imageURL = post.firstImageURL {
+                AsyncImage(url: imageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 52, height: 52)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    case .failure:
+                        EmptyView()
+                    default:
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.gray.opacity(0.1))
+                            .frame(width: 52, height: 52)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Data
+
+    private func fetchPosts() async {
+        isLoading = true
+        error = nil
+        do {
+            posts = try await BlogAPIService.getFeed()
+        } catch {
+            self.error = "Failed to load blog posts"
+        }
+        isLoading = false
     }
 }
 
