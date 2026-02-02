@@ -103,6 +103,43 @@ struct BreakroomUpdate: Codable, Identifiable {
     var displayText: String {
         summary ?? content ?? title ?? ""
     }
+
+    private var parsedDate: Date? {
+        guard let dateString = createdAt else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateString) { return date }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: dateString)
+    }
+
+    var relativeDate: String {
+        guard let date = parsedDate else { return "" }
+        let calendar = Calendar.current
+        let now = Date()
+
+        if calendar.isDateInToday(date) {
+            return "Today"
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
+        if days < 7 {
+            return "\(days) days ago"
+        }
+
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f.string(from: date)
+    }
+
+    var formattedTime: String {
+        guard let date = parsedDate else { return "" }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
+    }
 }
 
 struct BreakroomUpdatesResponse: Decodable {

@@ -8,7 +8,7 @@ struct BlockWidgetView: View {
         case .chat:
             ChatWidget(block: block)
         case .updates:
-            UpdatesWidgetPlaceholder(block: block)
+            UpdatesWidget(block: block)
         case .calendar:
             CalendarWidget(block: block)
         case .weather:
@@ -25,21 +25,149 @@ struct BlockWidgetView: View {
 
 // MARK: - Widget Placeholders
 
-struct UpdatesWidgetPlaceholder: View {
+struct UpdatesWidget: View {
     let block: BreakroomBlock
 
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "bell")
-                .font(.largeTitle)
-                .foregroundStyle(.orange)
+    @State private var updates: [BreakroomUpdate] = []
+    @State private var isLoading = true
+    @State private var error: String?
 
-            Text("Updates feed coming soon")
+    var body: some View {
+        VStack(spacing: 0) {
+            if isLoading {
+                updatesLoadingView
+            } else if let error {
+                updatesErrorView(error)
+            } else if updates.isEmpty {
+                updatesEmptyView
+            } else {
+                updatesList
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .task {
+            await fetchUpdates()
+        }
+    }
+
+    // MARK: - Loading
+
+    private var updatesLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("Loading updates...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
         .padding()
+    }
+
+    // MARK: - Error
+
+    private func updatesErrorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                Task {
+                    error = nil
+                    isLoading = true
+                    await fetchUpdates()
+                }
+            } label: {
+                Text("Retry")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.1))
+                    .foregroundStyle(.green)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - Empty
+
+    private var updatesEmptyView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bell")
+                .font(.largeTitle)
+                .foregroundStyle(.green)
+            Text("No updates yet")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - Updates List
+
+    private var updatesList: some View {
+        VStack(spacing: 0) {
+            ForEach(updates) { update in
+                updateRow(update)
+                if update.id != updates.last?.id {
+                    Divider()
+                        .padding(.leading, 12)
+                }
+            }
+        }
+    }
+
+    private func updateRow(_ update: BreakroomUpdate) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            // Green accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.green)
+                .frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Date + time
+                HStack(spacing: 6) {
+                    Text(update.relativeDate)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.green)
+
+                    if !update.formattedTime.isEmpty {
+                        Text(update.formattedTime)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                // Summary
+                Text(update.displayText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Data
+
+    private func fetchUpdates() async {
+        isLoading = true
+        error = nil
+        do {
+            updates = try await BreakroomAPIService.getUpdates()
+        } catch {
+            self.error = "Failed to load updates"
+        }
+        isLoading = false
     }
 }
 
