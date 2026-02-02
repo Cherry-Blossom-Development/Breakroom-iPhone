@@ -14,7 +14,7 @@ struct BlockWidgetView: View {
         case .weather:
             WeatherWidget(block: block)
         case .news:
-            NewsWidgetPlaceholder(block: block)
+            NewsWidget(block: block)
         case .blog:
             BlogWidget(block: block)
         case .placeholder:
@@ -716,21 +716,171 @@ struct WeatherWidget: View {
     }
 }
 
-struct NewsWidgetPlaceholder: View {
+struct NewsWidget: View {
     let block: BreakroomBlock
 
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "newspaper")
-                .font(.largeTitle)
-                .foregroundStyle(.red)
+    @State private var items: [NewsItem] = []
+    @State private var isLoading = true
+    @State private var error: String?
 
-            Text("News feed coming soon")
+    var body: some View {
+        VStack(spacing: 0) {
+            if isLoading {
+                newsLoadingView
+            } else if let error {
+                newsErrorView(error)
+            } else if items.isEmpty {
+                newsEmptyView
+            } else {
+                newsList
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .task {
+            await fetchNews()
+        }
+    }
+
+    // MARK: - Loading
+
+    private var newsLoadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("Loading news...")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
         .padding()
+    }
+
+    // MARK: - Error
+
+    private func newsErrorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                Task {
+                    error = nil
+                    isLoading = true
+                    await fetchNews()
+                }
+            } label: {
+                Text("Retry")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.1))
+                    .foregroundStyle(.red)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - Empty
+
+    private var newsEmptyView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "newspaper")
+                .font(.largeTitle)
+                .foregroundStyle(.red)
+            Text("No news available")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .padding()
+    }
+
+    // MARK: - News List
+
+    private var newsList: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(items.prefix(10))) { item in
+                Button {
+                    if let url = URL(string: item.link) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    newsRow(item)
+                }
+                .buttonStyle(.plain)
+                if item.id != items.prefix(10).last?.id {
+                    Divider()
+                        .padding(.leading, 12)
+                }
+            }
+        }
+    }
+
+    private func newsRow(_ item: NewsItem) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            // Red accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.red)
+                .frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Source + time
+                HStack(spacing: 4) {
+                    if let source = item.source, !source.isEmpty {
+                        Text(source.uppercased())
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+
+                    if !item.relativeTime.isEmpty {
+                        if item.source != nil {
+                            Text("·")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(item.relativeTime)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                // Title
+                Text(item.title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                // Description
+                if let description = item.description, !description.isEmpty {
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Data
+
+    private func fetchNews() async {
+        isLoading = true
+        error = nil
+        do {
+            items = try await BreakroomAPIService.getNews()
+        } catch {
+            self.error = "Failed to load news"
+        }
+        isLoading = false
     }
 }
 

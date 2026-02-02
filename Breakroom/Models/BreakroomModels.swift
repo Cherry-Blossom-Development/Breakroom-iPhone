@@ -108,3 +108,59 @@ struct BreakroomUpdate: Codable, Identifiable {
 struct BreakroomUpdatesResponse: Decodable {
     let updates: [BreakroomUpdate]
 }
+
+// MARK: - News
+
+struct NewsItem: Codable, Identifiable {
+    let title: String
+    let link: String
+    let description: String?
+    let pubDate: String?
+    let source: String?
+
+    var id: String { link }
+
+    var relativeTime: String {
+        guard let dateString = pubDate else { return "" }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var date = formatter.date(from: dateString)
+
+        if date == nil {
+            formatter.formatOptions = [.withInternetDateTime]
+            date = formatter.date(from: dateString)
+        }
+
+        // Try RFC 2822 format (common in RSS feeds)
+        if date == nil {
+            let rfc = DateFormatter()
+            rfc.locale = Locale(identifier: "en_US_POSIX")
+            rfc.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
+            date = rfc.date(from: dateString)
+        }
+
+        guard let date else { return "" }
+
+        let now = Date()
+        let diff = now.timeIntervalSince(date)
+        let minutes = Int(diff / 60)
+        let hours = Int(diff / 3600)
+
+        if minutes < 60 {
+            return "\(max(minutes, 1))m ago"
+        } else if hours < 24 {
+            return "\(hours)h ago"
+        } else {
+            let f = DateFormatter()
+            f.dateFormat = "MMM d"
+            return f.string(from: date)
+        }
+    }
+}
+
+struct NewsResponse: Decodable {
+    let title: String?
+    let items: [NewsItem]
+    let lastUpdated: String?
+}

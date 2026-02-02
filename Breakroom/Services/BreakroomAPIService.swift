@@ -30,4 +30,11 @@ enum BreakroomAPIService {
         )
         return response.updates
     }
+
+    static func getNews() async throws -> [NewsItem] {
+        let response: NewsResponse = try await APIClient.shared.request(
+            "/api/breakroom/news"
+        )
+        return response.items
+    }
 }
