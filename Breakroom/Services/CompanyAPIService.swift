@@ -86,4 +86,68 @@ enum CompanyAPIService {
         )
         return response.company
     }
+
+    // MARK: - Employee Management
+
+    static func searchUsers(companyId: Int, query: String) async throws -> [EmployeeSearchUser] {
+        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+        let response: EmployeeSearchResponse = try await APIClient.shared.request(
+            "/api/company/\(companyId)/employees/search?q=\(encoded)"
+        )
+        return response.users
+    }
+
+    static func addEmployee(
+        companyId: Int,
+        userId: Int,
+        title: String,
+        department: String?,
+        isAdmin: Int,
+        hireDate: String?
+    ) async throws -> CompanyEmployee {
+        let body = AddEmployeeRequest(
+            userId: userId,
+            title: title,
+            department: department,
+            isAdmin: isAdmin,
+            hireDate: hireDate
+        )
+        let response: AddEmployeeResponse = try await APIClient.shared.request(
+            "/api/company/\(companyId)/employees",
+            method: "POST",
+            body: body
+        )
+        return response.employee
+    }
+
+    static func updateEmployee(
+        companyId: Int,
+        employeeId: Int,
+        title: String?,
+        department: String?,
+        isAdmin: Int?,
+        hireDate: String?,
+        status: String?
+    ) async throws -> CompanyEmployee {
+        let body = UpdateEmployeeRequest(
+            title: title,
+            department: department,
+            isAdmin: isAdmin,
+            hireDate: hireDate,
+            status: status
+        )
+        let response: UpdateEmployeeResponse = try await APIClient.shared.request(
+            "/api/company/\(companyId)/employees/\(employeeId)",
+            method: "PUT",
+            body: body
+        )
+        return response.employee
+    }
+
+    static func deleteEmployee(companyId: Int, employeeId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/company/\(companyId)/employees/\(employeeId)",
+            method: "DELETE"
+        )
+    }
 }

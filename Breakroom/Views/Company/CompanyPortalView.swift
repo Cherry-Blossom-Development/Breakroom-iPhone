@@ -414,16 +414,39 @@ struct CompanyPortalView: View {
     }
 }
 
-// MARK: - Company Detail View (basic info for now)
+// MARK: - Company Detail View
 
 struct CompanyDetailView: View {
     let companyId: Int
 
+    enum DetailTab: String, CaseIterable {
+        case info = "Info"
+        case employees = "Employees"
+        case positions = "Positions"
+        case projects = "Projects"
+    }
+
+    @State private var selectedTab: DetailTab = .info
     @State private var detail: CompanyDetailResponse?
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var showEditSheet = false
+
+    // Employees tab
+    @State private var showAddEmployeeSheet = false
+    @State private var editingEmployee: CompanyEmployee?
+    @State private var employeeToDelete: CompanyEmployee?
+    @State private var showDeleteEmployeeConfirm = false
+
+    // Positions tab
+    @State private var positions: [Position] = []
+    @State private var isLoadingPositions = false
+    @State private var hasLoadedPositions = false
+    @State private var showAddPositionSheet = false
+    @State private var editingPosition: Position?
+    @State private var positionToDelete: Position?
+    @State private var showDeletePositionConfirm = false
 
     private var canEdit: Bool {
         guard let role = detail?.userRole else { return false }
@@ -435,7 +458,29 @@ struct CompanyDetailView: View {
             if isLoading {
                 ProgressView()
             } else if let detail {
-                companyContent(detail)
+                VStack(spacing: 0) {
+                    Picker("Tab", selection: $selectedTab) {
+                        ForEach(DetailTab.allCases, id: \.self) { tab in
+                            Text(tab.rawValue).tag(tab)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+
+                    Group {
+                        switch selectedTab {
+                        case .info:
+                            infoTab(detail)
+                        case .employees:
+                            employeesTab(detail)
+                        case .positions:
+                            positionsTab
+                        case .projects:
+                            projectsTab
+                        }
+                    }
+                }
             } else {
                 ContentUnavailableView(
                     "Could Not Load Company",
@@ -447,10 +492,23 @@ struct CompanyDetailView: View {
         .navigationTitle(detail?.company.name ?? "Company")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if canEdit {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Edit", systemImage: "pencil") {
-                        showEditSheet = true
+            ToolbarItem(placement: .topBarTrailing) {
+                if canEdit {
+                    switch selectedTab {
+                    case .info:
+                        Button("Edit", systemImage: "pencil") {
+                            showEditSheet = true
+                        }
+                    case .employees:
+                        Button("Add", systemImage: "plus") {
+                            showAddEmployeeSheet = true
+                        }
+                    case .positions:
+                        Button("Add", systemImage: "plus") {
+                            showAddPositionSheet = true
+                        }
+                    case .projects:
+                        EmptyView()
                     }
                 }
             }
@@ -466,23 +524,96 @@ struct CompanyDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showAddEmployeeSheet) {
+            AddEmployeeSheet(companyId: companyId) { newEmployee in
+                if let current = detail {
+                    var emps = current.employees
+                    emps.append(newEmployee)
+                    detail = CompanyDetailResponse(
+                        company: current.company,
+                        employees: emps,
+                        userRole: current.userRole
+                    )
+                }
+            }
+        }
+        .sheet(item: $editingEmployee) { emp in
+            EditEmployeeSheet(companyId: companyId, employee: emp) { updated in
+                if let detail {
+                    var emps = detail.employees
+                    if let idx = emps.firstIndex(where: { $0.id == updated.id }) {
+                        emps[idx] = updated
+                    }
+                    self.detail = CompanyDetailResponse(
+                        company: detail.company,
+                        employees: emps,
+                        userRole: detail.userRole
+                    )
+                }
+            }
+        }
+        .sheet(isPresented: $showAddPositionSheet) {
+            AddPositionSheet(companyId: companyId) { newPosition in
+                positions.insert(newPosition, at: 0)
+            }
+        }
+        .sheet(item: $editingPosition) { pos in
+            EditPositionSheet(position: pos) { updated in
+                if let idx = positions.firstIndex(where: { $0.id == updated.id }) {
+                    positions[idx] = updated
+                }
+            }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {
             Text(errorMessage ?? "An unknown error occurred")
         }
+        .alert("Delete Employee", isPresented: $showDeleteEmployeeConfirm) {
+            Button("Delete", role: .destructive) {
+                if let emp = employeeToDelete {
+                    Task { await deleteEmployee(emp) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            if let emp = employeeToDelete {
+                Text("Remove \(emp.displayName) from this company?")
+            }
+        }
+        .alert("Delete Position", isPresented: $showDeletePositionConfirm) {
+            Button("Delete", role: .destructive) {
+                if let pos = positionToDelete {
+                    Task { await deletePosition(pos) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            if let pos = positionToDelete {
+                Text("Delete the position \"\(pos.title)\"?")
+            }
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == .positions && !hasLoadedPositions {
+                Task { await loadPositions() }
+            }
+        }
         .refreshable {
             await loadDetail()
+            if selectedTab == .positions {
+                await loadPositions()
+            }
         }
         .task {
             await loadDetail()
         }
     }
 
-    private func companyContent(_ detail: CompanyDetailResponse) -> some View {
+    // MARK: - Info Tab
+
+    private func infoTab(_ detail: CompanyDetailResponse) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Header
                 VStack(alignment: .leading, spacing: 8) {
                     Text(detail.company.name)
                         .font(.title2.bold())
@@ -503,13 +634,11 @@ struct CompanyDetailView: View {
                     }
                 }
 
-                // Info section
                 if hasCompanyInfo(detail.company) {
                     VStack(alignment: .leading, spacing: 0) {
                         if let desc = detail.company.description, !desc.isEmpty {
                             infoSection("About", text: desc)
                         }
-
                         if !detail.company.locationString.isEmpty {
                             infoRow("Location", value: detail.company.locationString)
                         }
@@ -529,22 +658,193 @@ struct CompanyDetailView: View {
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-
-                // Employees section
-                if !detail.employees.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Employees (\(detail.employees.count))")
-                            .font(.headline)
-
-                        ForEach(detail.employees) { emp in
-                            employeeRow(emp)
-                        }
-                    }
-                }
             }
             .padding()
         }
     }
+
+    // MARK: - Employees Tab
+
+    private func employeesTab(_ detail: CompanyDetailResponse) -> some View {
+        Group {
+            if detail.employees.isEmpty {
+                ContentUnavailableView(
+                    "No Employees",
+                    systemImage: "person.3",
+                    description: Text("No employees have been added yet.")
+                )
+            } else {
+                List {
+                    ForEach(detail.employees) { emp in
+                        Button {
+                            if canEdit {
+                                editingEmployee = emp
+                            }
+                        } label: {
+                            employeeRow(emp)
+                        }
+                        .foregroundStyle(.primary)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if canEdit && !emp.isOwnerBool {
+                                Button(role: .destructive) {
+                                    employeeToDelete = emp
+                                    showDeleteEmployeeConfirm = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Positions Tab
+
+    private var positionsTab: some View {
+        Group {
+            if isLoadingPositions {
+                ProgressView()
+                    .frame(maxHeight: .infinity)
+            } else if positions.isEmpty {
+                ContentUnavailableView(
+                    "No Positions",
+                    systemImage: "briefcase",
+                    description: Text("No positions have been posted yet.")
+                )
+            } else {
+                List {
+                    ForEach(positions) { pos in
+                        Button {
+                            if canEdit {
+                                editingPosition = pos
+                            }
+                        } label: {
+                            positionRow(pos)
+                        }
+                        .foregroundStyle(.primary)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if canEdit {
+                                Button(role: .destructive) {
+                                    positionToDelete = pos
+                                    showDeletePositionConfirm = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Projects Tab
+
+    private var projectsTab: some View {
+        ContentUnavailableView(
+            "Projects",
+            systemImage: "folder",
+            description: Text("Coming Soon")
+        )
+    }
+
+    // MARK: - Row Views
+
+    private func positionRow(_ pos: Position) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(pos.title)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                Spacer()
+                positionStatusBadge(pos.status)
+            }
+
+            HStack(spacing: 12) {
+                if let dept = pos.department, !dept.isEmpty {
+                    Label(dept, systemImage: "building.2")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Label(pos.locationString, systemImage: "mappin")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Text(pos.formattedPay)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func positionStatusBadge(_ status: String?) -> some View {
+        let label: String
+        let color: Color
+        switch status?.lowercased() {
+        case "closed":
+            label = "Closed"
+            color = .red
+        case "filled":
+            label = "Filled"
+            color = .purple
+        default:
+            label = "Open"
+            color = .green
+        }
+        return Text(label)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+    }
+
+    private func employeeRow(_ emp: CompanyEmployee) -> some View {
+        HStack(spacing: 10) {
+            Group {
+                if let url = emp.photoURL {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        initialsCircle(emp)
+                    }
+                } else {
+                    initialsCircle(emp)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(emp.displayName)
+                        .font(.subheadline.weight(.medium))
+                    if emp.isOwnerBool {
+                        roleBadge("Owner", color: .orange)
+                    } else if emp.isAdminBool {
+                        roleBadge("Admin", color: .blue)
+                    }
+                }
+                if let title = emp.title, !title.isEmpty {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 2)
+    }
+
+    // MARK: - Helpers
 
     private func roleBadge(_ text: String, color: Color) -> some View {
         Text(text)
@@ -582,45 +882,6 @@ struct CompanyDetailView: View {
         .padding(.vertical, 8)
     }
 
-    private func employeeRow(_ emp: CompanyEmployee) -> some View {
-        HStack(spacing: 10) {
-            // Avatar
-            Group {
-                if let url = emp.photoURL {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        initialsCircle(emp)
-                    }
-                } else {
-                    initialsCircle(emp)
-                }
-            }
-            .frame(width: 36, height: 36)
-            .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(emp.displayName)
-                        .font(.subheadline.weight(.medium))
-                    if emp.isOwnerBool {
-                        roleBadge("Owner", color: .orange)
-                    } else if emp.isAdminBool {
-                        roleBadge("Admin", color: .blue)
-                    }
-                }
-                if let title = emp.title, !title.isEmpty {
-                    Text(title)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 2)
-    }
-
     private func initialsCircle(_ emp: CompanyEmployee) -> some View {
         Circle()
             .fill(Color.accentColor.opacity(0.2))
@@ -640,6 +901,8 @@ struct CompanyDetailView: View {
         (company.address != nil && !company.address!.isEmpty)
     }
 
+    // MARK: - Data Loading
+
     private func loadDetail() async {
         do {
             detail = try await CompanyAPIService.getCompany(id: companyId)
@@ -648,6 +911,45 @@ struct CompanyDetailView: View {
             if detail == nil { showError = true }
         }
         isLoading = false
+    }
+
+    private func loadPositions() async {
+        isLoadingPositions = true
+        do {
+            positions = try await PositionsAPIService.getCompanyPositions(companyId: companyId)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isLoadingPositions = false
+        hasLoadedPositions = true
+    }
+
+    private func deleteEmployee(_ emp: CompanyEmployee) async {
+        do {
+            try await CompanyAPIService.deleteEmployee(companyId: companyId, employeeId: emp.id)
+            if let detail {
+                let emps = detail.employees.filter { $0.id != emp.id }
+                self.detail = CompanyDetailResponse(
+                    company: detail.company,
+                    employees: emps,
+                    userRole: detail.userRole
+                )
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func deletePosition(_ pos: Position) async {
+        do {
+            try await PositionsAPIService.deletePosition(id: pos.id)
+            positions.removeAll { $0.id == pos.id }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 }
 
@@ -765,6 +1067,672 @@ struct EditCompanyView: View {
                 phone: nilIfEmpty(phone),
                 email: nilIfEmpty(email),
                 website: nilIfEmpty(website)
+            )
+            onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Add Employee Sheet
+
+struct AddEmployeeSheet: View {
+    let companyId: Int
+    let onAdd: (CompanyEmployee) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var searchText = ""
+    @State private var searchResults: [EmployeeSearchUser] = []
+    @State private var isSearching = false
+    @State private var searchTask: Task<Void, Never>?
+    @State private var selectedUser: EmployeeSearchUser?
+
+    @State private var title = ""
+    @State private var department = ""
+    @State private var isAdmin = false
+    @State private var hireDate = Date()
+    @State private var includeHireDate = false
+
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Find User") {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
+                        TextField("Search by name or handle...", text: $searchText)
+                            .textInputAutocapitalization(.never)
+                            .onChange(of: searchText) { _, newValue in
+                                debounceSearch(newValue)
+                            }
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                                searchResults = []
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    if isSearching {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .controlSize(.small)
+                            Spacer()
+                        }
+                    }
+
+                    ForEach(searchResults) { user in
+                        Button {
+                            selectedUser = user
+                            searchText = ""
+                            searchResults = []
+                        } label: {
+                            userSearchRow(user)
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
+
+                if let user = selectedUser {
+                    Section("Selected User") {
+                        HStack {
+                            Text(user.displayName)
+                                .font(.body.weight(.medium))
+                            Spacer()
+                            Button("Change") {
+                                selectedUser = nil
+                            }
+                            .font(.caption)
+                        }
+                    }
+
+                    Section("Employee Details") {
+                        TextField("Job Title *", text: $title)
+                        TextField("Department", text: $department)
+                        Toggle("Admin Access", isOn: $isAdmin)
+                        Toggle("Set Hire Date", isOn: $includeHireDate)
+                        if includeHireDate {
+                            DatePicker("Hire Date", selection: $hireDate, displayedComponents: .date)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add Employee")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await addEmployee() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Add")
+                        }
+                    }
+                    .disabled(selectedUser == nil ||
+                              title.trimmingCharacters(in: .whitespaces).isEmpty ||
+                              isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func userSearchRow(_ user: EmployeeSearchUser) -> some View {
+        HStack(spacing: 10) {
+            Group {
+                if let url = user.photoURL {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        userInitialsCircle(user)
+                    }
+                } else {
+                    userInitialsCircle(user)
+                }
+            }
+            .frame(width: 32, height: 32)
+            .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(user.displayName)
+                    .font(.subheadline.weight(.medium))
+                if let handle = user.handle, !handle.isEmpty {
+                    Text("@\(handle)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func userInitialsCircle(_ user: EmployeeSearchUser) -> some View {
+        Circle()
+            .fill(Color.accentColor.opacity(0.2))
+            .overlay {
+                Text((user.displayName.first ?? Character("?")).uppercased())
+                    .font(.caption.bold())
+                    .foregroundStyle(Color.accentColor)
+            }
+    }
+
+    private func debounceSearch(_ query: String) {
+        searchTask?.cancel()
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count >= 2 else {
+            searchResults = []
+            return
+        }
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            isSearching = true
+            do {
+                searchResults = try await CompanyAPIService.searchUsers(
+                    companyId: companyId, query: trimmed
+                )
+            } catch {
+                if !Task.isCancelled {
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+            isSearching = false
+        }
+    }
+
+    private func addEmployee() async {
+        guard let user = selectedUser else { return }
+        isSaving = true
+
+        let hireDateString: String? = includeHireDate ? {
+            let f = DateFormatter()
+            f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: hireDate)
+        }() : nil
+
+        let dept = department.trimmingCharacters(in: .whitespaces)
+
+        do {
+            let emp = try await CompanyAPIService.addEmployee(
+                companyId: companyId,
+                userId: user.id,
+                title: title.trimmingCharacters(in: .whitespaces),
+                department: dept.isEmpty ? nil : dept,
+                isAdmin: isAdmin ? 1 : 0,
+                hireDate: hireDateString
+            )
+            onAdd(emp)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Edit Employee Sheet
+
+struct EditEmployeeSheet: View {
+    let companyId: Int
+    let employee: CompanyEmployee
+    let onSave: (CompanyEmployee) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var department: String
+    @State private var isAdmin: Bool
+    @State private var hireDate: Date
+    @State private var includeHireDate: Bool
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    init(companyId: Int, employee: CompanyEmployee, onSave: @escaping (CompanyEmployee) -> Void) {
+        self.companyId = companyId
+        self.employee = employee
+        self.onSave = onSave
+        _title = State(initialValue: employee.title ?? "")
+        _department = State(initialValue: employee.department ?? "")
+        _isAdmin = State(initialValue: employee.isAdminBool)
+
+        if let dateStr = employee.hireDate, !dateStr.isEmpty {
+            let f = DateFormatter()
+            f.dateFormat = "yyyy-MM-dd"
+            _hireDate = State(initialValue: f.date(from: dateStr) ?? Date())
+            _includeHireDate = State(initialValue: true)
+        } else {
+            _hireDate = State(initialValue: Date())
+            _includeHireDate = State(initialValue: false)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Text((employee.displayName.first ?? Character("?")).uppercased())
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        VStack(alignment: .leading) {
+                            Text(employee.displayName)
+                                .font(.body.weight(.medium))
+                            if let handle = employee.handle, !handle.isEmpty {
+                                Text("@\(handle)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section("Employee Details") {
+                    TextField("Job Title", text: $title)
+                    TextField("Department", text: $department)
+                    if !employee.isOwnerBool {
+                        Toggle("Admin Access", isOn: $isAdmin)
+                    }
+                    Toggle("Set Hire Date", isOn: $includeHireDate)
+                    if includeHireDate {
+                        DatePicker("Hire Date", selection: $hireDate, displayedComponents: .date)
+                    }
+                }
+            }
+            .navigationTitle("Edit Employee")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+
+        let t = title.trimmingCharacters(in: .whitespaces)
+        let d = department.trimmingCharacters(in: .whitespaces)
+
+        let hireDateString: String? = includeHireDate ? {
+            let f = DateFormatter()
+            f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: hireDate)
+        }() : nil
+
+        do {
+            let updated = try await CompanyAPIService.updateEmployee(
+                companyId: companyId,
+                employeeId: employee.id,
+                title: t.isEmpty ? nil : t,
+                department: d.isEmpty ? nil : d,
+                isAdmin: employee.isOwnerBool ? nil : (isAdmin ? 1 : 0),
+                hireDate: hireDateString,
+                status: nil
+            )
+            onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Add Position Sheet
+
+struct AddPositionSheet: View {
+    let companyId: Int
+    let onAdd: (Position) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title = ""
+    @State private var description = ""
+    @State private var department = ""
+    @State private var locationType = "onsite"
+    @State private var city = ""
+    @State private var state = ""
+    @State private var country = ""
+    @State private var employmentType = "full-time"
+    @State private var payMin = ""
+    @State private var payMax = ""
+    @State private var payType = "salary"
+    @State private var requirements = ""
+    @State private var benefits = ""
+
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    private let locationTypes = ["onsite", "remote", "hybrid"]
+    private let employmentTypes = ["full-time", "part-time", "contract", "internship"]
+    private let payTypes = ["salary", "hourly"]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Position Info") {
+                    TextField("Title *", text: $title)
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                    TextField("Department", text: $department)
+                }
+
+                Section("Location") {
+                    Picker("Type", selection: $locationType) {
+                        ForEach(locationTypes, id: \.self) { type in
+                            Text(type.prefix(1).uppercased() + type.dropFirst()).tag(type)
+                        }
+                    }
+                    if locationType != "remote" {
+                        TextField("City", text: $city)
+                        TextField("State / Province", text: $state)
+                        TextField("Country", text: $country)
+                    }
+                }
+
+                Section("Employment") {
+                    Picker("Type", selection: $employmentType) {
+                        ForEach(employmentTypes, id: \.self) { type in
+                            Text(type.split(separator: "-").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: "-")).tag(type)
+                        }
+                    }
+                }
+
+                Section("Pay") {
+                    Picker("Pay Type", selection: $payType) {
+                        ForEach(payTypes, id: \.self) { type in
+                            Text(type.prefix(1).uppercased() + type.dropFirst()).tag(type)
+                        }
+                    }
+                    TextField("Min", text: $payMin)
+                        .keyboardType(.numberPad)
+                    TextField("Max", text: $payMax)
+                        .keyboardType(.numberPad)
+                }
+
+                Section("Details") {
+                    TextField("Requirements", text: $requirements, axis: .vertical)
+                        .lineLimit(3...6)
+                    TextField("Benefits", text: $benefits, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("Add Position")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await createPosition() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Create")
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func createPosition() async {
+        isSaving = true
+
+        func nilIfEmpty(_ s: String) -> String? {
+            let t = s.trimmingCharacters(in: .whitespaces)
+            return t.isEmpty ? nil : t
+        }
+
+        do {
+            let pos = try await PositionsAPIService.createPosition(
+                companyId: companyId,
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: nilIfEmpty(description),
+                department: nilIfEmpty(department),
+                locationType: locationType,
+                city: nilIfEmpty(city),
+                state: nilIfEmpty(state),
+                country: nilIfEmpty(country),
+                employmentType: employmentType,
+                payRateMin: Int(payMin),
+                payRateMax: Int(payMax),
+                payType: payType,
+                requirements: nilIfEmpty(requirements),
+                benefits: nilIfEmpty(benefits)
+            )
+            onAdd(pos)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Edit Position Sheet
+
+struct EditPositionSheet: View {
+    let position: Position
+    let onSave: (Position) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description: String
+    @State private var department: String
+    @State private var locationType: String
+    @State private var city: String
+    @State private var state: String
+    @State private var country: String
+    @State private var employmentType: String
+    @State private var payMin: String
+    @State private var payMax: String
+    @State private var payType: String
+    @State private var requirements: String
+    @State private var benefits: String
+    @State private var status: String
+
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    private let locationTypes = ["onsite", "remote", "hybrid"]
+    private let employmentTypes = ["full-time", "part-time", "contract", "internship"]
+    private let payTypes = ["salary", "hourly"]
+    private let statusOptions = ["open", "closed", "filled"]
+
+    init(position: Position, onSave: @escaping (Position) -> Void) {
+        self.position = position
+        self.onSave = onSave
+        _title = State(initialValue: position.title)
+        _description = State(initialValue: position.description ?? "")
+        _department = State(initialValue: position.department ?? "")
+        _locationType = State(initialValue: position.locationType ?? "onsite")
+        _city = State(initialValue: position.city ?? "")
+        _state = State(initialValue: position.state ?? "")
+        _country = State(initialValue: position.country ?? "")
+        _employmentType = State(initialValue: position.employmentType ?? "full-time")
+        _payMin = State(initialValue: position.payRateMin.map { String($0) } ?? "")
+        _payMax = State(initialValue: position.payRateMax.map { String($0) } ?? "")
+        _payType = State(initialValue: position.payType ?? "salary")
+        _requirements = State(initialValue: position.requirements ?? "")
+        _benefits = State(initialValue: position.benefits ?? "")
+        _status = State(initialValue: position.status ?? "open")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Position Info") {
+                    TextField("Title *", text: $title)
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                    TextField("Department", text: $department)
+                }
+
+                Section("Status") {
+                    Picker("Status", selection: $status) {
+                        ForEach(statusOptions, id: \.self) { opt in
+                            Text(opt.prefix(1).uppercased() + opt.dropFirst()).tag(opt)
+                        }
+                    }
+                }
+
+                Section("Location") {
+                    Picker("Type", selection: $locationType) {
+                        ForEach(locationTypes, id: \.self) { type in
+                            Text(type.prefix(1).uppercased() + type.dropFirst()).tag(type)
+                        }
+                    }
+                    if locationType != "remote" {
+                        TextField("City", text: $city)
+                        TextField("State / Province", text: $state)
+                        TextField("Country", text: $country)
+                    }
+                }
+
+                Section("Employment") {
+                    Picker("Type", selection: $employmentType) {
+                        ForEach(employmentTypes, id: \.self) { type in
+                            Text(type.split(separator: "-").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: "-")).tag(type)
+                        }
+                    }
+                }
+
+                Section("Pay") {
+                    Picker("Pay Type", selection: $payType) {
+                        ForEach(payTypes, id: \.self) { type in
+                            Text(type.prefix(1).uppercased() + type.dropFirst()).tag(type)
+                        }
+                    }
+                    TextField("Min", text: $payMin)
+                        .keyboardType(.numberPad)
+                    TextField("Max", text: $payMax)
+                        .keyboardType(.numberPad)
+                }
+
+                Section("Details") {
+                    TextField("Requirements", text: $requirements, axis: .vertical)
+                        .lineLimit(3...6)
+                    TextField("Benefits", text: $benefits, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("Edit Position")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+
+        func nilIfEmpty(_ s: String) -> String? {
+            let t = s.trimmingCharacters(in: .whitespaces)
+            return t.isEmpty ? nil : t
+        }
+
+        do {
+            let updated = try await PositionsAPIService.updatePosition(
+                id: position.id,
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: nilIfEmpty(description),
+                department: nilIfEmpty(department),
+                locationType: locationType,
+                city: nilIfEmpty(city),
+                state: nilIfEmpty(state),
+                country: nilIfEmpty(country),
+                employmentType: employmentType,
+                payRateMin: Int(payMin),
+                payRateMax: Int(payMax),
+                payType: payType,
+                requirements: nilIfEmpty(requirements),
+                benefits: nilIfEmpty(benefits),
+                status: status
             )
             onSave(updated)
             dismiss()

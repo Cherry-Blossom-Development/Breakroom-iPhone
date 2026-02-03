@@ -104,7 +104,7 @@ final class APIClient: @unchecked Sendable {
                 #endif
                 throw APIError.decodingError(error)
             }
-        case 401, 403:
+        case 401:
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
@@ -161,7 +161,7 @@ final class APIClient: @unchecked Sendable {
             } catch {
                 throw APIError.decodingError(error)
             }
-        case 401, 403:
+        case 401:
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
@@ -198,7 +198,7 @@ final class APIClient: @unchecked Sendable {
         switch httpResponse.statusCode {
         case 200...299:
             return
-        case 401, 403:
+        case 401:
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {

@@ -203,3 +203,129 @@ struct UpdateCompanyRequest: Encodable {
 struct UpdateCompanyResponse: Decodable {
     let company: CompanyDetail
 }
+
+// MARK: - Employee Management
+
+struct EmployeeSearchUser: Codable, Identifiable {
+    let id: Int
+    let handle: String?
+    let firstName: String?
+    let lastName: String?
+    let email: String?
+    let photoPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, handle, email
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case photoPath = "photo_path"
+    }
+
+    var displayName: String {
+        let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? (handle ?? "Unknown") : parts.joined(separator: " ")
+    }
+
+    var photoURL: URL? {
+        guard let photoPath, !photoPath.isEmpty else { return nil }
+        return URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(photoPath)")
+    }
+}
+
+struct EmployeeSearchResponse: Decodable {
+    let users: [EmployeeSearchUser]
+}
+
+struct AddEmployeeRequest: Encodable {
+    let userId: Int
+    let title: String
+    let department: String?
+    let isAdmin: Int
+    let hireDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, department
+        case userId = "user_id"
+        case isAdmin = "is_admin"
+        case hireDate = "hire_date"
+    }
+}
+
+struct AddEmployeeResponse: Decodable {
+    let employee: CompanyEmployee
+}
+
+struct UpdateEmployeeRequest: Encodable {
+    let title: String?
+    let department: String?
+    let isAdmin: Int?
+    let hireDate: String?
+    let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, department, status
+        case isAdmin = "is_admin"
+        case hireDate = "hire_date"
+    }
+}
+
+struct UpdateEmployeeResponse: Decodable {
+    let employee: CompanyEmployee
+}
+
+// MARK: - Position Management
+
+struct CreatePositionRequest: Encodable {
+    let title: String
+    let description: String?
+    let department: String?
+    let locationType: String?
+    let city: String?
+    let state: String?
+    let country: String?
+    let employmentType: String?
+    let payRateMin: Int?
+    let payRateMax: Int?
+    let payType: String?
+    let requirements: String?
+    let benefits: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, department, city, state, country, requirements, benefits
+        case locationType = "location_type"
+        case employmentType = "employment_type"
+        case payRateMin = "pay_rate_min"
+        case payRateMax = "pay_rate_max"
+        case payType = "pay_type"
+    }
+}
+
+struct CreatePositionResponse: Decodable {
+    let position: Position
+}
+
+struct UpdatePositionRequest: Encodable {
+    let title: String?
+    let description: String?
+    let department: String?
+    let locationType: String?
+    let city: String?
+    let state: String?
+    let country: String?
+    let employmentType: String?
+    let payRateMin: Int?
+    let payRateMax: Int?
+    let payType: String?
+    let requirements: String?
+    let benefits: String?
+    let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, department, city, state, country, requirements, benefits, status
+        case locationType = "location_type"
+        case employmentType = "employment_type"
+        case payRateMin = "pay_rate_min"
+        case payRateMax = "pay_rate_max"
+        case payType = "pay_type"
+    }
+}
