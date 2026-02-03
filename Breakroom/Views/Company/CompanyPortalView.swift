@@ -423,6 +423,12 @@ struct CompanyDetailView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var showEditSheet = false
+
+    private var canEdit: Bool {
+        guard let role = detail?.userRole else { return false }
+        return role.isOwnerBool || role.isAdminBool
+    }
 
     var body: some View {
         Group {
@@ -440,6 +446,26 @@ struct CompanyDetailView: View {
         }
         .navigationTitle(detail?.company.name ?? "Company")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if canEdit {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Edit", systemImage: "pencil") {
+                        showEditSheet = true
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            if let company = detail?.company {
+                EditCompanyView(company: company) { updated in
+                    detail = CompanyDetailResponse(
+                        company: updated,
+                        employees: detail?.employees ?? [],
+                        userRole: detail?.userRole
+                    )
+                }
+            }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {
@@ -622,5 +648,130 @@ struct CompanyDetailView: View {
             if detail == nil { showError = true }
         }
         isLoading = false
+    }
+}
+
+// MARK: - Edit Company View
+
+struct EditCompanyView: View {
+    let company: CompanyDetail
+    let onSave: (CompanyDetail) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var companyDescription: String
+    @State private var address: String
+    @State private var city: String
+    @State private var state: String
+    @State private var country: String
+    @State private var postalCode: String
+    @State private var phone: String
+    @State private var email: String
+    @State private var website: String
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    init(company: CompanyDetail, onSave: @escaping (CompanyDetail) -> Void) {
+        self.company = company
+        self.onSave = onSave
+        _name = State(initialValue: company.name)
+        _companyDescription = State(initialValue: company.description ?? "")
+        _address = State(initialValue: company.address ?? "")
+        _city = State(initialValue: company.city ?? "")
+        _state = State(initialValue: company.state ?? "")
+        _country = State(initialValue: company.country ?? "")
+        _postalCode = State(initialValue: company.postalCode ?? "")
+        _phone = State(initialValue: company.phone ?? "")
+        _email = State(initialValue: company.email ?? "")
+        _website = State(initialValue: company.website ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Company Info") {
+                    TextField("Company Name *", text: $name)
+                    TextField("Description", text: $companyDescription, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+
+                Section("Location") {
+                    TextField("Address", text: $address)
+                    TextField("City", text: $city)
+                    TextField("State / Province", text: $state)
+                    TextField("Country", text: $country)
+                    TextField("Postal Code", text: $postalCode)
+                }
+
+                Section("Contact") {
+                    TextField("Phone", text: $phone)
+                        .keyboardType(.phonePad)
+                    TextField("Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                    TextField("Website", text: $website)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                }
+            }
+            .navigationTitle("Edit Company")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+
+        func nilIfEmpty(_ s: String) -> String? {
+            let t = s.trimmingCharacters(in: .whitespaces)
+            return t.isEmpty ? nil : t
+        }
+
+        do {
+            let updated = try await CompanyAPIService.updateCompany(
+                id: company.id,
+                name: name.trimmingCharacters(in: .whitespaces),
+                description: nilIfEmpty(companyDescription),
+                address: nilIfEmpty(address),
+                city: nilIfEmpty(city),
+                state: nilIfEmpty(state),
+                country: nilIfEmpty(country),
+                postalCode: nilIfEmpty(postalCode),
+                phone: nilIfEmpty(phone),
+                email: nilIfEmpty(email),
+                website: nilIfEmpty(website)
+            )
+            onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
     }
 }

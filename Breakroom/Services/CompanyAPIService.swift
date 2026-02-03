@@ -53,4 +53,37 @@ enum CompanyAPIService {
         )
         return response.company
     }
+
+    static func updateCompany(
+        id: Int,
+        name: String,
+        description: String?,
+        address: String?,
+        city: String?,
+        state: String?,
+        country: String?,
+        postalCode: String?,
+        phone: String?,
+        email: String?,
+        website: String?
+    ) async throws -> CompanyDetail {
+        let body = UpdateCompanyRequest(
+            name: name,
+            description: description,
+            address: address,
+            city: city,
+            state: state,
+            country: country,
+            postalCode: postalCode,
+            phone: phone,
+            email: email,
+            website: website
+        )
+        let response: UpdateCompanyResponse = try await APIClient.shared.request(
+            "/api/company/\(id)",
+            method: "PUT",
+            body: body
+        )
+        return response.company
+    }
 }

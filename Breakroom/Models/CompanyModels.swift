@@ -180,3 +180,26 @@ struct CreateCompanyRequest: Encodable {
         case employeeTitle = "employee_title"
     }
 }
+
+struct UpdateCompanyRequest: Encodable {
+    let name: String
+    let description: String?
+    let address: String?
+    let city: String?
+    let state: String?
+    let country: String?
+    let postalCode: String?
+    let phone: String?
+    let email: String?
+    let website: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, description, address, city, state, country
+        case postalCode = "postal_code"
+        case phone, email, website
+    }
+}
+
+struct UpdateCompanyResponse: Decodable {
+    let company: CompanyDetail
+}
