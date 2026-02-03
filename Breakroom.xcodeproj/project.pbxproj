@@ -12,6 +12,7 @@
 		0F3C797B8A50E4E0BC1D37EB /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741C0D64D533BB2A875C97D1 /* LoginView.swift */; };
 		1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */; };
 		176BD8B512E79E2AD17DFE45 /* BlogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40740E66D14A56BE618FCEB7 /* BlogModels.swift */; };
+		2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */; };
 		2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */; };
 		30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */; };
 		315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */; };
@@ -24,6 +25,7 @@
 		446345F21ED087B5741FA337 /* SocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */; };
 		44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B4B3CB776F4FF533F31177 /* ChatModels.swift */; };
 		4532C71033400AAA3E7FC806 /* PositionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D469E4060E944F33F37B557 /* PositionModels.swift */; };
+		455C3D404A3E42B04CA5F7DA /* CompanyPortalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */; };
 		4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE02A450FDF8385DEF3420E /* BlogPostView.swift */; };
 		4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 05BB53121E6C9220E5091E05 /* SocketIO */; };
 		4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA0A819B1816531F0433D4C /* AuthService.swift */; };
@@ -42,6 +44,7 @@
 		B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */; };
 		B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */; };
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
+		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
 		C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF549F06647717B82C21D /* ProfileModels.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
@@ -66,6 +69,7 @@
 		28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketManager.swift; sourceTree = "<group>"; };
 		2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomApp.swift; sourceTree = "<group>"; };
+		34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyModels.swift; sourceTree = "<group>"; };
 		37CEED3E11E64EEDC2E45139 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		3AA0A819B1816531F0433D4C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoomView.swift; sourceTree = "<group>"; };
@@ -74,6 +78,7 @@
 		4278DCD1E69862C0582F1090 /* BlogManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogManagementView.swift; sourceTree = "<group>"; };
 		4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAPIService.swift; sourceTree = "<group>"; };
 		4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomModels.swift; sourceTree = "<group>"; };
+		5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyAPIService.swift; sourceTree = "<group>"; };
 		5E6A7AB807A923430F64364A /* FriendsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsModels.swift; sourceTree = "<group>"; };
 		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
@@ -92,6 +97,7 @@
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockWidgetView.swift; sourceTree = "<group>"; };
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
+		DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyPortalView.swift; sourceTree = "<group>"; };
 		DE3DF549F06647717B82C21D /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		DED8FDFB3748D4E3B76B622F /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
 		EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
@@ -125,6 +131,7 @@
 				E2DF196B5E353D644DD9FDE9 /* Blog */,
 				8CD871E9860C7645C09AE129 /* Breakroom */,
 				8AE094EB25F9EBB7F753CE91 /* Chat */,
+				DD6EE17AE2DD8CCBED7A2625 /* Company */,
 				F80DEE2EB9A8D15C04843203 /* Employment */,
 				D15A831D02FE70184711F26C /* Friends */,
 				0D93BC3388A3D11FF70C13C0 /* Profile */,
@@ -140,6 +147,7 @@
 				A77C18853F8F4E57876C8998 /* BlogAPIService.swift */,
 				1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */,
 				837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */,
+				5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */,
 				4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */,
 				EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */,
 				A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */,
@@ -229,6 +237,7 @@
 				40740E66D14A56BE618FCEB7 /* BlogModels.swift */,
 				4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */,
 				D7B4B3CB776F4FF533F31177 /* ChatModels.swift */,
+				34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */,
 				5E6A7AB807A923430F64364A /* FriendsModels.swift */,
 				8D469E4060E944F33F37B557 /* PositionModels.swift */,
 				DE3DF549F06647717B82C21D /* ProfileModels.swift */,
@@ -251,6 +260,14 @@
 				6A9EB2ABB7D103B81F1E7AE1 /* FriendsView.swift */,
 			);
 			path = Friends;
+			sourceTree = "<group>";
+		};
+		DD6EE17AE2DD8CCBED7A2625 /* Company */ = {
+			isa = PBXGroup;
+			children = (
+				DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */,
+			);
+			path = Company;
 			sourceTree = "<group>";
 		};
 		E2DF196B5E353D644DD9FDE9 /* Blog */ = {
@@ -369,6 +386,9 @@
 				762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */,
 				FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */,
 				AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */,
+				2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */,
+				C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */,
+				455C3D404A3E42B04CA5F7DA /* CompanyPortalView.swift in Sources */,
 				0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */,
 				315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */,
 				B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */,

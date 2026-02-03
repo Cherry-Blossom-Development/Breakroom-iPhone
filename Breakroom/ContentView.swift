@@ -80,10 +80,7 @@ struct MainTabView: View {
                 .tag(2)
 
             NavigationStack {
-                Text("Company Portal")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                    .navigationTitle("Company")
+                CompanyPortalView()
             }
             .tabItem { Label("Company", systemImage: "building.2") }
             .tag(3)
