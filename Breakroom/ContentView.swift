@@ -26,6 +26,8 @@ struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var selectedTab = 0
     @State private var showBlogManagement = false
+    @State private var showProfile = false
+    @State private var showFriends = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -34,15 +36,25 @@ struct MainTabView: View {
                     .navigationDestination(isPresented: $showBlogManagement) {
                         BlogManagementView()
                     }
+                    .navigationDestination(isPresented: $showProfile) {
+                        ProfileView()
+                    }
+                    .navigationDestination(isPresented: $showFriends) {
+                        FriendsView()
+                    }
                     .navigationTitle("Breakroom")
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Menu {
-                                Button("Profile", systemImage: "person") { }
+                                Button("Profile", systemImage: "person") {
+                                    showProfile = true
+                                }
                                 Button("Chat", systemImage: "bubble.left.and.bubble.right") {
                                     selectedTab = 1
                                 }
-                                Button("Friends", systemImage: "person.2") { }
+                                Button("Friends", systemImage: "person.2") {
+                                    showFriends = true
+                                }
                                 Button("Blog", systemImage: "doc.richtext") {
                                     showBlogManagement = true
                                 }
@@ -63,14 +75,9 @@ struct MainTabView: View {
                 .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
                 .tag(1)
 
-            NavigationStack {
-                Text("Open Positions")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                    .navigationTitle("Positions")
-            }
-            .tabItem { Label("Positions", systemImage: "briefcase") }
-            .tag(2)
+            EmploymentView()
+                .tabItem { Label("Employment", systemImage: "briefcase") }
+                .tag(2)
 
             NavigationStack {
                 Text("Company Portal")

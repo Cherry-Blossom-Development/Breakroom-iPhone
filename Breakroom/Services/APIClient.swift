@@ -96,6 +96,12 @@ final class APIClient: @unchecked Sendable {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                #if DEBUG
+                print("DECODE ERROR for \(T.self): \(error)")
+                if let json = String(data: data, encoding: .utf8) {
+                    print("RAW JSON (first 2000 chars): \(String(json.prefix(2000)))")
+                }
+                #endif
                 throw APIError.decodingError(error)
             }
         case 401, 403:

@@ -474,16 +474,6 @@ private struct WeatherData {
     let weatherCode: Int
 }
 
-private struct ProfileUserPayload: Decodable {
-    let city: String?
-    let latitude: Double?
-    let longitude: Double?
-    let timezone: String?
-}
-
-private struct ProfileResponse: Decodable {
-    let user: ProfileUserPayload
-}
 
 private struct LocationUpdatePayload: Decodable {
     let city: String
