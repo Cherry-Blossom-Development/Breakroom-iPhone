@@ -447,6 +447,10 @@ struct CompanyDetailView: View {
     // Projects tab
     @State private var projects: [CompanyProject] = []
     @State private var isLoadingProjects = false
+    @State private var showAddProjectSheet = false
+    @State private var editingProject: CompanyProject?
+    @State private var projectToDelete: CompanyProject?
+    @State private var showDeleteProjectConfirm = false
     @State private var editingPosition: Position?
     @State private var positionToDelete: Position?
     @State private var showDeletePositionConfirm = false
@@ -511,7 +515,9 @@ struct CompanyDetailView: View {
                             showAddPositionSheet = true
                         }
                     case .projects:
-                        EmptyView()
+                        Button("Add", systemImage: "plus") {
+                            showAddProjectSheet = true
+                        }
                     }
                 }
             }
@@ -567,6 +573,18 @@ struct CompanyDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showAddProjectSheet) {
+            AddProjectSheet(companyId: companyId) { newProject in
+                projects.insert(newProject, at: 0)
+            }
+        }
+        .sheet(item: $editingProject) { proj in
+            EditProjectSheet(project: proj) { updated in
+                if let idx = projects.firstIndex(where: { $0.id == updated.id }) {
+                    projects[idx] = updated
+                }
+            }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {
@@ -594,6 +612,18 @@ struct CompanyDetailView: View {
         } message: {
             if let pos = positionToDelete {
                 Text("Delete the position \"\(pos.title)\"?")
+            }
+        }
+        .alert("Delete Project", isPresented: $showDeleteProjectConfirm) {
+            Button("Delete", role: .destructive) {
+                if let proj = projectToDelete {
+                    Task { await deleteProject(proj) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            if let proj = projectToDelete {
+                Text("Delete the project \"\(proj.title)\"?")
             }
         }
         .refreshable {
@@ -755,8 +785,27 @@ struct CompanyDetailView: View {
                     description: Text("No projects have been created yet.")
                 )
             } else {
-                List(projects) { proj in
-                    projectRow(proj)
+                List {
+                    ForEach(projects) { proj in
+                        Button {
+                            if canEdit {
+                                editingProject = proj
+                            }
+                        } label: {
+                            projectRow(proj)
+                        }
+                        .foregroundStyle(.primary)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if canEdit && !proj.isDefaultBool {
+                                Button(role: .destructive) {
+                                    projectToDelete = proj
+                                    showDeleteProjectConfirm = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
                 }
                 .listStyle(.plain)
             }
@@ -1034,6 +1083,16 @@ struct CompanyDetailView: View {
         do {
             try await PositionsAPIService.deletePosition(id: pos.id)
             positions.removeAll { $0.id == pos.id }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func deleteProject(_ proj: CompanyProject) async {
+        do {
+            try await CompanyAPIService.deleteProject(id: proj.id)
+            projects.removeAll { $0.id == proj.id }
         } catch {
             errorMessage = error.localizedDescription
             showError = true
@@ -1821,6 +1880,164 @@ struct EditPositionSheet: View {
                 requirements: nilIfEmpty(requirements),
                 benefits: nilIfEmpty(benefits),
                 status: status
+            )
+            onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Add Project Sheet
+
+struct AddProjectSheet: View {
+    let companyId: Int
+    let onAdd: (CompanyProject) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title = ""
+    @State private var description = ""
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Project Info") {
+                    TextField("Title *", text: $title)
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("New Project")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Create")
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+        let desc = description.trimmingCharacters(in: .whitespaces)
+        do {
+            let proj = try await CompanyAPIService.createProject(
+                companyId: companyId,
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: desc.isEmpty ? nil : desc
+            )
+            onAdd(proj)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Edit Project Sheet
+
+struct EditProjectSheet: View {
+    let project: CompanyProject
+    let onSave: (CompanyProject) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description: String
+    @State private var isActive: Bool
+    @State private var isPublic: Bool
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    init(project: CompanyProject, onSave: @escaping (CompanyProject) -> Void) {
+        self.project = project
+        self.onSave = onSave
+        _title = State(initialValue: project.title)
+        _description = State(initialValue: project.description ?? "")
+        _isActive = State(initialValue: project.isActiveBool)
+        _isPublic = State(initialValue: project.isPublicBool)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Project Info") {
+                    TextField("Title *", text: $title)
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+
+                Section("Settings") {
+                    Toggle("Public", isOn: $isPublic)
+                    if !project.isDefaultBool {
+                        Toggle("Active", isOn: $isActive)
+                    }
+                }
+            }
+            .navigationTitle("Edit Project")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+        let desc = description.trimmingCharacters(in: .whitespaces)
+        do {
+            let updated = try await CompanyAPIService.updateProject(
+                id: project.id,
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: desc.isEmpty ? nil : desc,
+                isActive: project.isDefaultBool ? nil : isActive,
+                isPublic: isPublic
             )
             onSave(updated)
             dismiss()

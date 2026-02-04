@@ -358,6 +358,38 @@ struct CompanyProject: Codable, Identifiable {
     var isPublicBool: Bool { (isPublic ?? 0) != 0 }
 }
 
+struct CreateProjectRequest: Encodable {
+    let companyId: Int
+    let title: String
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description
+        case companyId = "company_id"
+    }
+}
+
+struct CreateProjectResponse: Decodable {
+    let project: CompanyProject
+}
+
+struct UpdateProjectRequest: Encodable {
+    let title: String?
+    let description: String?
+    let isActive: Bool?
+    let isPublic: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description
+        case isActive = "is_active"
+        case isPublic = "is_public"
+    }
+}
+
+struct UpdateProjectResponse: Decodable {
+    let project: CompanyProject
+}
+
 struct CompanyProjectsResponse: Decodable {
     let projects: [CompanyProject]
 }

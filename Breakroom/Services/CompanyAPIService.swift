@@ -159,4 +159,31 @@ enum CompanyAPIService {
         )
         return response.projects
     }
+
+    static func createProject(companyId: Int, title: String, description: String?) async throws -> CompanyProject {
+        let body = CreateProjectRequest(companyId: companyId, title: title, description: description)
+        let response: CreateProjectResponse = try await APIClient.shared.request(
+            "/api/projects",
+            method: "POST",
+            body: body
+        )
+        return response.project
+    }
+
+    static func updateProject(id: Int, title: String?, description: String?, isActive: Bool?, isPublic: Bool?) async throws -> CompanyProject {
+        let body = UpdateProjectRequest(title: title, description: description, isActive: isActive, isPublic: isPublic)
+        let response: UpdateProjectResponse = try await APIClient.shared.request(
+            "/api/projects/\(id)",
+            method: "PUT",
+            body: body
+        )
+        return response.project
+    }
+
+    static func deleteProject(id: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/projects/\(id)",
+            method: "DELETE"
+        )
+    }
 }
