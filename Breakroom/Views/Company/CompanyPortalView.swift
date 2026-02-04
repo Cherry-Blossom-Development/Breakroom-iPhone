@@ -442,7 +442,6 @@ struct CompanyDetailView: View {
     // Positions tab
     @State private var positions: [Position] = []
     @State private var isLoadingPositions = false
-    @State private var hasLoadedPositions = false
     @State private var showAddPositionSheet = false
     @State private var editingPosition: Position?
     @State private var positionToDelete: Position?
@@ -593,19 +592,13 @@ struct CompanyDetailView: View {
                 Text("Delete the position \"\(pos.title)\"?")
             }
         }
-        .onChange(of: selectedTab) { _, newTab in
-            if newTab == .positions && !hasLoadedPositions {
-                Task { await loadPositions() }
-            }
-        }
         .refreshable {
             await loadDetail()
-            if selectedTab == .positions {
-                await loadPositions()
-            }
+            await loadPositions()
         }
         .task {
             await loadDetail()
+            await loadPositions()
         }
     }
 
@@ -764,23 +757,42 @@ struct CompanyDetailView: View {
                 positionStatusBadge(pos.status)
             }
 
-            HStack(spacing: 12) {
-                if let dept = pos.department, !dept.isEmpty {
-                    Label(dept, systemImage: "building.2")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                if !pos.formattedEmploymentType.isEmpty {
+                    metaTag(pos.formattedEmploymentType)
                 }
-                Label(pos.locationString, systemImage: "mappin")
+                if !pos.formattedLocationType.isEmpty {
+                    metaTag(pos.formattedLocationType)
+                }
+                Text(pos.locationString)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             Text(pos.formattedPay)
-                .font(.caption)
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+
+            if !pos.descriptionExcerpt.isEmpty {
+                Text(pos.descriptionExcerpt)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(2)
+            }
         }
         .padding(.vertical, 4)
+        .opacity(pos.status != nil && pos.status != "open" ? 0.6 : 1.0)
+    }
+
+    private func metaTag(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color(.tertiarySystemFill))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .foregroundStyle(.secondary)
     }
 
     private func positionStatusBadge(_ status: String?) -> some View {
@@ -922,7 +934,6 @@ struct CompanyDetailView: View {
             showError = true
         }
         isLoadingPositions = false
-        hasLoadedPositions = true
     }
 
     private func deleteEmployee(_ emp: CompanyEmployee) async {
