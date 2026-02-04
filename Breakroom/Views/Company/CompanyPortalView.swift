@@ -443,6 +443,10 @@ struct CompanyDetailView: View {
     @State private var positions: [Position] = []
     @State private var isLoadingPositions = false
     @State private var showAddPositionSheet = false
+
+    // Projects tab
+    @State private var projects: [CompanyProject] = []
+    @State private var isLoadingProjects = false
     @State private var editingPosition: Position?
     @State private var positionToDelete: Position?
     @State private var showDeletePositionConfirm = false
@@ -595,10 +599,12 @@ struct CompanyDetailView: View {
         .refreshable {
             await loadDetail()
             await loadPositions()
+            await loadProjects()
         }
         .task {
             await loadDetail()
             await loadPositions()
+            await loadProjects()
         }
     }
 
@@ -738,11 +744,71 @@ struct CompanyDetailView: View {
     // MARK: - Projects Tab
 
     private var projectsTab: some View {
-        ContentUnavailableView(
-            "Projects",
-            systemImage: "folder",
-            description: Text("Coming Soon")
-        )
+        Group {
+            if isLoadingProjects {
+                ProgressView()
+                    .frame(maxHeight: .infinity)
+            } else if projects.isEmpty {
+                ContentUnavailableView(
+                    "No Projects",
+                    systemImage: "folder",
+                    description: Text("No projects have been created yet.")
+                )
+            } else {
+                List(projects) { proj in
+                    projectRow(proj)
+                }
+                .listStyle(.plain)
+            }
+        }
+    }
+
+    private func projectRow(_ proj: CompanyProject) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(proj.title)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                Spacer()
+                if proj.isDefaultBool {
+                    metaTag("Default")
+                }
+            }
+
+            HStack(spacing: 8) {
+                Text(proj.isPublicBool ? "Public" : "Private")
+                    .font(.caption2.weight(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(proj.isPublicBool ? Color.green.opacity(0.15) : Color.secondary.opacity(0.15))
+                    .foregroundStyle(proj.isPublicBool ? .green : .secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                Text(proj.isActiveBool ? "Active" : "Inactive")
+                    .font(.caption2.weight(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(proj.isActiveBool ? Color.blue.opacity(0.15) : Color.red.opacity(0.15))
+                    .foregroundStyle(proj.isActiveBool ? .blue : .red)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                Spacer()
+
+                let count = proj.ticketCount ?? 0
+                Label("\(count) ticket\(count == 1 ? "" : "s")", systemImage: "ticket")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let desc = proj.description, !desc.isEmpty {
+                Text(desc)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 4)
+        .opacity(proj.isActiveBool ? 1.0 : 0.6)
     }
 
     // MARK: - Row Views
@@ -934,6 +1000,17 @@ struct CompanyDetailView: View {
             showError = true
         }
         isLoadingPositions = false
+    }
+
+    private func loadProjects() async {
+        isLoadingProjects = true
+        do {
+            projects = try await CompanyAPIService.getCompanyProjects(companyId: companyId)
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isLoadingProjects = false
     }
 
     private func deleteEmployee(_ emp: CompanyEmployee) async {

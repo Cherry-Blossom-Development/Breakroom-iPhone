@@ -329,3 +329,35 @@ struct UpdatePositionRequest: Encodable {
         case payType = "pay_type"
     }
 }
+
+// MARK: - Company Projects
+
+struct CompanyProject: Codable, Identifiable {
+    let id: Int
+    let title: String
+    let description: String?
+    let isDefault: Int?
+    let isActive: Int?
+    let isPublic: Int?
+    let createdAt: String?
+    let updatedAt: String?
+    let ticketCount: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description
+        case isDefault = "is_default"
+        case isActive = "is_active"
+        case isPublic = "is_public"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case ticketCount = "ticket_count"
+    }
+
+    var isDefaultBool: Bool { (isDefault ?? 0) != 0 }
+    var isActiveBool: Bool { (isActive ?? 0) != 0 }
+    var isPublicBool: Bool { (isPublic ?? 0) != 0 }
+}
+
+struct CompanyProjectsResponse: Decodable {
+    let projects: [CompanyProject]
+}

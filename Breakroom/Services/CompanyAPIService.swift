@@ -150,4 +150,13 @@ enum CompanyAPIService {
             method: "DELETE"
         )
     }
+
+    // MARK: - Projects
+
+    static func getCompanyProjects(companyId: Int) async throws -> [CompanyProject] {
+        let response: CompanyProjectsResponse = try await APIClient.shared.request(
+            "/api/projects/company/\(companyId)"
+        )
+        return response.projects
+    }
 }
