@@ -17,14 +17,17 @@ struct KanbanBoardView: View {
             if isLoading {
                 ProgressView("Loading board...")
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 12) {
-                        ForEach(TicketStatus.kanbanStatuses, id: \.self) { status in
-                            kanbanColumn(status)
+                ScrollView(.vertical) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 12) {
+                            ForEach(TicketStatus.kanbanStatuses, id: \.self) { status in
+                                kanbanColumn(status)
+                            }
                         }
+                        .padding()
                     }
-                    .padding()
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .navigationTitle(projectTitle)
@@ -115,39 +118,49 @@ struct KanbanBoardView: View {
     }
 
     private func ticketCard(_ ticket: Ticket, status: TicketStatus) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(ticket.title)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(2)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            // Tappable card content
+            Button {
+                editingTicket = ticket
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(ticket.title)
+                            .font(.subheadline.weight(.medium))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                    }
 
-            HStack {
-                priorityIndicator(ticket.ticketPriority)
-                Spacer()
-                if let assignee = ticket.assigneeDisplayName {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.circle.fill")
-                            .foregroundStyle(.secondary)
-                        Text(assignee)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                    HStack {
+                        priorityIndicator(ticket.ticketPriority)
+                        Spacer()
+                        if let assignee = ticket.assigneeDisplayName {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.circle.fill")
+                                    .foregroundStyle(.secondary)
+                                Text(assignee)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
                 }
+                .padding(12)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
 
-            // Status transition buttons
+            // Status transition buttons (separate from tap area)
             statusTransitionButtons(ticket, currentStatus: status)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
         }
-        .padding(12)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-        .onTapGesture {
-            editingTicket = ticket
-        }
     }
 
     private func statusTransitionButtons(_ ticket: Ticket, currentStatus: TicketStatus) -> some View {
