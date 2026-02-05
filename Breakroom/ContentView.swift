@@ -126,23 +126,13 @@ struct MainTabView: View {
     private func handleShortcut(_ shortcut: Shortcut) {
         // Route to appropriate tab or view based on URL
         switch shortcut.url {
-        case "/lyrics":
-            selectedTab = 4 // Tool Shed tab
-            selectedShortcut = shortcut
-        case "/art-gallery":
-            selectedTab = 4
-            selectedShortcut = shortcut
         case "/blog":
             showBlogManagement = true
         case "/kanban":
             selectedTab = 3 // Company tab
         default:
-            // For project shortcuts like /project/123
-            if shortcut.url.hasPrefix("/project/") {
-                selectedTab = 3 // Company tab
-            } else {
-                selectedShortcut = shortcut
-            }
+            // All other shortcuts navigate from Breakroom tab
+            selectedShortcut = shortcut
         }
     }
 
@@ -172,7 +162,14 @@ struct MainTabView: View {
         case "/art-gallery":
             Text("Art Gallery - Coming Soon")
         default:
-            Text("Shortcut: \(shortcut.name)")
+            // Handle project shortcuts like /project/123
+            if shortcut.url.hasPrefix("/project/"),
+               let projectIdString = shortcut.url.split(separator: "/").last,
+               let projectId = Int(projectIdString) {
+                KanbanBoardView(projectId: projectId, projectTitle: shortcut.name)
+            } else {
+                Text("Shortcut: \(shortcut.name)")
+            }
         }
     }
 }
