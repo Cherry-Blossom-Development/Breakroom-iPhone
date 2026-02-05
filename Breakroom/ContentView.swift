@@ -29,6 +29,10 @@ struct MainTabView: View {
     @State private var showProfile = false
     @State private var showFriends = false
 
+    // Shortcuts
+    @State private var shortcuts: [Shortcut] = []
+    @State private var selectedShortcut: Shortcut?
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -41,6 +45,9 @@ struct MainTabView: View {
                     }
                     .navigationDestination(isPresented: $showFriends) {
                         FriendsView()
+                    }
+                    .navigationDestination(item: $selectedShortcut) { shortcut in
+                        shortcutDestination(shortcut)
                     }
                     .navigationTitle("Breakroom")
                     .toolbar {
@@ -58,6 +65,20 @@ struct MainTabView: View {
                                 Button("Blog", systemImage: "doc.richtext") {
                                     showBlogManagement = true
                                 }
+
+                                if !shortcuts.isEmpty {
+                                    Divider()
+                                    Section("Shortcuts") {
+                                        ForEach(shortcuts) { shortcut in
+                                            Button {
+                                                handleShortcut(shortcut)
+                                            } label: {
+                                                Label(shortcut.name, systemImage: shortcutIcon(for: shortcut.url))
+                                            }
+                                        }
+                                    }
+                                }
+
                                 Divider()
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                                     Task { await authViewModel.logout() }
@@ -66,6 +87,9 @@ struct MainTabView: View {
                                 Image(systemName: "line.3.horizontal")
                             }
                         }
+                    }
+                    .task {
+                        await loadShortcuts()
                     }
             }
             .tabItem { Label("Breakroom", systemImage: "square.grid.2x2") }
@@ -88,6 +112,67 @@ struct MainTabView: View {
             ToolShedView()
                 .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
                 .tag(4)
+        }
+    }
+
+    private func loadShortcuts() async {
+        do {
+            shortcuts = try await ShortcutsAPIService.getShortcuts()
+        } catch {
+            // Silently fail - shortcuts are optional
+        }
+    }
+
+    private func handleShortcut(_ shortcut: Shortcut) {
+        // Route to appropriate tab or view based on URL
+        switch shortcut.url {
+        case "/lyrics":
+            selectedTab = 4 // Tool Shed tab
+            selectedShortcut = shortcut
+        case "/art-gallery":
+            selectedTab = 4
+            selectedShortcut = shortcut
+        case "/blog":
+            showBlogManagement = true
+        case "/kanban":
+            selectedTab = 3 // Company tab
+        default:
+            // For project shortcuts like /project/123
+            if shortcut.url.hasPrefix("/project/") {
+                selectedTab = 3 // Company tab
+            } else {
+                selectedShortcut = shortcut
+            }
+        }
+    }
+
+    private func shortcutIcon(for url: String) -> String {
+        switch url {
+        case "/lyrics":
+            return "music.mic"
+        case "/art-gallery":
+            return "photo.artframe"
+        case "/blog":
+            return "doc.richtext"
+        case "/kanban":
+            return "rectangle.split.3x1"
+        default:
+            if url.hasPrefix("/project/") {
+                return "rectangle.split.3x1"
+            }
+            return "bookmark"
+        }
+    }
+
+    @ViewBuilder
+    private func shortcutDestination(_ shortcut: Shortcut) -> some View {
+        switch shortcut.url {
+        case "/lyrics":
+            LyricLabView()
+        case "/art-gallery":
+            Text("Art Gallery - Coming Soon")
+        default:
+            Text("Shortcut: \(shortcut.name)")
         }
     }
 }

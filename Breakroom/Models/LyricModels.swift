@@ -298,7 +298,7 @@ struct AddCollaboratorRequest: Encodable {
 
 // MARK: - Shortcut Models
 
-struct Shortcut: Codable, Identifiable {
+struct Shortcut: Codable, Identifiable, Hashable {
     let id: Int
     let userId: Int?
     let name: String
