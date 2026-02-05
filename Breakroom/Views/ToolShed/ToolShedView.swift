@@ -140,7 +140,7 @@ struct ToolShedView: View {
         case .artGallery:
             ArtGalleryView()
         case .blog:
-            Text("Blog - Coming Soon")
+            BlogManagementView()
         case .kanban:
             Text("Kanban - Use Company Portal")
         }
