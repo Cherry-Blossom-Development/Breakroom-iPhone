@@ -138,7 +138,7 @@ struct ToolShedView: View {
         case .lyricLab:
             LyricLabView()
         case .artGallery:
-            Text("Art Gallery - Coming Soon")
+            ArtGalleryView()
         case .blog:
             Text("Blog - Coming Soon")
         case .kanban:

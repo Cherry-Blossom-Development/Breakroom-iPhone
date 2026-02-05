@@ -160,7 +160,7 @@ struct MainTabView: View {
         case "/lyrics":
             LyricLabView()
         case "/art-gallery":
-            Text("Art Gallery - Coming Soon")
+            ArtGalleryView()
         default:
             // Handle project shortcuts like /project/123
             if shortcut.url.hasPrefix("/project/"),
