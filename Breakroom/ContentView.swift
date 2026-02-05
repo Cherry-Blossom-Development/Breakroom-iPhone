@@ -84,6 +84,10 @@ struct MainTabView: View {
             }
             .tabItem { Label("Company", systemImage: "building.2") }
             .tag(3)
+
+            ToolShedView()
+                .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
+                .tag(4)
         }
     }
 }
