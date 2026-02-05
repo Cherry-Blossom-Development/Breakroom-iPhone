@@ -455,6 +455,10 @@ struct CompanyDetailView: View {
     @State private var positionToDelete: Position?
     @State private var showDeletePositionConfirm = false
 
+    // Ticket navigation
+    @State private var selectedHelpDeskProject: CompanyProject?
+    @State private var selectedKanbanProject: CompanyProject?
+
     private var canEdit: Bool {
         guard let role = detail?.userRole else { return false }
         return role.isOwnerBool || role.isAdminBool
@@ -635,6 +639,18 @@ struct CompanyDetailView: View {
             await loadDetail()
             await loadPositions()
             await loadProjects()
+        }
+        .navigationDestination(item: $selectedHelpDeskProject) { proj in
+            HelpDeskView(
+                companyId: companyId,
+                companyName: detail?.company.name ?? ""
+            )
+        }
+        .navigationDestination(item: $selectedKanbanProject) { proj in
+            KanbanBoardView(
+                projectId: proj.id,
+                projectTitle: proj.title
+            )
         }
     }
 
@@ -855,9 +871,45 @@ struct CompanyDetailView: View {
                     .foregroundStyle(.tertiary)
                     .lineLimit(2)
             }
+
+            // Ticket navigation button - different style for Help Desk vs Kanban
+            if proj.isActiveBool {
+                ticketNavigationButton(proj)
+            }
         }
         .padding(.vertical, 4)
         .opacity(proj.isActiveBool ? 1.0 : 0.6)
+    }
+
+    private func ticketNavigationButton(_ proj: CompanyProject) -> some View {
+        Button {
+            if proj.isDefaultBool {
+                selectedHelpDeskProject = proj
+            } else {
+                selectedKanbanProject = proj
+            }
+        } label: {
+            if proj.isDefaultBool {
+                // Help Desk style - list icon, muted appearance
+                Label("Help Desk", systemImage: "list.bullet.rectangle")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(.tertiarySystemFill))
+                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                // Kanban style - board icon, more prominent
+                Label("Board", systemImage: "rectangle.split.3x1")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(0.15))
+                    .foregroundStyle(Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Row Views

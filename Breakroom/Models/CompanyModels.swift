@@ -332,7 +332,7 @@ struct UpdatePositionRequest: Encodable {
 
 // MARK: - Company Projects
 
-struct CompanyProject: Codable, Identifiable {
+struct CompanyProject: Codable, Identifiable, Hashable {
     let id: Int
     let title: String
     let description: String?
