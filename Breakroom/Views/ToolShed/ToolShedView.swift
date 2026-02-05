@@ -142,7 +142,7 @@ struct ToolShedView: View {
         case .blog:
             BlogManagementView()
         case .kanban:
-            Text("Kanban - Use Company Portal")
+            KanbanRedirectView()
         }
     }
 
