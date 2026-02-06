@@ -1,5 +1,11 @@
 import Foundation
 
+/// Notification posted when the user's session expires (401 response)
+/// Observers should log the user out and return to the login screen
+extension Notification.Name {
+    static let sessionExpired = Notification.Name("sessionExpired")
+}
+
 enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
@@ -15,7 +21,8 @@ enum APIError: LocalizedError {
         case .invalidResponse:
             return "Invalid server response"
         case .unauthorized:
-            return "Session expired. Please log in again."
+            // This shouldn't be shown to users - the app auto-redirects to login
+            return "Session expired"
         case .serverError(let message):
             return message
         case .decodingError(let error):
@@ -105,6 +112,7 @@ final class APIClient: @unchecked Sendable {
                 throw APIError.decodingError(error)
             }
         case 401:
+            await handleUnauthorized()
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
@@ -162,6 +170,7 @@ final class APIClient: @unchecked Sendable {
                 throw APIError.decodingError(error)
             }
         case 401:
+            await handleUnauthorized()
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
@@ -199,12 +208,20 @@ final class APIClient: @unchecked Sendable {
         case 200...299:
             return
         case 401:
+            await handleUnauthorized()
             throw APIError.unauthorized
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
             throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+        }
+    }
+
+    /// Handle 401 unauthorized response by posting notification to trigger logout
+    private func handleUnauthorized() async {
+        await MainActor.run {
+            NotificationCenter.default.post(name: .sessionExpired, object: nil)
         }
     }
 }

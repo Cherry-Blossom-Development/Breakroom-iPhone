@@ -14,6 +14,23 @@ final class AuthViewModel {
         if KeychainManager.token != nil {
             Task { await checkExistingSession() }
         }
+
+        // Listen for session expired notifications (401 responses)
+        NotificationCenter.default.addObserver(
+            forName: .sessionExpired,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.handleSessionExpired()
+            }
+        }
+    }
+
+    /// Handle session expiration by logging out silently
+    private func handleSessionExpired() async {
+        guard isAuthenticated else { return }
+        await logout()
     }
 
     func login(handle: String, password: String) async {
