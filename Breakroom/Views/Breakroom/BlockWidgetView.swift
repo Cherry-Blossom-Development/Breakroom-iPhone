@@ -112,15 +112,19 @@ struct UpdatesWidget: View {
     // MARK: - Updates List
 
     private var updatesList: some View {
-        VStack(spacing: 0) {
-            ForEach(updates) { update in
-                updateRow(update)
-                if update.id != updates.last?.id {
-                    Divider()
-                        .padding(.leading, 12)
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(updates) { update in
+                    updateRow(update)
+                    if update.id != updates.last?.id {
+                        Divider()
+                            .padding(.leading, 12)
+                    }
                 }
             }
         }
+        .frame(maxHeight: 280)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func updateRow(_ update: BreakroomUpdate) -> some View {
@@ -921,22 +925,26 @@ struct NewsWidget: View {
     // MARK: - News List
 
     private var newsList: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(items.prefix(10))) { item in
-                Button {
-                    if let url = URL(string: item.link) {
-                        UIApplication.shared.open(url)
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(items.prefix(10))) { item in
+                    Button {
+                        if let url = URL(string: item.link) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        newsRow(item)
                     }
-                } label: {
-                    newsRow(item)
-                }
-                .buttonStyle(.plain)
-                if item.id != items.prefix(10).last?.id {
-                    Divider()
-                        .padding(.leading, 12)
+                    .buttonStyle(.plain)
+                    if item.id != items.prefix(10).last?.id {
+                        Divider()
+                            .padding(.leading, 12)
+                    }
                 }
             }
         }
+        .frame(maxHeight: 280)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func newsRow(_ item: NewsItem) -> some View {
@@ -1094,18 +1102,22 @@ struct BlogWidget: View {
     // MARK: - Posts List
 
     private var blogPostsList: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(posts.prefix(5))) { post in
-                NavigationLink(value: post) {
-                    blogPostRow(post)
-                }
-                .buttonStyle(.plain)
-                if post.id != posts.prefix(5).last?.id {
-                    Divider()
-                        .padding(.leading, 12)
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(posts.prefix(5))) { post in
+                    NavigationLink(value: post) {
+                        blogPostRow(post)
+                    }
+                    .buttonStyle(.plain)
+                    if post.id != posts.prefix(5).last?.id {
+                        Divider()
+                            .padding(.leading, 12)
+                    }
                 }
             }
         }
+        .frame(maxHeight: 280)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func blogPostRow(_ post: BlogPost) -> some View {
