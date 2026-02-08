@@ -49,7 +49,7 @@ struct MainTabView: View {
                     .navigationDestination(item: $selectedShortcut) { shortcut in
                         shortcutDestination(shortcut)
                     }
-                    .navigationTitle("Breakroom")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Menu {
@@ -87,6 +87,10 @@ struct MainTabView: View {
                                 Image(systemName: "line.3.horizontal")
                             }
                         }
+                        ToolbarItem(placement: .principal) {
+                            Text("Breakroom")
+                                .font(.headline)
+                        }
                     }
                     .task {
                         await loadShortcuts()
@@ -100,7 +104,7 @@ struct MainTabView: View {
                 .tag(1)
 
             EmploymentView()
-                .tabItem { Label("Employment", systemImage: "briefcase") }
+                .tabItem { Label("Jobs", systemImage: "briefcase") }
                 .tag(2)
 
             NavigationStack {

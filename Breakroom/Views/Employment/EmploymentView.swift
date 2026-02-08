@@ -64,7 +64,7 @@ struct EmploymentView: View {
                     positionsList
                 }
             }
-            .navigationTitle("Employment")
+            .navigationTitle("Jobs")
             .searchable(text: $searchText, prompt: "Search jobs by title, company...")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
