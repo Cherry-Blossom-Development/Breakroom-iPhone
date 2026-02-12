@@ -21,10 +21,15 @@ struct SignupView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                Image("LogoLarge")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
+                    .padding(.top, 24)
+
                 Text("Create Account")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                    .padding(.top, 24)
 
                 VStack(spacing: 16) {
                     TextField("Handle", text: $handle)

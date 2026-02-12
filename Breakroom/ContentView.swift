@@ -88,8 +88,11 @@ struct MainTabView: View {
                             }
                         }
                         ToolbarItem(placement: .principal) {
-                            Text("Breakroom")
-                                .font(.headline)
+                            HStack(spacing: 6) {
+                                Image("Logo")
+                                Text("Breakroom")
+                                    .font(.headline)
+                            }
                         }
                     }
                     .task {

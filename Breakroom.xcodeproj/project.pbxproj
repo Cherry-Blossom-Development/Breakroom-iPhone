@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -72,7 +72,7 @@
 		013B71C54903F120BD58452A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		028A3743D482F0346A079BAD /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
 		04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricModels.swift; sourceTree = "<group>"; };
-		0A8D398682165173267FE358 /* Breakroom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Breakroom.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A8D398682165173267FE358 /* Breakroom.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Breakroom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanRedirectView.swift; sourceTree = "<group>"; };
 		127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAPIService.swift; sourceTree = "<group>"; };
 		130DAB511D587688461B04EE /* ChatRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomView.swift; sourceTree = "<group>"; };
@@ -391,9 +391,8 @@
 			mainGroup = 727682F0A609E51FDA008095;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -609,6 +608,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Breakroom/Preview Content\"";
+				DEVELOPMENT_TEAM = GF4C4N9K9C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
@@ -638,6 +638,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Breakroom/Preview Content\"";
+				DEVELOPMENT_TEAM = GF4C4N9K9C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
@@ -682,7 +683,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -695,7 +696,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		05BB53121E6C9220E5091E05 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
 		};
 /* End XCSwiftPackageProductDependency section */

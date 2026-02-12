@@ -11,6 +11,11 @@ struct LoginView: View {
             VStack(spacing: 24) {
                 Spacer()
 
+                Image("LogoLarge")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120, height: 120)
+
                 Text("Breakroom")
                     .font(.largeTitle)
                     .fontWeight(.bold)
