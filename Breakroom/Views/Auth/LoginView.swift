@@ -14,11 +14,7 @@ struct LoginView: View {
                 Image("LogoLarge")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 120, height: 120)
-
-                Text("Breakroom")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .frame(width: 180, height: 180)
 
                 VStack(spacing: 16) {
                     TextField("Handle", text: $handle)
