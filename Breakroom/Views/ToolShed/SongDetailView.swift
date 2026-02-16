@@ -389,8 +389,17 @@ struct EditSongSheet: View {
             Form {
                 Section("Song Info") {
                     TextField("Title *", text: $title)
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextEditor(text: $description)
+                        .frame(minHeight: 80)
+                        .overlay(alignment: .topLeading) {
+                            if description.isEmpty {
+                                Text("Description")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                     TextField("Genre", text: $genre)
                 }
 
@@ -482,8 +491,17 @@ struct AddLyricSheet: View {
         NavigationStack {
             Form {
                 Section("Lyric Content") {
-                    TextField("Write your lyrics...", text: $content, axis: .vertical)
-                        .lineLimit(5...15)
+                    TextEditor(text: $content)
+                        .frame(minHeight: 150)
+                        .overlay(alignment: .topLeading) {
+                            if content.isEmpty {
+                                Text("Write your lyrics...")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
 
                 Section("Section") {
@@ -591,8 +609,17 @@ struct EditLyricSheet: View {
         NavigationStack {
             Form {
                 Section("Lyric Content") {
-                    TextField("Write your lyrics...", text: $content, axis: .vertical)
-                        .lineLimit(5...15)
+                    TextEditor(text: $content)
+                        .frame(minHeight: 150)
+                        .overlay(alignment: .topLeading) {
+                            if content.isEmpty {
+                                Text("Write your lyrics...")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
 
                 Section("Section") {

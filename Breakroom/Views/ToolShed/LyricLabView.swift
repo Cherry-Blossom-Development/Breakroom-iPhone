@@ -195,6 +195,13 @@ struct LyricLabView: View {
                 statusBadge(song.songStatus)
             }
 
+            if let description = song.description, !description.isEmpty {
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+
             HStack(spacing: 8) {
                 if let genre = song.genre, !genre.isEmpty {
                     Text(genre)
@@ -419,8 +426,17 @@ struct NewSongSheet: View {
             Form {
                 Section("Song Info") {
                     TextField("Title *", text: $title)
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextEditor(text: $description)
+                        .frame(minHeight: 80)
+                        .overlay(alignment: .topLeading) {
+                            if description.isEmpty {
+                                Text("Description")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                     TextField("Genre", text: $genre)
                 }
 
@@ -508,14 +524,32 @@ struct QuickIdeaSheet: View {
         NavigationStack {
             Form {
                 Section("Lyric") {
-                    TextField("Write your lyric idea...", text: $content, axis: .vertical)
-                        .lineLimit(5...10)
+                    TextEditor(text: $content)
+                        .frame(minHeight: 150)
+                        .overlay(alignment: .topLeading) {
+                            if content.isEmpty {
+                                Text("Write your lyric idea...")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
 
                 Section("Optional") {
                     TextField("Mood (e.g., happy, melancholy)", text: $mood)
-                    TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 60)
+                        .overlay(alignment: .topLeading) {
+                            if notes.isEmpty {
+                                Text("Notes")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
             }
             .navigationTitle("Quick Idea")
@@ -603,8 +637,17 @@ struct EditIdeaSheet: View {
             Form {
                 Section("Idea") {
                     TextField("Title (optional)", text: $title)
-                    TextField("Write your lyric idea...", text: $content, axis: .vertical)
-                        .lineLimit(5...10)
+                    TextEditor(text: $content)
+                        .frame(minHeight: 150)
+                        .overlay(alignment: .topLeading) {
+                            if content.isEmpty {
+                                Text("Write your lyric idea...")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
 
                 Section("Status") {
