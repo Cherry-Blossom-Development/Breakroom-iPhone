@@ -146,9 +146,9 @@ enum LyricAPIService {
 
     // MARK: - Collaborators
 
-    /// Add a collaborator to a song
-    static func addCollaborator(songId: Int, userId: Int, role: String) async throws {
-        let body = AddCollaboratorRequest(userId: userId, role: role)
+    /// Add a collaborator to a song by handle
+    static func addCollaborator(songId: Int, handle: String, role: String) async throws {
+        let body = AddCollaboratorRequest(handle: handle, role: role)
         try await APIClient.shared.requestVoid(
             "/api/lyrics/songs/\(songId)/collaborators",
             method: "POST",

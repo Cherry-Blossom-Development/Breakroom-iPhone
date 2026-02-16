@@ -92,7 +92,7 @@ struct SongDetailView: View {
         }
         .sheet(isPresented: $showEditSongSheet) {
             if let song {
-                EditSongSheet(song: song) { updated in
+                EditSongSheet(song: song, collaborators: collaborators) { updated in
                     self.song = updated
                     onUpdate(updated)
                 }
@@ -361,6 +361,7 @@ struct SongDetailView: View {
 
 struct EditSongSheet: View {
     let song: Song
+    let initialCollaborators: [SongCollaborator]
     let onSave: (Song) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -374,14 +375,38 @@ struct EditSongSheet: View {
     @State private var errorMessage: String?
     @State private var showError = false
 
-    init(song: Song, onSave: @escaping (Song) -> Void) {
+    // Collaborators
+    @State private var collaborators: [SongCollaborator]
+    @State private var friends: [Friend] = []
+    @State private var searchText = ""
+    @State private var selectedRole: CollaboratorRole = .editor
+
+    private var isOwner: Bool {
+        !song.isCollaboration
+    }
+
+    private var filteredFriends: [Friend] {
+        guard !searchText.isEmpty else { return [] }
+        let existingIds = Set(collaborators.map { $0.userId })
+        return friends.filter { friend in
+            guard existingIds.contains(friend.id) == false else { return false }
+            let query = searchText.lowercased()
+            return friend.handle.lowercased().contains(query) ||
+                (friend.firstName?.lowercased().contains(query) ?? false) ||
+                (friend.lastName?.lowercased().contains(query) ?? false)
+        }
+    }
+
+    init(song: Song, collaborators: [SongCollaborator] = [], onSave: @escaping (Song) -> Void) {
         self.song = song
+        self.initialCollaborators = collaborators
         self.onSave = onSave
         _title = State(initialValue: song.title)
         _description = State(initialValue: song.description ?? "")
         _genre = State(initialValue: song.genre ?? "")
         _status = State(initialValue: song.songStatus)
         _visibility = State(initialValue: song.songVisibility)
+        _collaborators = State(initialValue: collaborators)
     }
 
     var body: some View {
@@ -418,6 +443,74 @@ struct EditSongSheet: View {
                         }
                     }
                 }
+
+                // Collaborators section (owner only)
+                if isOwner {
+                    Section("Collaborators") {
+                        if collaborators.isEmpty {
+                            Text("No collaborators yet")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(collaborators) { collab in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(collab.displayName)
+                                            .font(.body)
+                                        Text("@\(collab.handle ?? "")")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(collab.collaboratorRole.displayName)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.blue.opacity(0.15))
+                                        .foregroundStyle(.blue)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    Button(role: .destructive) {
+                                        Task { await removeCollaborator(collab) }
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.red)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
+                    Section("Add Collaborator") {
+                        TextField("Search friends...", text: $searchText)
+
+                        if !filteredFriends.isEmpty {
+                            ForEach(filteredFriends) { friend in
+                                Button {
+                                    Task { await addCollaborator(friend) }
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading) {
+                                            Text(friend.displayName)
+                                                .font(.body)
+                                            Text("@\(friend.handle)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                                .foregroundStyle(.primary)
+                            }
+                        }
+
+                        Picker("Role", selection: $selectedRole) {
+                            Text("Editor").tag(CollaboratorRole.editor)
+                            Text("Viewer").tag(CollaboratorRole.viewer)
+                        }
+                    }
+                }
             }
             .navigationTitle("Edit Song")
             .navigationBarTitleDisplayMode(.inline)
@@ -443,6 +536,68 @@ struct EditSongSheet: View {
             } message: {
                 Text(errorMessage ?? "An unknown error occurred")
             }
+            .task {
+                if isOwner {
+                    await loadData()
+                }
+            }
+        }
+    }
+
+    private func loadData() async {
+        // Load collaborators if not passed in
+        if initialCollaborators.isEmpty {
+            do {
+                let response = try await LyricAPIService.getSong(id: song.id)
+                collaborators = response.collaborators
+            } catch {
+                // Silently fail
+            }
+        }
+
+        // Load friends for search
+        do {
+            friends = try await FriendsAPIService.getFriends()
+        } catch {
+            // Silently fail - friends are optional
+        }
+    }
+
+    private func addCollaborator(_ friend: Friend) async {
+        do {
+            try await LyricAPIService.addCollaborator(
+                songId: song.id,
+                handle: friend.handle,
+                role: selectedRole.rawValue
+            )
+            // Add to local list
+            let newCollab = SongCollaborator(
+                id: friend.id,
+                songId: song.id,
+                userId: friend.id,
+                role: selectedRole.rawValue,
+                invitedBy: nil,
+                createdAt: nil,
+                handle: friend.handle,
+                firstName: friend.firstName,
+                lastName: friend.lastName
+            )
+            collaborators.append(newCollab)
+            searchText = ""
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func removeCollaborator(_ collab: SongCollaborator) async {
+        guard let userId = collab.userId else { return }
+        do {
+            try await LyricAPIService.removeCollaborator(songId: song.id, userId: userId)
+            collaborators.removeAll { $0.id == collab.id }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 

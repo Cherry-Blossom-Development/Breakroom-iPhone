@@ -130,7 +130,8 @@ struct Song: Codable, Identifiable, Hashable {
     }
 
     var isCollaboration: Bool {
-        role != nil
+        guard let role else { return false }
+        return role != "owner"
     }
 }
 
@@ -287,13 +288,8 @@ struct UpdateLyricRequest: Encodable {
 }
 
 struct AddCollaboratorRequest: Encodable {
-    let userId: Int
+    let handle: String
     let role: String
-
-    enum CodingKeys: String, CodingKey {
-        case role
-        case userId = "user_id"
-    }
 }
 
 // MARK: - Shortcut Models
