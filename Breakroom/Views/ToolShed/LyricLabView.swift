@@ -24,6 +24,10 @@ struct LyricLabView: View {
     @State private var ideaToDelete: Lyric?
     @State private var showDeleteIdeaConfirm = false
 
+    // Edit
+    @State private var editingIdea: Lyric?
+    @State private var editingSong: Song?
+
     private var mySongs: [Song] {
         songs.filter { !$0.isCollaboration }
     }
@@ -105,6 +109,20 @@ struct LyricLabView: View {
                 }
             }
         }
+        .sheet(item: $editingIdea) { idea in
+            EditIdeaSheet(idea: idea) { updatedIdea in
+                if let idx = ideas.firstIndex(where: { $0.id == updatedIdea.id }) {
+                    ideas[idx] = updatedIdea
+                }
+            }
+        }
+        .sheet(item: $editingSong) { song in
+            EditSongSheet(song: song) { updatedSong in
+                if let idx = songs.firstIndex(where: { $0.id == updatedSong.id }) {
+                    songs[idx] = updatedSong
+                }
+            }
+        }
         .alert("Delete Song", isPresented: $showDeleteSongConfirm) {
             Button("Delete", role: .destructive) {
                 if let song = songToDelete {
@@ -168,58 +186,66 @@ struct LyricLabView: View {
     }
 
     private func songRow(_ song: Song) -> some View {
-        Button {
-            selectedSong = song
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(song.title)
-                        .font(.body.weight(.medium))
-                        .lineLimit(1)
-                    Spacer()
-                    statusBadge(song.songStatus)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(song.title)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                Spacer()
+                statusBadge(song.songStatus)
+            }
+
+            HStack(spacing: 8) {
+                if let genre = song.genre, !genre.isEmpty {
+                    Text(genre)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(.tertiarySystemFill))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
 
-                HStack(spacing: 8) {
-                    if let genre = song.genre, !genre.isEmpty {
-                        Text(genre)
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(.tertiarySystemFill))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
+                if let role = song.collaboratorRole {
+                    Text(role.displayName)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.15))
+                        .foregroundStyle(.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
 
-                    if let role = song.collaboratorRole {
-                        Text(role.displayName)
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.15))
-                            .foregroundStyle(.blue)
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
+                Spacer()
 
-                    Spacer()
-
-                    if let count = song.lyricCount, count > 0 {
-                        Label("\(count) lyric\(count == 1 ? "" : "s")", systemImage: "text.quote")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                if let count = song.lyricCount, count > 0 {
+                    Label("\(count) lyric\(count == 1 ? "" : "s")", systemImage: "text.quote")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, 4)
         }
-        .foregroundStyle(.primary)
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            if !song.isCollaboration {
-                Button(role: .destructive) {
-                    songToDelete = song
-                    showDeleteSongConfirm = true
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            editingSong = song
+        }
+        .contextMenu {
+            Button {
+                editingSong = song
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            Button {
+                selectedSong = song
+            } label: {
+                Label("View Lyrics", systemImage: "text.quote")
+            }
+            Divider()
+            Button(role: .destructive) {
+                songToDelete = song
+                showDeleteSongConfirm = true
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -292,7 +318,17 @@ struct LyricLabView: View {
             }
         }
         .padding(.vertical, 4)
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+        .contentShape(Rectangle())
+        .onTapGesture {
+            editingIdea = idea
+        }
+        .contextMenu {
+            Button {
+                editingIdea = idea
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            Divider()
             Button(role: .destructive) {
                 ideaToDelete = idea
                 showDeleteIdeaConfirm = true
@@ -526,6 +562,111 @@ struct QuickIdeaSheet: View {
                 status: "draft"
             )
             onSave(lyric)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Edit Idea Sheet
+
+struct EditIdeaSheet: View {
+    let idea: Lyric
+    let onSave: (Lyric) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var content: String
+    @State private var mood: String
+    @State private var notes: String
+    @State private var status: LyricStatus
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    init(idea: Lyric, onSave: @escaping (Lyric) -> Void) {
+        self.idea = idea
+        self.onSave = onSave
+        _title = State(initialValue: idea.title ?? "")
+        _content = State(initialValue: idea.content)
+        _mood = State(initialValue: idea.mood ?? "")
+        _notes = State(initialValue: idea.notes ?? "")
+        _status = State(initialValue: idea.lyricStatus)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Idea") {
+                    TextField("Title (optional)", text: $title)
+                    TextField("Write your lyric idea...", text: $content, axis: .vertical)
+                        .lineLimit(5...10)
+                }
+
+                Section("Status") {
+                    Picker("Status", selection: $status) {
+                        ForEach(LyricStatus.allCases, id: \.self) { s in
+                            Text(s.displayName).tag(s)
+                        }
+                    }
+                }
+
+                Section("Optional") {
+                    TextField("Mood (e.g., happy, melancholy)", text: $mood)
+                    TextField("Notes", text: $notes, axis: .vertical)
+                        .lineLimit(2...4)
+                }
+            }
+            .navigationTitle("Edit Idea")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(content.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+        let t = title.trimmingCharacters(in: .whitespaces)
+        let m = mood.trimmingCharacters(in: .whitespaces)
+        let n = notes.trimmingCharacters(in: .whitespaces)
+
+        do {
+            let updated = try await LyricAPIService.updateLyric(
+                id: idea.id,
+                songId: nil,
+                title: t.isEmpty ? nil : t,
+                content: content.trimmingCharacters(in: .whitespaces),
+                sectionType: "idea",
+                sectionOrder: nil,
+                mood: m.isEmpty ? nil : m,
+                notes: n.isEmpty ? nil : n,
+                status: status.rawValue
+            )
+            onSave(updated)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
