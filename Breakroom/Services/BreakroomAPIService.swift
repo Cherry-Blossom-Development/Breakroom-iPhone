@@ -8,8 +8,8 @@ enum BreakroomAPIService {
         return response.blocks
     }
 
-    static func addBlock(type: BlockType, title: String?) async throws -> BreakroomBlock {
-        let body = AddBlockRequest(blockType: type.rawValue, title: title, w: 2, h: 2)
+    static func addBlock(type: BlockType, title: String?, contentId: Int? = nil) async throws -> BreakroomBlock {
+        let body = AddBlockRequest(blockType: type.rawValue, title: title, contentId: contentId, w: 2, h: 2)
         return try await APIClient.shared.request(
             "/api/breakroom/blocks",
             method: "POST",

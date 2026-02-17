@@ -165,6 +165,30 @@ struct AddBlockSheet: View {
     @State private var customTitle = ""
     @State private var isAdding = false
 
+    // Chat room selection
+    @State private var chatRooms: [ChatRoom] = []
+    @State private var selectedRoomId: Int?
+    @State private var isLoadingRooms = false
+
+    // Rooms that are already added as blocks
+    private var existingChatRoomIds: Set<Int> {
+        Set(viewModel.blocks.compactMap { block in
+            block.type == .chat ? block.contentId : nil
+        })
+    }
+
+    // Check if a room is already on the page
+    private func isRoomOnPage(_ roomId: Int) -> Bool {
+        existingChatRoomIds.contains(roomId)
+    }
+
+    private var canAdd: Bool {
+        if selectedType == .chat {
+            return selectedRoomId != nil
+        }
+        return true
+    }
+
     var body: some View {
         NavigationStack {
             blockTypeList
@@ -172,7 +196,12 @@ struct AddBlockSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { sheetToolbar }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+        .onChange(of: selectedType) { _, newType in
+            if newType == .chat && chatRooms.isEmpty {
+                Task { await loadChatRooms() }
+            }
+        }
     }
 
     private var blockTypeList: some View {
@@ -182,6 +211,54 @@ struct AddBlockSheet: View {
                     blockTypeRow(type)
                 }
             }
+
+            // Show chat room picker when chat is selected
+            if selectedType == .chat {
+                Section("Select Chat Room") {
+                    if isLoadingRooms {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    } else if chatRooms.isEmpty {
+                        Text("No available rooms")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(chatRooms) { room in
+                            Button {
+                                selectedRoomId = room.id
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        HStack(spacing: 4) {
+                                            Text(room.name)
+                                                .foregroundStyle(.primary)
+                                            if isRoomOnPage(room.id) {
+                                                Text("(on page)")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        if let desc = room.description, !desc.isEmpty {
+                                            Text(desc)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    Spacer()
+                                    if selectedRoomId == room.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Section("Title (Optional)") {
                 TextField("Custom title", text: $customTitle)
             }
@@ -191,6 +268,9 @@ struct AddBlockSheet: View {
     private func blockTypeRow(_ type: BlockType) -> some View {
         Button {
             selectedType = type
+            if type != .chat {
+                selectedRoomId = nil
+            }
         } label: {
             HStack {
                 Image(systemName: type.systemImage)
@@ -206,6 +286,16 @@ struct AddBlockSheet: View {
         }
     }
 
+    private func loadChatRooms() async {
+        isLoadingRooms = true
+        do {
+            chatRooms = try await ChatAPIService.getRooms()
+        } catch {
+            // Silently fail
+        }
+        isLoadingRooms = false
+    }
+
     @ToolbarContentBuilder
     private var sheetToolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
@@ -217,13 +307,14 @@ struct AddBlockSheet: View {
                 Task {
                     await viewModel.addBlock(
                         type: selectedType,
-                        title: customTitle.isEmpty ? nil : customTitle
+                        title: customTitle.isEmpty ? nil : customTitle,
+                        contentId: selectedRoomId
                     )
                     isAdding = false
                     dismiss()
                 }
             }
-            .disabled(isAdding)
+            .disabled(isAdding || !canAdd)
         }
     }
 }

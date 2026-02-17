@@ -76,11 +76,13 @@ struct BreakroomLayoutResponse: Decodable {
 struct AddBlockRequest: Encodable {
     let blockType: String
     let title: String?
+    let contentId: Int?
     let w: Int
     let h: Int
 
     enum CodingKeys: String, CodingKey {
         case blockType = "block_type"
+        case contentId = "content_id"
         case title, w, h
     }
 }

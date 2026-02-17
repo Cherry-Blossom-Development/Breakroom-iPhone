@@ -64,9 +64,9 @@ final class BreakroomViewModel {
         }
     }
 
-    func addBlock(type: BlockType, title: String?) async {
+    func addBlock(type: BlockType, title: String?, contentId: Int? = nil) async {
         do {
-            let block = try await BreakroomAPIService.addBlock(type: type, title: title)
+            let block = try await BreakroomAPIService.addBlock(type: type, title: title, contentId: contentId)
             blocks.append(block)
             expandedBlockIds.insert(block.id)
         } catch {
