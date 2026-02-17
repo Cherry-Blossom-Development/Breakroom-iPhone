@@ -177,9 +177,9 @@ struct AddBlockSheet: View {
         })
     }
 
-    // Check if a room is already on the page
-    private func isRoomOnPage(_ roomId: Int) -> Bool {
-        existingChatRoomIds.contains(roomId)
+    // Available rooms (not yet on the page)
+    private var availableRooms: [ChatRoom] {
+        chatRooms.filter { !existingChatRoomIds.contains($0.id) }
     }
 
     private var canAdd: Bool {
@@ -221,25 +221,18 @@ struct AddBlockSheet: View {
                             ProgressView()
                             Spacer()
                         }
-                    } else if chatRooms.isEmpty {
-                        Text("No available rooms")
+                    } else if availableRooms.isEmpty {
+                        Text("All chat rooms are already on your page")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(chatRooms) { room in
+                        ForEach(availableRooms) { room in
                             Button {
                                 selectedRoomId = room.id
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading) {
-                                        HStack(spacing: 4) {
-                                            Text(room.name)
-                                                .foregroundStyle(.primary)
-                                            if isRoomOnPage(room.id) {
-                                                Text("(on page)")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
+                                        Text(room.name)
+                                            .foregroundStyle(.primary)
                                         if let desc = room.description, !desc.isEmpty {
                                             Text(desc)
                                                 .font(.caption)
