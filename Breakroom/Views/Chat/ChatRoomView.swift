@@ -79,6 +79,7 @@ struct ChatRoomView: View {
                     .onChange(of: chatViewModel.messageText) {
                         chatViewModel.handleTypingChanged()
                     }
+                    .accessibilityIdentifier("messageInput")
 
                 Button {
                     Task { await chatViewModel.sendMessage() }
@@ -87,6 +88,7 @@ struct ChatRoomView: View {
                         .font(.title2)
                 }
                 .disabled(chatViewModel.messageText.trimmingCharacters(in: .whitespaces).isEmpty)
+                .accessibilityIdentifier("sendButton")
             }
             .padding(.horizontal)
             .padding(.vertical, 8)

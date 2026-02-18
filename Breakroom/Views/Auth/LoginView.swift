@@ -15,6 +15,7 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 180, height: 180)
+                    .accessibilityIdentifier("appLogo")
 
                 VStack(spacing: 16) {
                     TextField("Handle", text: $handle)
@@ -24,12 +25,14 @@ struct LoginView: View {
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("usernameField")
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("passwordField")
                 }
 
                 if let error = authViewModel.errorMessage {
@@ -37,6 +40,7 @@ struct LoginView: View {
                         .foregroundStyle(.red)
                         .font(.callout)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("errorMessage")
                 }
 
                 Button {
@@ -55,6 +59,7 @@ struct LoginView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(handle.isEmpty || password.isEmpty || authViewModel.isLoading)
+                .accessibilityIdentifier("loginButton")
 
                 Spacer()
 
