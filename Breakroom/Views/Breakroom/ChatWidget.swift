@@ -135,6 +135,7 @@ struct ChatWidget: View {
                 .padding(.vertical, 6)
                 .background(.fill.tertiary)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                .accessibilityIdentifier("widgetMessageInput")
                 .onChange(of: messageText) {
                     guard !messageText.isEmpty else { return }
                     socketManager.startTyping(roomId: roomId)
@@ -158,6 +159,7 @@ struct ChatWidget: View {
                 }
             }
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)
+            .accessibilityIdentifier("widgetSendButton")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

@@ -117,6 +117,7 @@ struct BlockCard: View {
                 .background(headerBackground)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("blockCard_\(block.displayTitle)")
 
             // Content - visible when expanded
             if isExpanded {
