@@ -72,14 +72,17 @@ struct LyricLabView: View {
                     } label: {
                         Label("Quick Idea", systemImage: "lightbulb")
                     }
+                    .accessibilityIdentifier("quickIdeaButton")
                     Button {
                         showNewSongSheet = true
                     } label: {
                         Label("New Song", systemImage: "music.note.list")
                     }
+                    .accessibilityIdentifier("newSongButton")
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("lyricLabPlusButton")
             }
         }
         .task {
@@ -426,6 +429,7 @@ struct NewSongSheet: View {
             Form {
                 Section("Song Info") {
                     TextField("Title *", text: $title)
+                        .accessibilityIdentifier("songTitleField")
                     TextEditor(text: $description)
                         .frame(minHeight: 80)
                         .overlay(alignment: .topLeading) {
@@ -437,7 +441,9 @@ struct NewSongSheet: View {
                                     .allowsHitTesting(false)
                             }
                         }
+                        .accessibilityIdentifier("songDescriptionField")
                     TextField("Genre", text: $genre)
+                        .accessibilityIdentifier("songGenreField")
                 }
 
                 Section("Status") {
@@ -473,6 +479,7 @@ struct NewSongSheet: View {
                         }
                     }
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                    .accessibilityIdentifier("createSongButton")
                 }
             }
             .alert("Error", isPresented: $showError) {

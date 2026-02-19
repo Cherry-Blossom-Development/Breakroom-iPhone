@@ -103,6 +103,7 @@ struct ToolShedView: View {
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
+                .accessibilityIdentifier("\(tool.name.lowercased().replacingOccurrences(of: " ", with: ""))OpenButton")
 
                 if shortcuts.contains(tool.shortcutUrl) {
                     Label("In Shortcuts", systemImage: "checkmark")
