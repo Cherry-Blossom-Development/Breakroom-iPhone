@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -67,8 +68,10 @@ final class BreakroomViewModel {
     func addBlock(type: BlockType, title: String?, contentId: Int? = nil) async {
         do {
             let block = try await BreakroomAPIService.addBlock(type: type, title: title, contentId: contentId)
-            blocks.append(block)
-            expandedBlockIds.insert(block.id)
+            withAnimation {
+                blocks.append(block)
+                expandedBlockIds.insert(block.id)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
