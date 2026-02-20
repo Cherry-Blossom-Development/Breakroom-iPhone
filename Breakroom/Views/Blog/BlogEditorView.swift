@@ -270,6 +270,15 @@ struct RichTextEditorView: UIViewRepresentable {
         </head>
         <body>
         <div id="editor" contenteditable="true">\(escapedContent)</div>
+        <script>
+            // Handle Enter key to insert line breaks
+            document.getElementById('editor').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.execCommand('insertLineBreak');
+                }
+            });
+        </script>
         </body>
         </html>
         """
