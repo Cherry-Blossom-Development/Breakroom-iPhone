@@ -171,6 +171,18 @@ struct AddBlockSheet: View {
     @State private var selectedRoomId: Int?
     @State private var isLoadingRooms = false
 
+    // Block types already on the page (excluding chat, which allows multiples)
+    private var existingBlockTypes: Set<BlockType> {
+        Set(viewModel.blocks.compactMap { $0.type }.filter { $0 != .chat })
+    }
+
+    // Available block types (filter out singles that are already added)
+    private var availableBlockTypes: [BlockType] {
+        BlockType.allCases.filter { type in
+            type == .chat || !existingBlockTypes.contains(type)
+        }
+    }
+
     // Rooms that are already added as blocks
     private var existingChatRoomIds: Set<Int> {
         Set(viewModel.blocks.compactMap { block in
@@ -184,6 +196,7 @@ struct AddBlockSheet: View {
     }
 
     private var canAdd: Bool {
+        guard !availableBlockTypes.isEmpty else { return false }
         if selectedType == .chat {
             return selectedRoomId != nil
         }
@@ -198,6 +211,13 @@ struct AddBlockSheet: View {
                 .toolbar { sheetToolbar }
         }
         .presentationDetents([.medium, .large])
+        .onAppear {
+            // Select first available type if current selection isn't available
+            if !availableBlockTypes.contains(selectedType),
+               let firstAvailable = availableBlockTypes.first {
+                selectedType = firstAvailable
+            }
+        }
         .onChange(of: selectedType) { _, newType in
             if newType == .chat && chatRooms.isEmpty {
                 Task { await loadChatRooms() }
@@ -208,8 +228,13 @@ struct AddBlockSheet: View {
     private var blockTypeList: some View {
         List {
             Section("Widget Type") {
-                ForEach(BlockType.allCases) { type in
-                    blockTypeRow(type)
+                if availableBlockTypes.isEmpty {
+                    Text("All widget types are already on your page")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(availableBlockTypes) { type in
+                        blockTypeRow(type)
+                    }
                 }
             }
 
