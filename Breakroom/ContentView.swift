@@ -29,6 +29,12 @@ struct MainTabView: View {
     @State private var showProfile = false
     @State private var showFriends = false
 
+    // Account deletion
+    @State private var showDeleteAccountConfirmation = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountError: String?
+    @State private var showDeleteAccountError = false
+
     // Shortcuts
     @State private var shortcuts: [Shortcut] = []
     @State private var selectedShortcut: Shortcut?
@@ -80,8 +86,11 @@ struct MainTabView: View {
                                 }
 
                                 Divider()
-                                Button("Logout", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                                Button("Logout", systemImage: "rectangle.portrait.and.arrow.right") {
                                     Task { await authViewModel.logout() }
+                                }
+                                Button("Delete Account", systemImage: "trash", role: .destructive) {
+                                    showDeleteAccountConfirmation = true
                                 }
                             } label: {
                                 Image(systemName: "line.3.horizontal")
@@ -120,6 +129,33 @@ struct MainTabView: View {
                 .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
                 .tag(4)
         }
+        .confirmationDialog(
+            "Delete Account",
+            isPresented: $showDeleteAccountConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Account", role: .destructive) {
+                Task { await performDeleteAccount() }
+            }
+        } message: {
+            Text("Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed.")
+        }
+        .alert("Error", isPresented: $showDeleteAccountError) {
+            Button("OK") { }
+        } message: {
+            Text(deleteAccountError ?? "Failed to delete account")
+        }
+    }
+
+    private func performDeleteAccount() async {
+        isDeletingAccount = true
+        do {
+            try await authViewModel.deleteAccount()
+        } catch {
+            deleteAccountError = error.localizedDescription
+            showDeleteAccountError = true
+        }
+        isDeletingAccount = false
     }
 
     private func loadShortcuts() async {

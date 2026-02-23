@@ -247,7 +247,7 @@ struct ChatWidget: View {
     }
 }
 
-// MARK: - Message Row (compact widget style, matching Android)
+// MARK: - Message Row
 
 struct ChatWidgetMessageRow: View {
     let message: ChatMessage

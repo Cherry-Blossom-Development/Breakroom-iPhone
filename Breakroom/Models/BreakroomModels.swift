@@ -7,7 +7,6 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
     case weather
     case news
     case blog
-    case placeholder
 
     var id: String { rawValue }
 
@@ -19,7 +18,6 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
         case .weather: return "Weather"
         case .news: return "News"
         case .blog: return "Blog Posts"
-        case .placeholder: return "Placeholder"
         }
     }
 
@@ -31,7 +29,6 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
         case .weather: return "cloud.sun"
         case .news: return "newspaper"
         case .blog: return "doc.richtext"
-        case .placeholder: return "square.dashed"
         }
     }
 }
@@ -56,12 +53,12 @@ struct BreakroomBlock: Codable, Identifiable {
         case x, y, w, h
     }
 
-    var type: BlockType {
-        BlockType(rawValue: blockType) ?? .placeholder
+    var type: BlockType? {
+        BlockType(rawValue: blockType)
     }
 
     var displayTitle: String {
-        title ?? type.defaultTitle
+        title ?? type?.defaultTitle ?? blockType.capitalized
     }
 
     var heightMultiplier: Int {

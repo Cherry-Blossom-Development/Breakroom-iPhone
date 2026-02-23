@@ -82,6 +82,16 @@ final class AuthViewModel {
         currentUsername = nil
     }
 
+    func deleteAccount() async throws {
+        guard let userId = currentUserId else {
+            throw APIError.unauthorized
+        }
+        try await AuthService.deleteAccount(userId: userId)
+        isAuthenticated = false
+        currentUserId = nil
+        currentUsername = nil
+    }
+
     private func checkExistingSession() async {
         if let me = await AuthService.checkSession() {
             currentUserId = me.userId

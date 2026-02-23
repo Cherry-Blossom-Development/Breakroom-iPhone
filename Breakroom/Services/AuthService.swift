@@ -54,12 +54,17 @@ enum AuthService {
         KeychainManager.clearAll()
     }
 
+    static func deleteAccount(userId: Int) async throws {
+        try await APIClient.shared.requestVoid("/api/user/\(userId)", method: "DELETE")
+        KeychainManager.clearAll()
+    }
+
     static func checkSession() async -> MeResponse? {
         guard KeychainManager.token != nil else { return nil }
         return try? await APIClient.shared.request("/api/auth/me")
     }
 
-    // MARK: - Password Hashing (matches Android/Web implementation)
+    // MARK: - Password Hashing
 
     private static func generateSalt() -> String {
         var bytes = [UInt8](repeating: 0, count: 16)

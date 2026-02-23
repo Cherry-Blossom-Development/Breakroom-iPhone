@@ -75,23 +75,31 @@ final class ChatSocketManager {
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
             Task { @MainActor in
                 self?.connectionState = .connected
+                #if DEBUG
                 print("[Socket] Connected")
+                #endif
             }
         }
 
         socket?.on(clientEvent: .disconnect) { [weak self] _, _ in
             Task { @MainActor in
                 self?.connectionState = .disconnected
+                #if DEBUG
                 print("[Socket] Disconnected")
+                #endif
             }
         }
 
         socket?.on(clientEvent: .reconnect) { _, _ in
+            #if DEBUG
             print("[Socket] Reconnecting...")
+            #endif
         }
 
         socket?.on(clientEvent: .error) { data, _ in
+            #if DEBUG
             print("[Socket] Error:", data)
+            #endif
         }
 
         socket?.on("new_message") { [weak self] data, _ in

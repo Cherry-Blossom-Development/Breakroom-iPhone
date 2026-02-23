@@ -4,21 +4,21 @@ struct BlockWidgetView: View {
     let block: BreakroomBlock
 
     var body: some View {
-        switch block.type {
-        case .chat:
-            ChatWidget(block: block)
-        case .updates:
-            UpdatesWidget(block: block)
-        case .calendar:
-            CalendarWidget(block: block)
-        case .weather:
-            WeatherWidget(block: block)
-        case .news:
-            NewsWidget(block: block)
-        case .blog:
-            BlogWidget(block: block)
-        case .placeholder:
-            GenericWidgetPlaceholder(block: block)
+        if let type = block.type {
+            switch type {
+            case .chat:
+                ChatWidget(block: block)
+            case .updates:
+                UpdatesWidget(block: block)
+            case .calendar:
+                CalendarWidget(block: block)
+            case .weather:
+                WeatherWidget(block: block)
+            case .news:
+                NewsWidget(block: block)
+            case .blog:
+                BlogWidget(block: block)
+            }
         }
     }
 }
@@ -1200,20 +1200,3 @@ struct BlogWidget: View {
     }
 }
 
-struct GenericWidgetPlaceholder: View {
-    let block: BreakroomBlock
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "square.dashed")
-                .font(.largeTitle)
-                .foregroundStyle(.gray)
-
-            Text("Empty block")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 80)
-        .padding()
-    }
-}

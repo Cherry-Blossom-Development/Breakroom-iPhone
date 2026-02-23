@@ -87,7 +87,7 @@ struct BlockCard: View {
             // Header - always visible, tappable to expand/collapse
             Button(action: onToggle) {
                 HStack {
-                    Image(systemName: block.type.systemImage)
+                    Image(systemName: block.type?.systemImage ?? "square")
                         .foregroundStyle(accentColor)
                         .frame(width: 24)
 
@@ -148,7 +148,7 @@ struct BlockCard: View {
         case .weather: return .cyan
         case .news: return .red
         case .blog: return .green
-        case .placeholder: return .gray
+        case .none: return .gray
         }
     }
 
