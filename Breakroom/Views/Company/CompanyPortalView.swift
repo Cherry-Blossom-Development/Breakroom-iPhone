@@ -459,6 +459,9 @@ struct CompanyDetailView: View {
     @State private var selectedHelpDeskProject: CompanyProject?
     @State private var selectedKanbanProject: CompanyProject?
 
+    // Shortcuts
+    @State private var projectShortcuts: [String: Int] = [:]  // URL -> shortcut ID
+
     private var canEdit: Bool {
         guard let role = detail?.userRole else { return false }
         return role.isOwnerBool || role.isAdminBool
@@ -874,11 +877,33 @@ struct CompanyDetailView: View {
 
             // Ticket navigation button - different style for Help Desk vs Kanban
             if proj.isActiveBool {
-                ticketNavigationButton(proj)
+                HStack(spacing: 8) {
+                    ticketNavigationButton(proj)
+                    shortcutButton(proj)
+                }
             }
         }
         .padding(.vertical, 4)
         .opacity(proj.isActiveBool ? 1.0 : 0.6)
+    }
+
+    private func shortcutButton(_ proj: CompanyProject) -> some View {
+        let hasIt = hasShortcut(for: proj)
+        return Button {
+            Task { await toggleShortcut(for: proj) }
+        } label: {
+            Label(
+                hasIt ? "Remove Shortcut" : "Add Shortcut",
+                systemImage: hasIt ? "bookmark.fill" : "bookmark"
+            )
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(hasIt ? Color.purple.opacity(0.15) : Color(.tertiarySystemFill))
+            .foregroundStyle(hasIt ? .purple : .secondary)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
     }
 
     private func ticketNavigationButton(_ proj: CompanyProject) -> some View {
@@ -1107,11 +1132,57 @@ struct CompanyDetailView: View {
         isLoadingProjects = true
         do {
             projects = try await CompanyAPIService.getCompanyProjects(companyId: companyId)
+            await loadProjectShortcuts()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
         }
         isLoadingProjects = false
+    }
+
+    private func loadProjectShortcuts() async {
+        do {
+            let shortcuts = try await ShortcutsAPIService.getShortcuts()
+            var map: [String: Int] = [:]
+            for shortcut in shortcuts {
+                map[shortcut.url] = shortcut.id
+            }
+            projectShortcuts = map
+        } catch {
+            // Silently fail - shortcuts are optional
+        }
+    }
+
+    private func projectUrl(for project: CompanyProject) -> String {
+        project.isDefaultBool ? "/help-desk" : "/project/\(project.id)"
+    }
+
+    private func hasShortcut(for project: CompanyProject) -> Bool {
+        projectShortcuts[projectUrl(for: project)] != nil
+    }
+
+    private func toggleShortcut(for project: CompanyProject) async {
+        let url = projectUrl(for: project)
+
+        if let shortcutId = projectShortcuts[url] {
+            // Remove shortcut
+            do {
+                try await ShortcutsAPIService.deleteShortcut(id: shortcutId)
+                projectShortcuts.removeValue(forKey: url)
+            } catch {
+                errorMessage = "Failed to remove shortcut"
+                showError = true
+            }
+        } else {
+            // Add shortcut
+            do {
+                let shortcut = try await ShortcutsAPIService.addShortcut(name: project.title, url: url)
+                projectShortcuts[url] = shortcut.id
+            } catch {
+                errorMessage = "Failed to add shortcut"
+                showError = true
+            }
+        }
     }
 
     private func deleteEmployee(_ emp: CompanyEmployee) async {
