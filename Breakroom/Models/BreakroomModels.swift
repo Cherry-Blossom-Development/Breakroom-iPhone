@@ -200,3 +200,17 @@ struct NewsResponse: Decodable {
     let items: [NewsItem]
     let lastUpdated: String?
 }
+
+// MARK: - Layout Update
+
+struct UpdateLayoutRequest: Encodable {
+    let blocks: [UpdateBlockPosition]
+}
+
+struct UpdateBlockPosition: Encodable {
+    let id: Int
+    let x: Int
+    let y: Int
+    let w: Int
+    let h: Int
+}

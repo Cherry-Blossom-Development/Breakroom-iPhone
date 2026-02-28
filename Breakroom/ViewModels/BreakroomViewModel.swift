@@ -10,6 +10,7 @@ final class BreakroomViewModel {
     var errorMessage: String?
     var expandedBlockIds: Set<Int> = []
     var showAddBlockSheet = false
+    var isEditMode = false
 
     func loadLayout() async {
         isLoading = blocks.isEmpty
@@ -72,6 +73,18 @@ final class BreakroomViewModel {
                 blocks.append(block)
                 expandedBlockIds.insert(block.id)
             }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func moveBlock(from source: IndexSet, to destination: Int) {
+        blocks.move(fromOffsets: source, toOffset: destination)
+    }
+
+    func saveBlockOrder() async {
+        do {
+            try await BreakroomAPIService.updateLayout(blocks: blocks)
         } catch {
             errorMessage = error.localizedDescription
         }

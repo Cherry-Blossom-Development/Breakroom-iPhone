@@ -16,22 +16,34 @@ struct BreakroomView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
-                    Button {
-                        viewModel.showAddBlockSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-
-                    Button {
-                        Task { await viewModel.refresh() }
-                    } label: {
-                        if viewModel.isRefreshing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
+                    if viewModel.isEditMode {
+                        Button("Done") {
+                            Task {
+                                await viewModel.saveBlockOrder()
+                                withAnimation {
+                                    viewModel.isEditMode = false
+                                }
+                            }
                         }
+                        .fontWeight(.semibold)
+                    } else {
+                        Button {
+                            viewModel.showAddBlockSheet = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+
+                        Button {
+                            Task { await viewModel.refresh() }
+                        } label: {
+                            if viewModel.isRefreshing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                        }
+                        .disabled(viewModel.isRefreshing)
                     }
-                    .disabled(viewModel.isRefreshing)
                 }
             }
         }
@@ -44,19 +56,29 @@ struct BreakroomView: View {
     }
 
     private var blockList: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                ForEach(viewModel.blocks) { block in
-                    BlockCard(
-                        block: block,
-                        isExpanded: viewModel.isExpanded(block.id),
-                        onToggle: { viewModel.toggleBlock(block.id) },
-                        onRemove: { Task { await viewModel.removeBlock(block.id) } }
-                    )
-                }
+        List {
+            ForEach(viewModel.blocks) { block in
+                BlockCard(
+                    block: block,
+                    isExpanded: viewModel.isExpanded(block.id),
+                    isEditMode: viewModel.isEditMode,
+                    onToggle: { viewModel.toggleBlock(block.id) },
+                    onRemove: { Task { await viewModel.removeBlock(block.id) } },
+                    onLongPress: {
+                        withAnimation {
+                            viewModel.isEditMode = true
+                        }
+                    }
+                )
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .padding()
+            .onMove { from, to in
+                viewModel.moveBlock(from: from, to: to)
+            }
         }
+        .listStyle(.plain)
+        .environment(\.editMode, viewModel.isEditMode ? .constant(.active) : .constant(.inactive))
     }
 
     private var emptyState: some View {
@@ -78,25 +100,33 @@ struct BreakroomView: View {
 struct BlockCard: View {
     let block: BreakroomBlock
     let isExpanded: Bool
+    let isEditMode: Bool
     let onToggle: () -> Void
     let onRemove: () -> Void
+    let onLongPress: () -> Void
     @State private var showDeleteConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
             // Header - always visible, tappable to expand/collapse
-            Button(action: onToggle) {
-                HStack {
-                    Image(systemName: block.type?.systemImage ?? "square")
-                        .foregroundStyle(accentColor)
+            HStack {
+                if isEditMode {
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.secondary)
                         .frame(width: 24)
+                }
 
-                    Text(block.displayTitle)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                Image(systemName: block.type?.systemImage ?? "square")
+                    .foregroundStyle(accentColor)
+                    .frame(width: 24)
 
-                    Spacer()
+                Text(block.displayTitle)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
 
+                Spacer()
+
+                if !isEditMode {
                     Button {
                         showDeleteConfirmation = true
                     } label: {
@@ -112,15 +142,23 @@ struct BlockCard: View {
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .animation(.easeInOut(duration: 0.2), value: isExpanded)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(headerBackground)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(headerBackground)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if !isEditMode {
+                    onToggle()
+                }
+            }
+            .onLongPressGesture {
+                onLongPress()
+            }
             .accessibilityIdentifier("blockCard_\(block.displayTitle)")
 
-            // Content - visible when expanded
-            if isExpanded {
+            // Content - visible when expanded and not in edit mode
+            if isExpanded && !isEditMode {
                 Divider()
                 BlockWidgetView(block: block)
             }
@@ -128,7 +166,7 @@ struct BlockCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(.quaternary, lineWidth: 1)
+                .stroke(isEditMode ? Color.accentColor.opacity(0.5) : Color(.quaternaryLabel), lineWidth: isEditMode ? 2 : 1)
         )
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
         .confirmationDialog(

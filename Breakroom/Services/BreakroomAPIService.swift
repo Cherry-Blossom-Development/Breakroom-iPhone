@@ -37,4 +37,15 @@ enum BreakroomAPIService {
         )
         return response.items
     }
+
+    static func updateLayout(blocks: [BreakroomBlock]) async throws {
+        let body = UpdateLayoutRequest(blocks: blocks.enumerated().map { index, block in
+            UpdateBlockPosition(id: block.id, x: 0, y: index, w: block.w ?? 2, h: block.h ?? 2)
+        })
+        try await APIClient.shared.requestVoid(
+            "/api/breakroom/layout",
+            method: "PUT",
+            body: body
+        )
+    }
 }
