@@ -49,6 +49,13 @@ final class APIClient: @unchecked Sendable {
         session = URLSession(configuration: config)
     }
 
+    /// Check response for refreshed token and save it
+    private func handleTokenRefresh(_ response: HTTPURLResponse) {
+        if let newToken = response.value(forHTTPHeaderField: "X-New-Token") {
+            KeychainManager.token = newToken
+        }
+    }
+
     private func buildRequest(
         path: String,
         method: String = "GET",
@@ -97,6 +104,8 @@ final class APIClient: @unchecked Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
+        handleTokenRefresh(httpResponse)
 
         switch httpResponse.statusCode {
         case 200...299:
@@ -162,6 +171,8 @@ final class APIClient: @unchecked Sendable {
             throw APIError.invalidResponse
         }
 
+        handleTokenRefresh(httpResponse)
+
         switch httpResponse.statusCode {
         case 200...299:
             do {
@@ -203,6 +214,8 @@ final class APIClient: @unchecked Sendable {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
+        handleTokenRefresh(httpResponse)
 
         switch httpResponse.statusCode {
         case 200...299:
