@@ -15,6 +15,12 @@ struct ChatWidget: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isUploadingMedia: Bool = false
 
+    // Pagination state
+    @State private var hasOlderMessages = false
+    @State private var oldestMessageDate: String?
+    @State private var isLoadingOlderMessages = false
+    @State private var suppressScrollToBottom = false
+
     private var roomId: Int? { block.contentId }
 
     var body: some View {
@@ -99,6 +105,30 @@ struct ChatWidget: View {
                         .frame(maxWidth: .infinity, minHeight: 80)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) {
+                        // Loading indicator at top when fetching older messages
+                        if isLoadingOlderMessages {
+                            HStack {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Loading older messages...")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+
+                        // Sentinel view to detect scroll to top
+                        if hasOlderMessages && !isLoadingOlderMessages {
+                            Color.clear
+                                .frame(height: 1)
+                                .id("topSentinel")
+                                .onAppear {
+                                    guard let roomId else { return }
+                                    Task { await loadOlderMessages(roomId: roomId) }
+                                }
+                        }
+
                         ForEach(messages) { message in
                             ChatWidgetMessageRow(message: message)
                                 .id(message.id)
@@ -110,7 +140,9 @@ struct ChatWidget: View {
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.bottom)
             .onChange(of: messages.count) {
-                if let last = messages.last {
+                if suppressScrollToBottom {
+                    suppressScrollToBottom = false
+                } else if let last = messages.last {
                     withAnimation {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
@@ -187,12 +219,45 @@ struct ChatWidget: View {
 
     private func loadMessages(roomId: Int) async {
         isLoading = true
+        hasOlderMessages = false
+        oldestMessageDate = nil
         do {
-            messages = try await ChatAPIService.getMessages(roomId: roomId, limit: 30)
+            let (msgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId)
+            messages = msgs
+            hasOlderMessages = hasMore
+            oldestMessageDate = msgs.first?.createdAt
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private func loadOlderMessages(roomId: Int) async {
+        guard let oldest = oldestMessageDate,
+              hasOlderMessages,
+              !isLoadingOlderMessages else { return }
+
+        isLoadingOlderMessages = true
+        suppressScrollToBottom = true
+
+        do {
+            guard let since = ChatAPIService.sevenDaysBefore(oldest) else {
+                isLoadingOlderMessages = false
+                return
+            }
+            let (olderMsgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId, since: since, until: oldest)
+            let existingIds = Set(messages.map(\.id))
+            let newMessages = olderMsgs.filter { !existingIds.contains($0.id) }
+            if !newMessages.isEmpty {
+                messages = newMessages + messages
+                oldestMessageDate = newMessages.first?.createdAt
+            }
+            hasOlderMessages = hasMore
+        } catch {
+            // Silently fail
+        }
+
+        isLoadingOlderMessages = false
     }
 
     private func handlePickedMedia(_ item: PhotosPickerItem, roomId: Int) async {

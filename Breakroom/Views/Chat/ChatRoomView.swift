@@ -7,6 +7,7 @@ struct ChatRoomView: View {
     @Environment(ChatSocketManager.self) private var socketManager
 
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var suppressScrollToBottom = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,6 +15,30 @@ struct ChatRoomView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
+                        // Loading indicator at top when fetching older messages
+                        if chatViewModel.isLoadingOlderMessages {
+                            HStack {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Loading older messages...")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                        }
+
+                        // Sentinel view to detect scroll to top
+                        if chatViewModel.hasOlderMessages && !chatViewModel.isLoadingOlderMessages {
+                            Color.clear
+                                .frame(height: 1)
+                                .id("topSentinel")
+                                .onAppear {
+                                    suppressScrollToBottom = true
+                                    Task { await chatViewModel.loadOlderMessages() }
+                                }
+                        }
+
                         ForEach(chatViewModel.messages) { message in
                             MessageBubble(message: message)
                                 .id(message.id)
@@ -23,7 +48,9 @@ struct ChatRoomView: View {
                 }
                 .defaultScrollAnchor(.bottom)
                 .onChange(of: chatViewModel.messages.count) {
-                    if let lastMessage = chatViewModel.messages.last {
+                    if suppressScrollToBottom {
+                        suppressScrollToBottom = false
+                    } else if let lastMessage = chatViewModel.messages.last {
                         withAnimation {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }

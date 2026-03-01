@@ -25,6 +25,11 @@ final class ChatViewModel {
     // Media upload
     var isUploadingMedia = false
 
+    // Pagination state
+    var hasOlderMessages = false
+    var oldestMessageDate: String?
+    var isLoadingOlderMessages = false
+
     var socketManager: ChatSocketManager?
     private var typingStopTask: Task<Void, Never>?
 
@@ -147,6 +152,8 @@ final class ChatViewModel {
         }
 
         selectedRoom = room
+        hasOlderMessages = false
+        oldestMessageDate = nil
         socketManager?.joinRoom(room.id)
         await loadMessages(for: room.id)
     }
@@ -155,7 +162,10 @@ final class ChatViewModel {
         isLoadingMessages = true
 
         do {
-            messages = try await ChatAPIService.getMessages(roomId: roomId)
+            let (msgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId)
+            messages = msgs
+            hasOlderMessages = hasMore
+            oldestMessageDate = msgs.first?.createdAt
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -163,6 +173,35 @@ final class ChatViewModel {
         }
 
         isLoadingMessages = false
+    }
+
+    func loadOlderMessages() async {
+        guard let roomId = selectedRoom?.id,
+              let oldest = oldestMessageDate,
+              hasOlderMessages,
+              !isLoadingOlderMessages else { return }
+
+        isLoadingOlderMessages = true
+
+        do {
+            guard let since = ChatAPIService.sevenDaysBefore(oldest) else {
+                isLoadingOlderMessages = false
+                return
+            }
+            let (olderMsgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId, since: since, until: oldest)
+            // Prepend older messages, avoiding duplicates
+            let existingIds = Set(messages.map(\.id))
+            let newMessages = olderMsgs.filter { !existingIds.contains($0.id) }
+            if !newMessages.isEmpty {
+                messages = newMessages + messages
+                oldestMessageDate = newMessages.first?.createdAt
+            }
+            hasOlderMessages = hasMore
+        } catch {
+            // Silently fail - user can try scrolling again
+        }
+
+        isLoadingOlderMessages = false
     }
 
     func sendMessage() async {

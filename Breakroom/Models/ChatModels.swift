@@ -67,6 +67,7 @@ struct ChatRoomsResponse: Decodable {
 
 struct ChatMessagesResponse: Decodable {
     let messages: [ChatMessage]
+    let hasMore: Bool?
 }
 
 struct ChatMessageResponse: Decodable {

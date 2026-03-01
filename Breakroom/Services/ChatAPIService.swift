@@ -1,18 +1,42 @@
 import Foundation
 
 enum ChatAPIService {
+    /// Returns a date 7 days ago as ISO string
+    static func sevenDaysAgo() -> String {
+        let date = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
+
+    /// Returns a date 7 days before the given ISO date string
+    static func sevenDaysBefore(_ dateString: String) -> String? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: dateString) else { return nil }
+        guard let earlier = Calendar.current.date(byAdding: .day, value: -7, to: date) else { return nil }
+        return formatter.string(from: earlier)
+    }
+
     static func getRooms() async throws -> [ChatRoom] {
         let response: ChatRoomsResponse = try await APIClient.shared.request("/api/chat/rooms")
         return response.rooms
     }
 
-    static func getMessages(roomId: Int, limit: Int = 50, before: Int? = nil) async throws -> [ChatMessage] {
-        var path = "/api/chat/rooms/\(roomId)/messages?limit=\(limit)"
-        if let before {
-            path += "&before=\(before)"
+    /// Fetch messages for a room within a date window.
+    /// - Parameters:
+    ///   - roomId: The chat room ID
+    ///   - since: Start of window (ISO date). Defaults to 7 days ago.
+    ///   - until: End of window (ISO date, exclusive). Omit for messages up to now.
+    /// - Returns: Tuple of (messages, hasMore) where hasMore indicates older messages exist
+    static func getMessages(roomId: Int, since: String? = nil, until: String? = nil) async throws -> (messages: [ChatMessage], hasMore: Bool) {
+        let effectiveSince = since ?? sevenDaysAgo()
+        var path = "/api/chat/rooms/\(roomId)/messages?since=\(effectiveSince)"
+        if let until {
+            path += "&until=\(until.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? until)"
         }
         let response: ChatMessagesResponse = try await APIClient.shared.request(path)
-        return response.messages
+        return (response.messages, response.hasMore ?? false)
     }
 
     static func sendMessage(roomId: Int, message: String) async throws -> ChatMessage {
