@@ -184,11 +184,7 @@ final class ChatViewModel {
         isLoadingOlderMessages = true
 
         do {
-            guard let since = ChatAPIService.sevenDaysBefore(oldest) else {
-                isLoadingOlderMessages = false
-                return
-            }
-            let (olderMsgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId, since: since, until: oldest)
+            let (olderMsgs, hasMore) = try await ChatAPIService.getMessages(roomId: roomId, before: oldest)
             // Prepend older messages, avoiding duplicates
             let existingIds = Set(messages.map(\.id))
             let newMessages = olderMsgs.filter { !existingIds.contains($0.id) }
