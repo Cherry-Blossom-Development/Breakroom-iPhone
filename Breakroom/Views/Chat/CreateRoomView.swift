@@ -24,8 +24,9 @@ struct CreateRoomView: View {
         NavigationStack {
             Form {
                 Section("Room Details") {
-                    TextField("Room Name", text: $name)
-                    TextField("Description (optional)", text: $description)
+                    TextField("Room Name *", text: $name)
+                    TextField("Description *", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
                 }
 
                 if !selectedUserIds.isEmpty {
@@ -83,7 +84,8 @@ struct CreateRoomView: View {
                             dismiss()
                         }
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty ||
+                             description.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .task {

@@ -61,6 +61,31 @@ enum ChatAPIService {
         )
     }
 
+    /// Leave a room (removes membership; for default room, records opt-out)
+    static func leaveRoom(id: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/chat/rooms/\(id)/leave",
+            method: "DELETE"
+        )
+    }
+
+    // MARK: - Discoverable Rooms
+
+    /// Get discoverable rooms the user has NOT yet joined
+    static func getDiscoverableRooms() async throws -> [ChatRoom] {
+        let response: ChatRoomsResponse = try await APIClient.shared.request("/api/chat/rooms/discoverable")
+        return response.rooms
+    }
+
+    /// Self-join a discoverable room
+    static func joinRoom(id: Int) async throws -> ChatRoom {
+        let response: ChatRoomResponse = try await APIClient.shared.request(
+            "/api/chat/rooms/\(id)/join",
+            method: "POST"
+        )
+        return response.room
+    }
+
     // MARK: - Invites
 
     static func getInvites() async throws -> [ChatInvite] {

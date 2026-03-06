@@ -4,6 +4,7 @@ import Foundation
 @Observable
 final class ChatViewModel {
     var rooms: [ChatRoom] = []
+    var discoverableRooms: [ChatRoom] = []
     var messages: [ChatMessage] = []
     var selectedRoom: ChatRoom?
     var isLoadingRooms = false
@@ -19,8 +20,11 @@ final class ChatViewModel {
     var showEditRoom = false
     var showInviteUsers = false
     var showDeleteConfirmation = false
+    var showAddRoom = false
     var roomToEdit: ChatRoom?
     var roomToDelete: ChatRoom?
+    var roomToLeave: ChatRoom?
+    var showLeaveConfirmation = false
 
     // Media upload
     var isUploadingMedia = false
@@ -92,6 +96,54 @@ final class ChatViewModel {
         do {
             try await ChatAPIService.deleteRoom(id: room.id)
             rooms.removeAll { $0.id == room.id }
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func leaveRoom(_ room: ChatRoom) async {
+        do {
+            try await ChatAPIService.leaveRoom(id: room.id)
+            rooms.removeAll { $0.id == room.id }
+            // If leaving the currently selected room, clear selection
+            if selectedRoom?.id == room.id {
+                socketManager?.leaveRoom(room.id)
+                selectedRoom = nil
+                messages = []
+                typingUsers = []
+                // Auto-select first remaining room
+                if let first = rooms.first {
+                    await selectRoom(first)
+                }
+            }
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Discoverable Rooms
+
+    func loadDiscoverableRooms() async {
+        do {
+            discoverableRooms = try await ChatAPIService.getDiscoverableRooms()
+        } catch {
+            // Silently fail - discoverable rooms are supplementary
+        }
+    }
+
+    func joinDiscoverableRoom(_ room: ChatRoom) async {
+        do {
+            let joinedRoom = try await ChatAPIService.joinRoom(id: room.id)
+            discoverableRooms.removeAll { $0.id == room.id }
+            if !rooms.contains(where: { $0.id == joinedRoom.id }) {
+                rooms.append(joinedRoom)
+            }
+            showAddRoom = false
+            await selectRoom(joinedRoom)
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {

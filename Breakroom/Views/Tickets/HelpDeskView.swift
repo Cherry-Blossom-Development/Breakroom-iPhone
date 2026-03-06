@@ -123,7 +123,7 @@ struct HelpDeskView: View {
                 }
 
                 if let desc = ticket.description, !desc.isEmpty {
-                    Text(desc)
+                    Text(desc.strippingHTML())
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .lineLimit(2)

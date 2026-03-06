@@ -102,8 +102,9 @@ struct Position: Identifiable {
 
     var descriptionExcerpt: String {
         guard let description, !description.isEmpty else { return "" }
-        if description.count <= 150 { return description }
-        return String(description.prefix(150)) + "..."
+        let stripped = description.strippingHTML()
+        if stripped.count <= 150 { return stripped }
+        return String(stripped.prefix(150)) + "..."
     }
 }
 

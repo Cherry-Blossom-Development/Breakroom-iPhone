@@ -203,7 +203,7 @@ struct ProfileView: View {
             sectionHeader("About")
 
             if let bio = profile.bio, !bio.isEmpty {
-                Text(bio)
+                Text(bio.strippingHTML())
                     .font(.body)
                     .foregroundStyle(.secondary)
             } else {
@@ -222,7 +222,7 @@ struct ProfileView: View {
             sectionHeader("Work Biography")
 
             if let workBio = profile.workBio, !workBio.isEmpty {
-                Text(workBio)
+                Text(workBio.strippingHTML())
                     .font(.body)
                     .foregroundStyle(.secondary)
             } else {

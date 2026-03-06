@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -57,6 +57,7 @@
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
 		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
+		CA11111111111111111111A2 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA11111111111111111111A1 /* StringExtensions.swift */; };
 		C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF549F06647717B82C21D /* ProfileModels.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
@@ -117,6 +118,7 @@
 		A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionsAPIService.swift; sourceTree = "<group>"; };
 		AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		B33066537C65EE3DB5A792F8 /* GalleryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryModels.swift; sourceTree = "<group>"; };
+		CA11111111111111111111A1 /* StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensions.swift; sourceTree = "<group>"; };
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockWidgetView.swift; sourceTree = "<group>"; };
 		D3F61C941989489C1B54449D /* ArtGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGalleryView.swift; sourceTree = "<group>"; };
@@ -286,6 +288,7 @@
 				04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */,
 				8D469E4060E944F33F37B557 /* PositionModels.swift */,
 				DE3DF549F06647717B82C21D /* ProfileModels.swift */,
+				CA11111111111111111111A1 /* StringExtensions.swift */,
 				319BB438E5D2DE8B9A00BB30 /* TicketModels.swift */,
 				1D9AC9F72B4CED61F085EAD7 /* User.swift */,
 			);
@@ -392,9 +395,8 @@
 			mainGroup = 727682F0A609E51FDA008095;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -471,6 +473,7 @@
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */,
 				446345F21ED087B5741FA337 /* SocketManager.swift in Sources */,
+				CA11111111111111111111A2 /* StringExtensions.swift in Sources */,
 				8ED1BE434925E642E556EB9C /* SongDetailView.swift in Sources */,
 				DFC9B224556F272EEC3718E1 /* TicketAPIService.swift in Sources */,
 				52B4EA17D8D733F30C75D4B9 /* TicketModels.swift in Sources */,
@@ -689,7 +692,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -702,7 +705,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		05BB53121E6C9220E5091E05 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
 		};
 /* End XCSwiftPackageProductDependency section */

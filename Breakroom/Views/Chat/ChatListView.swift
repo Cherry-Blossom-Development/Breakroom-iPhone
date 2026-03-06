@@ -81,6 +81,15 @@ struct ChatListView: View {
                                     .padding(.vertical, 4)
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    // Leave action for all rooms
+                                    Button {
+                                        chatViewModel.roomToLeave = room
+                                        chatViewModel.showLeaveConfirmation = true
+                                    } label: {
+                                        Label("Leave", systemImage: "arrow.left.circle")
+                                    }
+                                    .tint(.yellow)
+
                                     if chatViewModel.isRoomOwner(room) {
                                         Button(role: .destructive) {
                                             chatViewModel.roomToDelete = room
@@ -119,12 +128,23 @@ struct ChatListView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     connectionDot
                 }
-                if chatViewModel.canCreateRoomPermission {
-                    ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 16) {
                         Button {
-                            chatViewModel.showCreateRoom = true
+                            Task {
+                                await chatViewModel.loadDiscoverableRooms()
+                                chatViewModel.showAddRoom = true
+                            }
                         } label: {
-                            Image(systemName: "plus.bubble")
+                            Image(systemName: "plus.circle")
+                        }
+
+                        if chatViewModel.canCreateRoomPermission {
+                            Button {
+                                chatViewModel.showCreateRoom = true
+                            } label: {
+                                Image(systemName: "plus.bubble")
+                            }
                         }
                     }
                 }
@@ -155,6 +175,20 @@ struct ChatListView: View {
                 }
             } message: { room in
                 Text("Are you sure you want to delete \"\(room.name)\"? This cannot be undone.")
+            }
+            .confirmationDialog(
+                "Leave Room",
+                isPresented: $chatViewModel.showLeaveConfirmation,
+                presenting: chatViewModel.roomToLeave
+            ) { room in
+                Button("Leave \"\(room.name)\"", role: .destructive) {
+                    Task { await chatViewModel.leaveRoom(room) }
+                }
+            } message: { room in
+                Text("Are you sure you want to leave \"\(room.name)\"?")
+            }
+            .sheet(isPresented: $chatViewModel.showAddRoom) {
+                AddRoomSheet(chatViewModel: chatViewModel)
             }
             .alert("Error", isPresented: .init(
                 get: { chatViewModel.errorMessage != nil },
@@ -190,5 +224,55 @@ extension ChatRoom: Hashable {
 
     public static func == (lhs: ChatRoom, rhs: ChatRoom) -> Bool {
         lhs.id == rhs.id
+    }
+}
+
+// MARK: - Add Room Sheet (for discoverable rooms)
+
+struct AddRoomSheet: View {
+    @Bindable var chatViewModel: ChatViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if chatViewModel.discoverableRooms.isEmpty {
+                    ContentUnavailableView(
+                        "No Rooms Available",
+                        systemImage: "bubble.left.and.bubble.right",
+                        description: Text("There are no discoverable rooms to join at this time.")
+                    )
+                } else {
+                    List(chatViewModel.discoverableRooms) { room in
+                        Button {
+                            Task {
+                                await chatViewModel.joinDiscoverableRoom(room)
+                                dismiss()
+                            }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("# \(room.name)")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                if let description = room.description, !description.isEmpty {
+                                    Text(description)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add Room")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }

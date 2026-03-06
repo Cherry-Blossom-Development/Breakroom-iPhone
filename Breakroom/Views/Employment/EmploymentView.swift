@@ -121,7 +121,7 @@ struct EmploymentView: View {
             Menu {
                 Button("All Types") { employmentFilter = "" }
                 Divider()
-                ForEach(["full-time", "part-time", "contract", "internship", "temporary"], id: \.self) { type in
+                ForEach(["full-time", "part-time", "contract", "internship", "temporary", "prospecting"], id: \.self) { type in
                     Button {
                         employmentFilter = type
                     } label: {
@@ -369,7 +369,7 @@ struct PositionDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-            Text(text)
+            Text(text.strippingHTML())
                 .font(.body)
                 .foregroundStyle(.secondary)
         }
