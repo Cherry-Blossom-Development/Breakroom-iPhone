@@ -61,7 +61,7 @@ struct EmploymentView: View {
                         description: Text("No open positions are currently available.")
                     )
                 } else {
-                    positionsList
+                    positionsListWithHeader
                 }
             }
             .navigationTitle("Jobs")
@@ -147,7 +147,71 @@ struct EmploymentView: View {
         }
     }
 
-    // MARK: - Positions List
+    // MARK: - Welcome Header
+
+    private var welcomeHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Welcome to the Prosaurus Job Board!")
+                .font(.title3.bold())
+                .foregroundStyle(Color.accentColor)
+
+            Text("We're brand new, so we don't have any real jobs yet - but what we do have is ideas. That's why, in addition to all the standard job types, we've added one called ")
+            + Text("Prospecting").italic()
+
+            Text("These are the roles we think we might have someday, if we ever become a *real company. We invite you to check out our Prospecting positions and post your own. We think it's a good thing to dream about what the future looks like, and we'd love for you to join us in that endeavor.")
+
+            Text("* For the record, Cherry Blossom Development LLC ")
+            + Text("is").italic()
+            + Text(" a real company, we just haven't made any money yet so we can't afford to hire anyone.")
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Positions List with Header
+
+    private var positionsListWithHeader: some View {
+        List {
+            Section {
+                welcomeHeader
+            }
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            .listRowSeparator(.hidden)
+
+            if filteredPositions.isEmpty {
+                ContentUnavailableView(
+                    "No Matches",
+                    systemImage: "magnifyingglass",
+                    description: Text("No positions match your filters.")
+                )
+                .listRowSeparator(.hidden)
+            } else {
+                Section {
+                    Text("\(filteredPositions.count) position\(filteredPositions.count == 1 ? "" : "s") available")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .listRowSeparator(.hidden)
+                }
+
+                ForEach(filteredPositions) { position in
+                    Button {
+                        selectedPosition = position
+                    } label: {
+                        positionCard(position)
+                    }
+                    .foregroundStyle(.primary)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowSeparator(.hidden)
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    // MARK: - Positions List (without header, kept for reference)
 
     private var positionsList: some View {
         List {
@@ -307,17 +371,17 @@ struct PositionDetailView: View {
 
                 // Description
                 if let desc = display.description, !desc.isEmpty {
-                    detailSection("Description", text: desc)
+                    detailSection("Description", html: desc)
                 }
 
                 // Requirements
                 if let req = display.requirements, !req.isEmpty {
-                    detailSection("Requirements", text: req)
+                    detailSection("Requirements", html: req)
                 }
 
                 // Benefits
                 if let ben = display.benefits, !ben.isEmpty {
-                    detailSection("Benefits", text: ben)
+                    detailSection("Benefits", html: ben)
                 }
 
                 // Footer
@@ -365,13 +429,12 @@ struct PositionDetailView: View {
         .padding(.vertical, 10)
     }
 
-    private func detailSection(_ title: String, text: String) -> some View {
+    private func detailSection(_ title: String, html: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-            Text(text.strippingHTML())
-                .font(.body)
-                .foregroundStyle(.secondary)
+            HTMLContentView(html: html)
+                .frame(minHeight: 50)
         }
     }
 

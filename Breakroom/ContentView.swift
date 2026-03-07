@@ -38,6 +38,7 @@ struct MainTabView: View {
     // Shortcuts
     @State private var shortcuts: [Shortcut] = []
     @State private var selectedShortcut: Shortcut?
+    @State private var showManageShortcuts = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -81,6 +82,11 @@ struct MainTabView: View {
                                             } label: {
                                                 Label(shortcut.name, systemImage: shortcutIcon(for: shortcut.url))
                                             }
+                                        }
+                                        Button {
+                                            showManageShortcuts = true
+                                        } label: {
+                                            Label("Manage Shortcuts", systemImage: "gear")
                                         }
                                     }
                                 }
@@ -144,6 +150,9 @@ struct MainTabView: View {
             Button("OK") { }
         } message: {
             Text(deleteAccountError ?? "Failed to delete account")
+        }
+        .sheet(isPresented: $showManageShortcuts) {
+            ManageShortcutsSheet(shortcuts: $shortcuts)
         }
     }
 
@@ -214,5 +223,69 @@ struct MainTabView: View {
                 Text("Shortcut: \(shortcut.name)")
             }
         }
+    }
+}
+
+// MARK: - Manage Shortcuts Sheet
+
+struct ManageShortcutsSheet: View {
+    @Binding var shortcuts: [Shortcut]
+    @Environment(\.dismiss) private var dismiss
+    @State private var isDeleting: Int?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if shortcuts.isEmpty {
+                    ContentUnavailableView(
+                        "No Shortcuts",
+                        systemImage: "bookmark",
+                        description: Text("Shortcuts you add will appear here.")
+                    )
+                } else {
+                    ForEach(shortcuts) { shortcut in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(shortcut.name)
+                                    .font(.body)
+                                Text(shortcut.url)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if isDeleting == shortcut.id {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await deleteShortcut(shortcut) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Manage Shortcuts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func deleteShortcut(_ shortcut: Shortcut) async {
+        isDeleting = shortcut.id
+        do {
+            try await ShortcutsAPIService.deleteShortcut(id: shortcut.id)
+            shortcuts.removeAll { $0.id == shortcut.id }
+        } catch {
+            // Silently fail
+        }
+        isDeleting = nil
     }
 }
