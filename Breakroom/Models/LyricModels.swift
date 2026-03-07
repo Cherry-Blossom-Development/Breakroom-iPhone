@@ -103,6 +103,7 @@ struct Song: Codable, Identifiable, Hashable {
     let genre: String?
     let status: String?
     let visibility: String?
+    let songDate: String?
     let createdAt: String?
     let updatedAt: String?
     let lyricCount: Int?
@@ -111,6 +112,7 @@ struct Song: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, title, description, genre, status, visibility, role
         case userId = "user_id"
+        case songDate = "song_date"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case lyricCount = "lyric_count"
@@ -241,6 +243,12 @@ struct CreateSongRequest: Encodable {
     let genre: String?
     let status: String?
     let visibility: String?
+    let songDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, genre, status, visibility
+        case songDate = "song_date"
+    }
 }
 
 struct UpdateSongRequest: Encodable {
@@ -249,6 +257,12 @@ struct UpdateSongRequest: Encodable {
     let genre: String?
     let status: String?
     let visibility: String?
+    let songDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, genre, status, visibility
+        case songDate = "song_date"
+    }
 }
 
 struct CreateLyricRequest: Encodable {

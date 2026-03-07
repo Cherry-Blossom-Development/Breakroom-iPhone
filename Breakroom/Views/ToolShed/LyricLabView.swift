@@ -17,6 +17,7 @@ struct LyricLabView: View {
     @State private var showNewSongSheet = false
     @State private var showQuickIdeaSheet = false
     @State private var selectedSong: Song?
+    @State private var songForNewLyric: Song?
 
     // Delete confirmations
     @State private var songToDelete: Song?
@@ -94,6 +95,15 @@ struct LyricLabView: View {
         .sheet(isPresented: $showNewSongSheet) {
             NewSongSheet { newSong in
                 songs.insert(newSong, at: 0)
+            } onSaveAndAddLyric: { newSong in
+                songs.insert(newSong, at: 0)
+                songForNewLyric = newSong
+            }
+        }
+        .sheet(item: $songForNewLyric) { song in
+            AddLyricSheet(songId: song.id) { _ in
+                // Lyric added - we don't need to track it here since
+                // we'll see it when viewing the song details
             }
         }
         .sheet(isPresented: $showQuickIdeaSheet) {
@@ -412,17 +422,30 @@ struct LyricLabView: View {
 
 struct NewSongSheet: View {
     let onSave: (Song) -> Void
+    let onSaveAndAddLyric: ((Song) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
 
     @State private var title = ""
     @State private var description = ""
     @State private var genre = ""
+    @State private var songDate = Date()
     @State private var status: SongStatus = .idea
     @State private var visibility: SongVisibility = .private
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var showError = false
+
+    init(onSave: @escaping (Song) -> Void, onSaveAndAddLyric: ((Song) -> Void)? = nil) {
+        self.onSave = onSave
+        self.onSaveAndAddLyric = onSaveAndAddLyric
+    }
+
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }
 
     var body: some View {
         NavigationStack {
@@ -444,6 +467,7 @@ struct NewSongSheet: View {
                         .accessibilityIdentifier("songDescriptionField")
                     TextField("Genre", text: $genre)
                         .accessibilityIdentifier("songGenreField")
+                    DatePicker("Date", selection: $songDate, displayedComponents: .date)
                 }
 
                 Section("Status") {
@@ -461,6 +485,25 @@ struct NewSongSheet: View {
                         }
                     }
                 }
+
+                if onSaveAndAddLyric != nil {
+                    Section {
+                        Button {
+                            Task { await save(andAddLyric: true) }
+                        } label: {
+                            HStack {
+                                Spacer()
+                                if isSaving {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Label("Create & Add Lyric", systemImage: "text.badge.plus")
+                                }
+                                Spacer()
+                            }
+                        }
+                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                    }
+                }
             }
             .navigationTitle("New Song")
             .navigationBarTitleDisplayMode(.inline)
@@ -470,7 +513,7 @@ struct NewSongSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        Task { await save() }
+                        Task { await save(andAddLyric: false) }
                     } label: {
                         if isSaving {
                             ProgressView().controlSize(.small)
@@ -490,7 +533,7 @@ struct NewSongSheet: View {
         }
     }
 
-    private func save() async {
+    private func save(andAddLyric: Bool) async {
         isSaving = true
         let desc = description.trimmingCharacters(in: .whitespaces)
         let g = genre.trimmingCharacters(in: .whitespaces)
@@ -501,9 +544,14 @@ struct NewSongSheet: View {
                 description: desc.isEmpty ? nil : desc,
                 genre: g.isEmpty ? nil : g,
                 status: status.rawValue,
-                visibility: visibility.rawValue
+                visibility: visibility.rawValue,
+                songDate: dateFormatter.string(from: songDate)
             )
-            onSave(song)
+            if andAddLyric {
+                onSaveAndAddLyric?(song)
+            } else {
+                onSave(song)
+            }
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

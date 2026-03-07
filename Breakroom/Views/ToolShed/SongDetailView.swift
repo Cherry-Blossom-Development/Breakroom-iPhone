@@ -369,6 +369,7 @@ struct EditSongSheet: View {
     @State private var title: String
     @State private var description: String
     @State private var genre: String
+    @State private var songDate: Date
     @State private var status: SongStatus
     @State private var visibility: SongVisibility
     @State private var isSaving = false
@@ -383,6 +384,12 @@ struct EditSongSheet: View {
 
     private var isOwner: Bool {
         !song.isCollaboration
+    }
+
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
     }
 
     private var filteredFriends: [Friend] {
@@ -404,6 +411,14 @@ struct EditSongSheet: View {
         _title = State(initialValue: song.title)
         _description = State(initialValue: song.description ?? "")
         _genre = State(initialValue: song.genre ?? "")
+        // Parse song_date or default to today
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        if let dateStr = song.songDate?.prefix(10), let parsed = formatter.date(from: String(dateStr)) {
+            _songDate = State(initialValue: parsed)
+        } else {
+            _songDate = State(initialValue: Date())
+        }
         _status = State(initialValue: song.songStatus)
         _visibility = State(initialValue: song.songVisibility)
         _collaborators = State(initialValue: collaborators)
@@ -426,6 +441,7 @@ struct EditSongSheet: View {
                             }
                         }
                     TextField("Genre", text: $genre)
+                    DatePicker("Date", selection: $songDate, displayedComponents: .date)
                 }
 
                 Section("Status") {
@@ -613,7 +629,8 @@ struct EditSongSheet: View {
                 description: desc.isEmpty ? nil : desc,
                 genre: g.isEmpty ? nil : g,
                 status: status.rawValue,
-                visibility: visibility.rawValue
+                visibility: visibility.rawValue,
+                songDate: dateFormatter.string(from: songDate)
             )
             onSave(updated)
             dismiss()

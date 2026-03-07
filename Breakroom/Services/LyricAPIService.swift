@@ -20,14 +20,16 @@ enum LyricAPIService {
         description: String?,
         genre: String?,
         status: String?,
-        visibility: String?
+        visibility: String?,
+        songDate: String? = nil
     ) async throws -> Song {
         let body = CreateSongRequest(
             title: title,
             description: description,
             genre: genre,
             status: status,
-            visibility: visibility
+            visibility: visibility,
+            songDate: songDate
         )
         let response: SongResponse = try await APIClient.shared.request(
             "/api/lyrics/songs",
@@ -44,14 +46,16 @@ enum LyricAPIService {
         description: String?,
         genre: String?,
         status: String?,
-        visibility: String?
+        visibility: String?,
+        songDate: String? = nil
     ) async throws -> Song {
         let body = UpdateSongRequest(
             title: title,
             description: description,
             genre: genre,
             status: status,
-            visibility: visibility
+            visibility: visibility,
+            songDate: songDate
         )
         let response: SongResponse = try await APIClient.shared.request(
             "/api/lyrics/songs/\(id)",
