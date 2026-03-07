@@ -47,7 +47,10 @@ struct BreakroomView: View {
                 }
             }
         }
-        .sheet(isPresented: $viewModel.showAddBlockSheet) {
+        .sheet(isPresented: $viewModel.showAddBlockSheet, onDismiss: {
+            // Force refresh to ensure new block appears
+            Task { await viewModel.refresh() }
+        }) {
             AddBlockSheet(viewModel: viewModel)
         }
         .task {

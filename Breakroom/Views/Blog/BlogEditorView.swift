@@ -16,6 +16,13 @@ struct BlogEditorView: View {
     @State private var editorCoordinator = RichTextEditorCoordinator()
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isUploadingImage = false
+    @State private var showLinkAlert = false
+    @State private var linkURL = ""
+    @State private var selectedFont = "Arial"
+    @State private var selectedSize = "Normal"
+
+    private let availableFonts = ["Arial", "Georgia", "Times", "Courier", "Verdana"]
+    private let availableSizes = ["Small", "Normal", "Large", "X-Large"]
 
     init(existingPost: BlogPost?, onSave: @escaping (BlogPost) -> Void) {
         self.existingPost = existingPost
@@ -51,6 +58,19 @@ struct BlogEditorView: View {
         } message: {
             Text(errorMessage ?? "An unknown error occurred")
         }
+        .alert("Add Link", isPresented: $showLinkAlert) {
+            TextField("https://example.com", text: $linkURL)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.URL)
+            Button("Cancel", role: .cancel) { }
+            Button("Add") {
+                if !linkURL.isEmpty {
+                    editorCoordinator.insertLink(url: linkURL)
+                }
+            }
+        } message: {
+            Text("Enter the URL for the link")
+        }
         .onChange(of: selectedPhoto) { _, item in
             guard let item else { return }
             Task { await uploadPhoto(item) }
@@ -66,7 +86,59 @@ struct BlogEditorView: View {
 
     private var formattingToolbar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                // Font picker
+                Menu {
+                    ForEach(availableFonts, id: \.self) { font in
+                        Button {
+                            selectedFont = font
+                            editorCoordinator.setFont(font)
+                        } label: {
+                            HStack {
+                                Text(font)
+                                if selectedFont == font {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedFont)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                    .frame(minWidth: 70)
+                }
+
+                // Size picker
+                Menu {
+                    ForEach(availableSizes, id: \.self) { size in
+                        Button {
+                            selectedSize = size
+                            editorCoordinator.setFontSize(size)
+                        } label: {
+                            HStack {
+                                Text(size)
+                                if selectedSize == size {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedSize)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                }
+
+                Divider()
+                    .frame(height: 20)
+
+                // Text formatting
                 Button { editorCoordinator.execCommand("bold") } label: {
                     Text("B").bold()
                 }
@@ -80,6 +152,15 @@ struct BlogEditorView: View {
                 Divider()
                     .frame(height: 20)
 
+                // Link button
+                Button {
+                    linkURL = ""
+                    showLinkAlert = true
+                } label: {
+                    Image(systemName: "link")
+                }
+
+                // Image picker
                 if isUploadingImage {
                     ProgressView()
                         .controlSize(.small)
@@ -296,6 +377,43 @@ class RichTextEditorCoordinator: NSObject, WKNavigationDelegate {
 
     func execCommand(_ command: String) {
         webView?.evaluateJavaScript("document.execCommand('\(command)', false, null)")
+    }
+
+    func setFont(_ font: String) {
+        let fontFamily: String
+        switch font {
+        case "Georgia":
+            fontFamily = "Georgia, serif"
+        case "Times":
+            fontFamily = "Times New Roman, Times, serif"
+        case "Courier":
+            fontFamily = "Courier New, Courier, monospace"
+        case "Verdana":
+            fontFamily = "Verdana, Geneva, sans-serif"
+        default: // Arial
+            fontFamily = "Arial, Helvetica, sans-serif"
+        }
+        webView?.evaluateJavaScript("document.execCommand('fontName', false, '\(fontFamily)')")
+    }
+
+    func setFontSize(_ size: String) {
+        // HTML font sizes are 1-7
+        let htmlSize: String
+        switch size {
+        case "Small": htmlSize = "2"
+        case "Large": htmlSize = "5"
+        case "X-Large": htmlSize = "6"
+        default: htmlSize = "3" // Normal
+        }
+        webView?.evaluateJavaScript("document.execCommand('fontSize', false, '\(htmlSize)')")
+    }
+
+    func insertLink(url: String) {
+        var finalURL = url
+        if !url.hasPrefix("http://") && !url.hasPrefix("https://") {
+            finalURL = "https://" + url
+        }
+        webView?.evaluateJavaScript("document.execCommand('createLink', false, '\(finalURL)')")
     }
 
     func insertImage(url: String) {
