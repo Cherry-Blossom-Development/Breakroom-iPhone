@@ -206,8 +206,10 @@ struct AddBlockSheet: View {
 
     // Chat room selection
     @State private var chatRooms: [ChatRoom] = []
+    @State private var myRoomIds: Set<Int> = []  // Rooms user is already a member of
     @State private var selectedRoomId: Int?
     @State private var isLoadingRooms = false
+    @State private var roomLoadError: String?
 
     // Block types already on the page (excluding chat, which allows multiples)
     private var existingBlockTypes: Set<BlockType> {
@@ -231,6 +233,12 @@ struct AddBlockSheet: View {
     // Available rooms (not yet on the page)
     private var availableRooms: [ChatRoom] {
         chatRooms.filter { !existingChatRoomIds.contains($0.id) }
+    }
+
+    // Get the selected room object
+    private var selectedRoom: ChatRoom? {
+        guard let id = selectedRoomId else { return nil }
+        return chatRooms.first { $0.id == id }
     }
 
     private var canAdd: Bool {
@@ -285,8 +293,23 @@ struct AddBlockSheet: View {
                             ProgressView()
                             Spacer()
                         }
+                    } else if let error = roomLoadError {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Failed to load chat rooms")
+                                .foregroundStyle(.secondary)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Button("Retry") {
+                                Task { await loadChatRooms() }
+                            }
+                            .font(.caption)
+                        }
+                    } else if chatRooms.isEmpty {
+                        Text("You don't have any chat rooms. Join or create a chat room first.")
+                            .foregroundStyle(.secondary)
                     } else if availableRooms.isEmpty {
-                        Text("All chat rooms are already on your page")
+                        Text("All your chat rooms are already on this page")
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(availableRooms) { room in
@@ -345,10 +368,28 @@ struct AddBlockSheet: View {
 
     private func loadChatRooms() async {
         isLoadingRooms = true
+        roomLoadError = nil
         do {
-            chatRooms = try await ChatAPIService.getRooms()
+            // Load both user's rooms and discoverable rooms
+            async let myRoomsTask = ChatAPIService.getRooms()
+            async let discoverableRoomsTask = ChatAPIService.getDiscoverableRooms()
+
+            let (userRooms, publicRooms) = try await (myRoomsTask, discoverableRoomsTask)
+
+            // Track which rooms user is already a member of
+            myRoomIds = Set(userRooms.map { $0.id })
+
+            // Combine and deduplicate (user's rooms take precedence)
+            var roomsById: [Int: ChatRoom] = [:]
+            for room in publicRooms {
+                roomsById[room.id] = room
+            }
+            for room in userRooms {
+                roomsById[room.id] = room
+            }
+            chatRooms = Array(roomsById.values).sorted { $0.name < $1.name }
         } catch {
-            // Silently fail
+            roomLoadError = error.localizedDescription
         }
         isLoadingRooms = false
     }
@@ -362,11 +403,26 @@ struct AddBlockSheet: View {
             Button("Add") {
                 isAdding = true
                 Task {
-                    await viewModel.addBlock(
-                        type: selectedType,
-                        title: customTitle.isEmpty ? nil : customTitle,
-                        contentId: selectedRoomId
-                    )
+                    // For chat widgets, handle room joining and title
+                    if selectedType == .chat, let roomId = selectedRoomId {
+                        // If user isn't a member, join the room first
+                        if !myRoomIds.contains(roomId) {
+                            _ = try? await ChatAPIService.joinRoom(id: roomId)
+                        }
+                        // Use room name as title if no custom title provided
+                        let title = customTitle.isEmpty ? selectedRoom?.name : customTitle
+                        await viewModel.addBlock(
+                            type: selectedType,
+                            title: title,
+                            contentId: roomId
+                        )
+                    } else {
+                        await viewModel.addBlock(
+                            type: selectedType,
+                            title: customTitle.isEmpty ? nil : customTitle,
+                            contentId: selectedRoomId
+                        )
+                    }
                     isAdding = false
                     dismiss()
                 }
