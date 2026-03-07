@@ -4,12 +4,14 @@ struct HelpDeskView: View {
     let companyId: Int
     let companyName: String
 
+    @Environment(AuthViewModel.self) private var authViewModel
     @State private var tickets: [Ticket] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var showAddTicket = false
     @State private var editingTicket: Ticket?
+    @State private var viewingTicket: Ticket?
 
     private var openTickets: [Ticket] {
         tickets.filter { !$0.isResolved }
@@ -91,6 +93,9 @@ struct HelpDeskView: View {
                 }
             }
         }
+        .sheet(item: $viewingTicket) { ticket in
+            ViewTicketSheet(ticket: ticket)
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {
@@ -98,9 +103,19 @@ struct HelpDeskView: View {
         }
     }
 
+    private func canEditTicket(_ ticket: Ticket) -> Bool {
+        guard let currentUserId = authViewModel.currentUserId,
+              let creatorId = ticket.creatorId else { return false }
+        return currentUserId == creatorId
+    }
+
     private func ticketRow(_ ticket: Ticket) -> some View {
         Button {
-            editingTicket = ticket
+            if canEditTicket(ticket) {
+                editingTicket = ticket
+            } else {
+                viewingTicket = ticket
+            }
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -299,7 +314,8 @@ struct EditTicketSheet: View {
         self.ticket = ticket
         self.onSave = onSave
         _title = State(initialValue: ticket.title)
-        _description = State(initialValue: ticket.description ?? "")
+        // Strip HTML for plain text editing
+        _description = State(initialValue: ticket.description?.strippingHTML() ?? "")
         _status = State(initialValue: ticket.ticketStatus)
         _priority = State(initialValue: ticket.ticketPriority)
     }
@@ -384,5 +400,52 @@ struct EditTicketSheet: View {
             showError = true
         }
         isSaving = false
+    }
+}
+
+// MARK: - View Ticket Sheet (Read-Only)
+
+struct ViewTicketSheet: View {
+    let ticket: Ticket
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Ticket Info") {
+                    LabeledContent("Title", value: ticket.title)
+
+                    if let desc = ticket.description, !desc.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Description")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(desc.strippingHTML())
+                                .font(.body)
+                        }
+                    }
+                }
+
+                Section("Status") {
+                    LabeledContent("Status", value: ticket.ticketStatus.displayName)
+                    LabeledContent("Priority", value: ticket.ticketPriority.displayName)
+                }
+
+                Section {
+                    LabeledContent("Created by", value: ticket.creatorDisplayName)
+                    if let assignee = ticket.assigneeDisplayName {
+                        LabeledContent("Assigned to", value: assignee)
+                    }
+                }
+            }
+            .navigationTitle("Ticket Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }
