@@ -40,3 +40,24 @@ struct ErrorResponse: Decodable {
         error ?? message ?? "An unknown error occurred"
     }
 }
+
+// MARK: - Forgot Password
+
+struct ForgotPasswordRequest: Encodable {
+    let email: String
+}
+
+struct ForgotPasswordResponse: Decodable {
+    let message: String
+}
+
+struct ResetPasswordRequest: Encodable {
+    let token: String
+    let password: String
+    let salt: String
+    let hash: String
+}
+
+struct ResetPasswordResponse: Decodable {
+    let message: String
+}

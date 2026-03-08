@@ -64,6 +64,36 @@ enum AuthService {
         return try? await APIClient.shared.request("/api/auth/me")
     }
 
+    // MARK: - Forgot Password
+
+    static func forgotPassword(email: String) async throws {
+        let request = ForgotPasswordRequest(email: email)
+        let _: ForgotPasswordResponse = try await APIClient.shared.request(
+            "/api/auth/forgot-password",
+            method: "POST",
+            body: request,
+            authenticated: false
+        )
+    }
+
+    static func resetPassword(token: String, password: String) async throws {
+        let salt = generateSalt()
+        let hash = hashPassword(password, salt: salt)
+
+        let request = ResetPasswordRequest(
+            token: token,
+            password: password,
+            salt: salt,
+            hash: hash
+        )
+        let _: ResetPasswordResponse = try await APIClient.shared.request(
+            "/api/auth/reset-password",
+            method: "POST",
+            body: request,
+            authenticated: false
+        )
+    }
+
     // MARK: - Password Hashing
 
     private static func generateSalt() -> String {
