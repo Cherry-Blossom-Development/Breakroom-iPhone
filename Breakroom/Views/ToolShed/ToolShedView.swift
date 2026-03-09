@@ -3,6 +3,8 @@ import SwiftUI
 struct ToolShedView: View {
     @State private var shortcuts: Set<String> = []
     @State private var isLoadingShortcuts = true
+    @State private var userFeatures: Set<String> = []
+    @State private var isLoadingFeatures = true
 
     var body: some View {
         NavigationStack {
@@ -41,32 +43,39 @@ struct ToolShedView: View {
             }
             .navigationTitle("Tool Shed")
             .task {
+                await loadFeatures()
                 await loadShortcuts()
             }
         }
     }
 
+    @ViewBuilder
     private func toolCategorySection(_ category: ToolCategory) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Category header
-            HStack(spacing: 10) {
-                Image(systemName: category.icon)
-                    .font(.title3)
-                    .foregroundStyle(category.color)
-                    .frame(width: 32)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(category.title)
-                        .font(.headline)
-                    Text(category.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal)
+        let tools = visibleTools(for: category)
 
-            // Tools in category
-            ForEach(category.tools, id: \.name) { tool in
-                toolCard(tool, category: category)
+        // Only show category if it has visible tools
+        if !tools.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                // Category header
+                HStack(spacing: 10) {
+                    Image(systemName: category.icon)
+                        .font(.title3)
+                        .foregroundStyle(category.color)
+                        .frame(width: 32)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(category.title)
+                            .font(.headline)
+                        Text(category.subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+
+                // Tools in category
+                ForEach(tools, id: \.name) { tool in
+                    toolCard(tool, category: category)
+                }
             }
         }
     }
@@ -138,12 +147,24 @@ struct ToolShedView: View {
         switch destination {
         case .lyricLab:
             LyricLabView()
+        case .sessions:
+            SessionsView()
         case .artGallery:
             ArtGalleryView()
         case .blog:
             BlogManagementView()
         case .kanban:
             KanbanRedirectView()
+        }
+    }
+
+    private func loadFeatures() async {
+        do {
+            let features = try await FeaturesAPIService.getMyFeatures()
+            userFeatures = Set(features)
+            isLoadingFeatures = false
+        } catch {
+            isLoadingFeatures = false
         }
     }
 
@@ -154,6 +175,14 @@ struct ToolShedView: View {
             isLoadingShortcuts = false
         } catch {
             isLoadingShortcuts = false
+        }
+    }
+
+    /// Filter tools to show only those available to all users (featureKey == nil)
+    /// or those the user has access to via their feature flags
+    private func visibleTools(for category: ToolCategory) -> [Tool] {
+        category.tools.filter { tool in
+            tool.featureKey == nil || userFeatures.contains(tool.featureKey!)
         }
     }
 
@@ -171,6 +200,7 @@ struct ToolShedView: View {
 
 enum ToolDestination: Hashable {
     case lyricLab
+    case sessions
     case artGallery
     case blog
     case kanban
@@ -182,6 +212,16 @@ struct Tool {
     let icon: String
     let destination: ToolDestination
     let shortcutUrl: String
+    let featureKey: String?  // nil = available to all; non-nil = requires feature flag
+
+    init(name: String, description: String, icon: String, destination: ToolDestination, shortcutUrl: String, featureKey: String? = nil) {
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self.destination = destination
+        self.shortcutUrl = shortcutUrl
+        self.featureKey = featureKey
+    }
 }
 
 enum ToolCategory: CaseIterable {
@@ -236,6 +276,14 @@ enum ToolCategory: CaseIterable {
                     icon: "music.mic",
                     destination: .lyricLab,
                     shortcutUrl: "/lyrics"
+                ),
+                Tool(
+                    name: "Sessions",
+                    description: "Track and manage your recording sessions, log progress, and keep notes on each session.",
+                    icon: "music.note",
+                    destination: .sessions,
+                    shortcutUrl: "/sessions",
+                    featureKey: "sessions"
                 )
             ]
         case .artist:

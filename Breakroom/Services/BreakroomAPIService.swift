@@ -26,7 +26,7 @@ enum BreakroomAPIService {
 
     static func getUpdates(limit: Int = 20) async throws -> [BreakroomUpdate] {
         let response: BreakroomUpdatesResponse = try await APIClient.shared.request(
-            "/api/breakroom/updates?limit=\(limit)"
+            "/api/breakroom/updates?limit=\(limit)&platform=ios"
         )
         return response.updates
     }

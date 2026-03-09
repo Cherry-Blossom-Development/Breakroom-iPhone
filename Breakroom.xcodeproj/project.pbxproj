@@ -68,6 +68,8 @@
 		EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */; };
 		FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */; };
 		FE1EF55A761C9A80859ABE56 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9AC9F72B4CED61F085EAD7 /* User.swift */; };
+		FA33333333333333333333B1 /* FeaturesAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA33333333333333333333A1 /* FeaturesAPIService.swift */; };
+		SE44444444444444444444B1 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SE44444444444444444444A1 /* SessionsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -132,6 +134,8 @@
 		EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWidget.swift; sourceTree = "<group>"; };
 		FD2A7DEA7811D2E6DDBDDAC2 /* HelpDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpDeskView.swift; sourceTree = "<group>"; };
+		FA33333333333333333333A1 /* FeaturesAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesAPIService.swift; sourceTree = "<group>"; };
+		SE44444444444444444444A1 /* SessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +156,7 @@
 				D3F61C941989489C1B54449D /* ArtGalleryView.swift */,
 				0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */,
 				26DEBC966A34157A3A985E03 /* LyricLabView.swift */,
+				SE44444444444444444444A1 /* SessionsView.swift */,
 				028A3743D482F0346A079BAD /* SongDetailView.swift */,
 				18446587DDCAB3E01271A326 /* ToolShedView.swift */,
 			);
@@ -192,6 +197,7 @@
 				1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */,
 				837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */,
 				5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */,
+				FA33333333333333333333A1 /* FeaturesAPIService.swift */,
 				4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */,
 				2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */,
 				EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */,
@@ -483,6 +489,8 @@
 				52B4EA17D8D733F30C75D4B9 /* TicketModels.swift in Sources */,
 				1562F93BEBF3921C1C495B77 /* ToolShedView.swift in Sources */,
 				FE1EF55A761C9A80859ABE56 /* User.swift in Sources */,
+				FA33333333333333333333B1 /* FeaturesAPIService.swift in Sources */,
+				SE44444444444444444444B1 /* SessionsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
