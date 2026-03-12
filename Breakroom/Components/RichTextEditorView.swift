@@ -254,12 +254,10 @@ class FormRichTextCoordinator: NSObject, WKNavigationDelegate, ObservableObject 
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
     ) {
-        Task { @MainActor in
-            if navigationAction.navigationType == .other {
-                decisionHandler(.allow)
-            } else {
-                decisionHandler(.cancel)
-            }
+        if navigationAction.navigationType == .other {
+            decisionHandler(.allow)
+        } else {
+            decisionHandler(.cancel)
         }
     }
 

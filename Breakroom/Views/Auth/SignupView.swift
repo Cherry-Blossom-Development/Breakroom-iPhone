@@ -39,18 +39,21 @@ struct SignupView: View {
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("handleField")
 
                     TextField("First Name", text: $firstName)
                         .textContentType(.givenName)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("firstNameField")
 
                     TextField("Last Name", text: $lastName)
                         .textContentType(.familyName)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("lastNameField")
 
                     TextField("Email", text: $email)
                         .textContentType(.emailAddress)
@@ -60,18 +63,21 @@ struct SignupView: View {
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("emailField")
 
                     SecureField("Password", text: $password)
                         .textContentType(.newPassword)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("passwordField")
 
                     SecureField("Confirm Password", text: $confirmPassword)
                         .textContentType(.newPassword)
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .accessibilityIdentifier("confirmPasswordField")
 
                     if !confirmPassword.isEmpty && !passwordsMatch {
                         Text("Passwords do not match")
@@ -85,6 +91,7 @@ struct SignupView: View {
                         .foregroundStyle(.red)
                         .font(.callout)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("errorMessage")
                 }
 
                 Button {
@@ -109,6 +116,13 @@ struct SignupView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!formValid || authViewModel.isLoading)
+                .accessibilityIdentifier("createAccountButton")
+
+                Button("Already have an account? Log In") {
+                    dismiss()
+                }
+                .font(.callout)
+                .accessibilityIdentifier("loginButton")
             }
             .padding(.horizontal, 32)
         }

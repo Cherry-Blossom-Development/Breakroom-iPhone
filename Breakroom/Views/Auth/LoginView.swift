@@ -73,6 +73,7 @@ struct LoginView: View {
                     showSignup = true
                 }
                 .font(.callout)
+                .accessibilityIdentifier("signupButton")
             }
             .padding(.horizontal, 32)
             .navigationDestination(isPresented: $showSignup) {

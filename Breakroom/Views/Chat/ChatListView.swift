@@ -80,6 +80,7 @@ struct ChatListView: View {
                                     }
                                     .padding(.vertical, 4)
                                 }
+                                .accessibilityIdentifier("roomItem")
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     // Leave action for all rooms
                                     Button {

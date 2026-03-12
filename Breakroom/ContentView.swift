@@ -116,24 +116,29 @@ struct MainTabView: View {
             }
             .tabItem { Label("Breakroom", systemImage: "square.grid.2x2") }
             .tag(0)
+            .accessibilityIdentifier("tabBreakroom")
 
             ChatListView()
                 .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
                 .tag(1)
+                .accessibilityIdentifier("tabChat")
 
             EmploymentView()
                 .tabItem { Label("Jobs", systemImage: "briefcase") }
                 .tag(2)
+                .accessibilityIdentifier("tabJobs")
 
             NavigationStack {
                 CompanyPortalView()
             }
             .tabItem { Label("Company", systemImage: "building.2") }
             .tag(3)
+            .accessibilityIdentifier("tabCompany")
 
             ToolShedView()
                 .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
                 .tag(4)
+                .accessibilityIdentifier("tabToolShed")
         }
         .confirmationDialog(
             "Delete Account",

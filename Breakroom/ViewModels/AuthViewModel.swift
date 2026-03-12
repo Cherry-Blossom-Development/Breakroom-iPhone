@@ -10,6 +10,14 @@ final class AuthViewModel {
     var errorMessage: String?
 
     init() {
+        #if DEBUG
+        // Clear auth state when testing (triggered by launch argument)
+        if UserDefaults.standard.bool(forKey: "CLEAR_AUTH_STATE") {
+            KeychainManager.clearAll()
+            UserDefaults.standard.removeObject(forKey: "CLEAR_AUTH_STATE")
+        }
+        #endif
+
         // Check for existing session on launch
         if KeychainManager.token != nil {
             Task { await checkExistingSession() }
