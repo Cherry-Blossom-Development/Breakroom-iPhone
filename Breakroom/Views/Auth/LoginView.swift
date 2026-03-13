@@ -66,6 +66,7 @@ struct LoginView: View {
                     showForgotPassword = true
                 }
                 .font(.callout)
+                .accessibilityIdentifier("forgotPasswordButton")
 
                 Spacer()
 

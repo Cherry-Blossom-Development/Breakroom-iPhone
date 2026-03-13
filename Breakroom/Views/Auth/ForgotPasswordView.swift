@@ -20,6 +20,7 @@ struct ForgotPasswordView: View {
 
                 Text("Forgot Password")
                     .font(.title2.bold())
+                    .accessibilityIdentifier("forgotPasswordTitle")
 
                 Text("Enter your email address and we'll send you a link to reset your password.")
                     .font(.subheadline)
@@ -32,18 +33,21 @@ struct ForgotPasswordView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 48))
                             .foregroundStyle(.green)
+                            .accessibilityIdentifier("forgotPasswordSuccessIcon")
 
                         Text("If that email is registered, a reset link has been sent. Please check your inbox.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
+                            .accessibilityIdentifier("forgotPasswordSuccessMessage")
 
                         Button("Back to Login") {
                             dismiss()
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                        .accessibilityIdentifier("forgotPasswordBackToLoginButton")
                     }
                 } else {
                     VStack(spacing: 16) {
@@ -55,12 +59,14 @@ struct ForgotPasswordView: View {
                             .padding()
                             .background(.fill.tertiary)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .accessibilityIdentifier("forgotPasswordEmailField")
 
                         if let error = errorMessage {
                             Text(error)
                                 .foregroundStyle(.red)
                                 .font(.callout)
                                 .multilineTextAlignment(.center)
+                                .accessibilityIdentifier("forgotPasswordErrorMessage")
                         }
 
                         Button {
@@ -77,6 +83,7 @@ struct ForgotPasswordView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .disabled(email.isEmpty || isSubmitting)
+                        .accessibilityIdentifier("forgotPasswordSubmitButton")
                     }
                 }
 
