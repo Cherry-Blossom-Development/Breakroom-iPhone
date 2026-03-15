@@ -37,23 +37,14 @@ final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
     let baseURL: String = {
-        #if DEBUG
         // For testing: check UserDefaults (set via launch arguments: -TEST_API_URL http://localhost:3001)
         if let testURL = UserDefaults.standard.string(forKey: "TEST_API_URL"), !testURL.isEmpty {
             print("[APIClient] Using TEST_API_URL from launch args: \(testURL)")
             return testURL
         }
-        // Also check environment variable
-        if let testURL = ProcessInfo.processInfo.environment["TEST_API_URL"] {
-            print("[APIClient] Using TEST_API_URL from env: \(testURL)")
-            return testURL
-        }
-        // Default to test server for DEBUG builds
-        print("[APIClient] Using default test URL: http://localhost:3001")
-        return "http://localhost:3001"
-        #else
-        return "https://www.prosaurus.com"
-        #endif
+        // Use the configured environment (set via ./switch-env.sh)
+        print("[APIClient] Using \(Config.environment) environment: \(Config.baseURL)")
+        return Config.baseURL
     }()
 
     private let session: URLSession
