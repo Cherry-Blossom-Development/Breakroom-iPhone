@@ -35,8 +35,21 @@ struct UserProfile: Codable {
         photoPath = try container.decodeIfPresent(String.self, forKey: .photoPath)
         timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
         city = try container.decodeIfPresent(String.self, forKey: .city)
-        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
-        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+        // latitude/longitude can be Double or String (MySQL returns DECIMAL as string)
+        if let lat = try? container.decodeIfPresent(Double.self, forKey: .latitude) {
+            latitude = lat
+        } else if let latStr = try? container.decodeIfPresent(String.self, forKey: .latitude) {
+            latitude = Double(latStr)
+        } else {
+            latitude = nil
+        }
+        if let lng = try? container.decodeIfPresent(Double.self, forKey: .longitude) {
+            longitude = lng
+        } else if let lngStr = try? container.decodeIfPresent(String.self, forKey: .longitude) {
+            longitude = Double(lngStr)
+        } else {
+            longitude = nil
+        }
         createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
         friendCount = try container.decodeIfPresent(Int.self, forKey: .friendCount) ?? 0
         skills = try container.decodeIfPresent([Skill].self, forKey: .skills) ?? []
