@@ -4,6 +4,7 @@ import Foundation
 @Observable
 final class AuthViewModel {
     var isAuthenticated = false
+    var hasAcceptedEula = false
     var currentUserId: Int?
     var currentUsername: String?
     var isLoading = false
@@ -86,8 +87,13 @@ final class AuthViewModel {
     func logout() async {
         await AuthService.logout()
         isAuthenticated = false
+        hasAcceptedEula = false
         currentUserId = nil
         currentUsername = nil
+    }
+
+    func markEulaAccepted() {
+        hasAcceptedEula = true
     }
 
     func deleteAccount() async throws {

@@ -61,3 +61,18 @@ struct ResetPasswordRequest: Encodable {
 struct ResetPasswordResponse: Decodable {
     let message: String
 }
+
+// MARK: - EULA
+
+struct EulaStatusResponse: Decodable {
+    let accepted: Bool
+    let notificationId: Int?
+}
+
+struct NotificationStatusRequest: Encodable {
+    let status: String
+}
+
+struct NotificationStatusResponse: Decodable {
+    let message: String
+}

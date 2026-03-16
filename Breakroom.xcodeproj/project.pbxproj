@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */; };
+		00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */; };
+		00PP1A5WE1A2B3C4D5E6F7G8 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */; };
 		04CC645E800401B901D9696F /* BlogSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */; };
 		0B79001CBFFE1D09CCE98B86 /* FeaturesAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */; };
 		0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22966EA63DE25C92D69E99DD /* ContentView.swift */; };
@@ -76,6 +78,8 @@
 
 /* Begin PBXFileReference section */
 		00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
+		00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
 		013B71C54903F120BD58452A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		028A3743D482F0346A079BAD /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
 		04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricModels.swift; sourceTree = "<group>"; };
@@ -236,8 +240,10 @@
 		6624944EE960DAF195368039 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */,
 				05769385EC924F9C434488B0 /* ForgotPasswordView.swift */,
 				741C0D64D533BB2A875C97D1 /* LoginView.swift */,
+				00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */,
 				5FB57CE1D061C3414AF0E0CD /* SignupView.swift */,
 			);
 			path = Auth;
@@ -451,6 +457,8 @@
 				DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */,
 				BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */,
 				00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */,
+				00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */,
+				00PP1A5WE1A2B3C4D5E6F7G8 /* PrivacyPolicyView.swift in Sources */,
 				2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */,
 				4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */,
 				EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */,

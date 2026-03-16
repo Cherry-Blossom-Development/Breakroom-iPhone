@@ -7,7 +7,13 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                MainTabView()
+                if authViewModel.hasAcceptedEula {
+                    MainTabView()
+                } else {
+                    EulaView {
+                        authViewModel.markEulaAccepted()
+                    }
+                }
             } else {
                 LoginView()
             }

@@ -94,6 +94,21 @@ enum AuthService {
         )
     }
 
+    // MARK: - EULA
+
+    static func getEulaStatus() async throws -> EulaStatusResponse {
+        try await APIClient.shared.request("/api/eula/status")
+    }
+
+    static func acceptEula(notificationId: Int) async throws {
+        let request = NotificationStatusRequest(status: "dismissed")
+        let _: NotificationStatusResponse = try await APIClient.shared.request(
+            "/api/notification/\(notificationId)/status",
+            method: "PUT",
+            body: request
+        )
+    }
+
     // MARK: - Password Hashing
 
     private static func generateSalt() -> String {
