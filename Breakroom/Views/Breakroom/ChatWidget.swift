@@ -347,15 +347,6 @@ struct ChatWidgetMessageRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .contextMenu {
-            if !isCurrentUser {
-                Button(role: .destructive) {
-                    onFlag()
-                } label: {
-                    Label("Report Message", systemImage: "flag")
-                }
-            }
-        }
     }
 
     private var headerRow: some View {
@@ -367,6 +358,17 @@ struct ChatWidgetMessageRow: View {
             Text(formattedTime)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            // Report button for other users' messages
+            if !isCurrentUser {
+                Button {
+                    onFlag()
+                } label: {
+                    Image(systemName: "flag")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -415,6 +417,26 @@ struct ChatWidgetMessageRow: View {
         }
 
         return timeFormatter.string(from: date)
+    }
+}
+
+/// Context menu modifier that only adds menu for non-current-user messages
+struct ReportContextMenu: ViewModifier {
+    let isCurrentUser: Bool
+    let onFlag: () -> Void
+
+    func body(content: Content) -> some View {
+        if isCurrentUser {
+            content
+        } else {
+            content.contextMenu {
+                Button(role: .destructive) {
+                    onFlag()
+                } label: {
+                    Label("Report Message", systemImage: "flag")
+                }
+            }
+        }
     }
 }
 

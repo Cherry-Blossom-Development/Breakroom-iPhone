@@ -34,15 +34,6 @@ struct BreakroomView: View {
                         }
 
                         Button {
-                            withAnimation {
-                                viewModel.isEditMode = true
-                            }
-                        } label: {
-                            Image(systemName: "arrow.up.arrow.down")
-                        }
-                        .disabled(viewModel.blocks.isEmpty)
-
-                        Button {
                             Task { await viewModel.refresh() }
                         } label: {
                             if viewModel.isRefreshing {
@@ -158,6 +149,20 @@ struct BlockCard: View {
                     onToggle()
                 }
             }
+            .contextMenu {
+                if !isEditMode {
+                    Button {
+                        onEnterEditMode()
+                    } label: {
+                        Label("Rearrange Widgets", systemImage: "arrow.up.arrow.down")
+                    }
+                }
+                Button(role: .destructive) {
+                    showDeleteConfirmation = true
+                } label: {
+                    Label("Remove Widget", systemImage: "trash")
+                }
+            }
             .accessibilityIdentifier("blockCard_\(block.displayTitle)")
 
             // Content - visible when expanded and not in edit mode
@@ -172,20 +177,6 @@ struct BlockCard: View {
                 .stroke(isEditMode ? Color.accentColor.opacity(0.5) : Color(.quaternaryLabel), lineWidth: isEditMode ? 2 : 1)
         )
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-        .contextMenu {
-            if !isEditMode {
-                Button {
-                    onEnterEditMode()
-                } label: {
-                    Label("Rearrange Widgets", systemImage: "arrow.up.arrow.down")
-                }
-            }
-            Button(role: .destructive) {
-                showDeleteConfirmation = true
-            } label: {
-                Label("Remove Widget", systemImage: "trash")
-            }
-        }
         .confirmationDialog(
             "Remove \(block.displayTitle)?",
             isPresented: $showDeleteConfirmation,
