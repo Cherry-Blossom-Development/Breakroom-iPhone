@@ -9,7 +9,6 @@ struct ChatRoomView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var suppressScrollToBottom = false
     @State private var messageToFlag: ChatMessage?
-    @State private var showFlagDialog = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,7 +43,6 @@ struct ChatRoomView: View {
                         ForEach(chatViewModel.messages) { message in
                             MessageBubble(message: message) {
                                 messageToFlag = message
-                                showFlagDialog = true
                             }
                             .id(message.id)
                         }
@@ -154,22 +152,19 @@ struct ChatRoomView: View {
         .task {
             await chatViewModel.selectRoom(room)
         }
-        .sheet(isPresented: $showFlagDialog) {
-            if let message = messageToFlag {
-                FlagDialogView(
-                    contentType: .chatMessage,
-                    contentId: message.id,
-                    onDismiss: {
-                        showFlagDialog = false
-                        messageToFlag = nil
-                    },
-                    onFlagged: {
-                        // Optionally remove the message from view
-                        chatViewModel.messages.removeAll { $0.id == message.id }
-                    }
-                )
-                .presentationDetents([.medium])
-            }
+        .sheet(item: $messageToFlag) { message in
+            FlagDialogView(
+                contentType: .chatMessage,
+                contentId: message.id,
+                onDismiss: {
+                    messageToFlag = nil
+                },
+                onFlagged: {
+                    // Optionally remove the message from view
+                    chatViewModel.messages.removeAll { $0.id == message.id }
+                }
+            )
+            .presentationDetents([.medium])
         }
     }
 
