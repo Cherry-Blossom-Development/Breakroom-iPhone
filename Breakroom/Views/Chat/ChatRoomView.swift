@@ -8,6 +8,8 @@ struct ChatRoomView: View {
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var suppressScrollToBottom = false
+    @State private var messageToFlag: ChatMessage?
+    @State private var showFlagDialog = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,8 +42,11 @@ struct ChatRoomView: View {
                         }
 
                         ForEach(chatViewModel.messages) { message in
-                            MessageBubble(message: message)
-                                .id(message.id)
+                            MessageBubble(message: message) {
+                                messageToFlag = message
+                                showFlagDialog = true
+                            }
+                            .id(message.id)
                         }
                     }
                     .padding()
@@ -149,6 +154,23 @@ struct ChatRoomView: View {
         .task {
             await chatViewModel.selectRoom(room)
         }
+        .sheet(isPresented: $showFlagDialog) {
+            if let message = messageToFlag {
+                FlagDialogView(
+                    contentType: .chatMessage,
+                    contentId: message.id,
+                    onDismiss: {
+                        showFlagDialog = false
+                        messageToFlag = nil
+                    },
+                    onFlagged: {
+                        // Optionally remove the message from view
+                        chatViewModel.messages.removeAll { $0.id == message.id }
+                    }
+                )
+                .presentationDetents([.medium])
+            }
+        }
     }
 
     private func handlePickedMedia(_ item: PhotosPickerItem) async {
@@ -164,6 +186,7 @@ struct ChatRoomView: View {
 
 struct MessageBubble: View {
     let message: ChatMessage
+    let onFlag: () -> Void
 
     private var isCurrentUser: Bool {
         guard let storedId = KeychainManager.get(.userId),
@@ -200,6 +223,15 @@ struct MessageBubble: View {
                         .background(isCurrentUser ? Color.accentColor : Color(.systemGray5))
                         .foregroundStyle(isCurrentUser ? .white : .primary)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+            }
+            .contextMenu {
+                if !isCurrentUser {
+                    Button(role: .destructive) {
+                        onFlag()
+                    } label: {
+                        Label("Report Message", systemImage: "flag")
+                    }
                 }
             }
 

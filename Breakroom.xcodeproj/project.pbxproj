@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */; };
 		00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */; };
+		00FD1A5WE1A2B3C4D5E6F7G8 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */; };
+		00MM1A5WE1A2B3C4D5E6F7G8 /* ModerationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MM1A5WE1A2B3C4D5E6F7G9 /* ModerationModels.swift */; };
+		00MS1A5WE1A2B3C4D5E6F7G8 /* ModerationAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */; };
+		00MT1A5WE1A2B3C4D5E6F7G8 /* ModerationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MT1A5WE1A2B3C4D5E6F7G9 /* ModerationStore.swift */; };
 		00PP1A5WE1A2B3C4D5E6F7G8 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */; };
 		04CC645E800401B901D9696F /* BlogSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */; };
 		0B79001CBFFE1D09CCE98B86 /* FeaturesAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */; };
@@ -79,6 +83,10 @@
 /* Begin PBXFileReference section */
 		00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
+		00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
+		00MM1A5WE1A2B3C4D5E6F7G9 /* ModerationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationModels.swift; sourceTree = "<group>"; };
+		00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationAPIService.swift; sourceTree = "<group>"; };
+		00MT1A5WE1A2B3C4D5E6F7G9 /* ModerationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationStore.swift; sourceTree = "<group>"; };
 		00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
 		013B71C54903F120BD58452A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		028A3743D482F0346A079BAD /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
@@ -200,6 +208,7 @@
 		4C46CE9F16F513C97E7B2C86 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */,
 				A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */,
 			);
 			path = Components;
@@ -219,6 +228,7 @@
 				2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */,
 				EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */,
 				23E95654769587A5CE156387 /* LyricAPIService.swift */,
+				00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */,
 				A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */,
 				127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */,
 				28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */,
@@ -233,6 +243,7 @@
 				2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */,
 				1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */,
 				BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */,
+				00MT1A5WE1A2B3C4D5E6F7G9 /* ModerationStore.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -317,6 +328,7 @@
 				5E6A7AB807A923430F64364A /* FriendsModels.swift */,
 				B33066537C65EE3DB5A792F8 /* GalleryModels.swift */,
 				04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */,
+				00MM1A5WE1A2B3C4D5E6F7G9 /* ModerationModels.swift */,
 				8D469E4060E944F33F37B557 /* PositionModels.swift */,
 				DE3DF549F06647717B82C21D /* ProfileModels.swift */,
 				13E88739A60E372810A63A28 /* StringExtensions.swift */,
@@ -488,6 +500,7 @@
 				B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */,
 				5EE4BC4A00E07A9C907EB8CB /* EmploymentView.swift in Sources */,
 				0B79001CBFFE1D09CCE98B86 /* FeaturesAPIService.swift in Sources */,
+				00FD1A5WE1A2B3C4D5E6F7G8 /* FlagDialogView.swift in Sources */,
 				74CA770CD8B0AFB4A7B79E94 /* ForgotPasswordView.swift in Sources */,
 				7878131D248338289F832E7D /* FriendsAPIService.swift in Sources */,
 				C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */,
@@ -503,6 +516,9 @@
 				623BFF942B9FC1DDF4DEEDBC /* LyricAPIService.swift in Sources */,
 				0F1E62F684481C2F899AF2C3 /* LyricLabView.swift in Sources */,
 				ABE24D913BA4284A8A0AEBC8 /* LyricModels.swift in Sources */,
+				00MS1A5WE1A2B3C4D5E6F7G8 /* ModerationAPIService.swift in Sources */,
+				00MM1A5WE1A2B3C4D5E6F7G8 /* ModerationModels.swift in Sources */,
+				00MT1A5WE1A2B3C4D5E6F7G8 /* ModerationStore.swift in Sources */,
 				4532C71033400AAA3E7FC806 /* PositionModels.swift in Sources */,
 				438A55B58CE8084B9F9383D2 /* PositionsAPIService.swift in Sources */,
 				B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */,

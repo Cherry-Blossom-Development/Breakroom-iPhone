@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(ChatSocketManager.self) private var socketManager
+    @Environment(ModerationStore.self) private var moderationStore
 
     var body: some View {
         Group {
@@ -21,8 +22,10 @@ struct ContentView: View {
         .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 socketManager.connect()
+                Task { await moderationStore.loadBlockList() }
             } else {
                 socketManager.disconnect()
+                moderationStore.clear()
             }
         }
     }
