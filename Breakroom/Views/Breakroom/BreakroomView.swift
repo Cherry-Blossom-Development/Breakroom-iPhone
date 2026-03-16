@@ -56,6 +56,9 @@ struct BreakroomView: View {
         .task {
             await viewModel.loadLayout()
         }
+        .navigationDestination(for: BlogPost.self) { post in
+            BlogPostView(post: post)
+        }
     }
 
     private var blockList: some View {

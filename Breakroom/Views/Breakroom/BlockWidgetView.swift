@@ -1032,9 +1032,6 @@ struct BlogWidget: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 120)
-        .navigationDestination(for: BlogPost.self) { post in
-            BlogPostView(post: post)
-        }
         .task {
             await fetchPosts()
         }
