@@ -10,6 +10,7 @@ struct BlogPostView: View {
     @State private var fullPost: BlogPost?
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
+    @State private var showFlagDialog = false
 
     private var displayPost: BlogPost {
         fullPost ?? post
@@ -36,9 +37,9 @@ struct BlogPostView: View {
         .navigationTitle("Post")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if isOwnPost {
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 16) {
+                    if isOwnPost {
                         NavigationLink {
                             BlogEditorView(existingPost: displayPost) { savedPost in
                                 fullPost = savedPost
@@ -53,6 +54,12 @@ struct BlogPostView: View {
                             Image(systemName: "trash")
                         }
                         .disabled(isDeleting)
+                    } else {
+                        Button {
+                            showFlagDialog = true
+                        } label: {
+                            Image(systemName: "flag")
+                        }
                     }
                 }
             }
@@ -69,6 +76,19 @@ struct BlogPostView: View {
         }
         .task {
             await loadFullPost()
+        }
+        .sheet(isPresented: $showFlagDialog) {
+            FlagDialogView(
+                contentType: .post,
+                contentId: displayPost.id,
+                onDismiss: {
+                    showFlagDialog = false
+                },
+                onFlagged: {
+                    dismiss()
+                }
+            )
+            .presentationDetents([.medium])
         }
     }
 
