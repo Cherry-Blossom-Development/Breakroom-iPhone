@@ -21,6 +21,9 @@ struct ChatWidget: View {
     @State private var isLoadingOlderMessages = false
     @State private var suppressScrollToBottom = false
 
+    // Flagging
+    @State private var messageToFlag: ChatMessage?
+
     private var roomId: Int? { block.contentId }
 
     var body: some View {
@@ -77,6 +80,19 @@ struct ChatWidget: View {
         .onDisappear {
             socketManager.leaveRoom(roomId)
         }
+        .sheet(item: $messageToFlag) { message in
+            FlagDialogView(
+                contentType: .chatMessage,
+                contentId: message.id,
+                onDismiss: {
+                    messageToFlag = nil
+                },
+                onFlagged: {
+                    messages.removeAll { $0.id == message.id }
+                }
+            )
+            .presentationDetents([.medium])
+        }
     }
 
     private var typingIndicator: some View {
@@ -130,8 +146,10 @@ struct ChatWidget: View {
                         }
 
                         ForEach(messages) { message in
-                            ChatWidgetMessageRow(message: message)
-                                .id(message.id)
+                            ChatWidgetMessageRow(message: message) {
+                                messageToFlag = message
+                            }
+                            .id(message.id)
                         }
                     }
                 }
@@ -312,6 +330,13 @@ struct ChatWidget: View {
 
 struct ChatWidgetMessageRow: View {
     let message: ChatMessage
+    let onFlag: () -> Void
+
+    private var isCurrentUser: Bool {
+        guard let storedId = KeychainManager.get(.userId),
+              let currentUserId = Int(storedId) else { return false }
+        return message.userId == currentUserId
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -322,6 +347,15 @@ struct ChatWidgetMessageRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
+        .contextMenu {
+            if !isCurrentUser {
+                Button(role: .destructive) {
+                    onFlag()
+                } label: {
+                    Label("Report Message", systemImage: "flag")
+                }
+            }
+        }
     }
 
     private var headerRow: some View {
