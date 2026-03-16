@@ -34,6 +34,15 @@ struct BreakroomView: View {
                         }
 
                         Button {
+                            withAnimation {
+                                viewModel.isEditMode = true
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                        }
+                        .disabled(viewModel.blocks.isEmpty)
+
+                        Button {
                             Task { await viewModel.refresh() }
                         } label: {
                             if viewModel.isRefreshing {
@@ -67,7 +76,7 @@ struct BreakroomView: View {
                     isEditMode: viewModel.isEditMode,
                     onToggle: { viewModel.toggleBlock(block.id) },
                     onRemove: { Task { await viewModel.removeBlock(block.id) } },
-                    onLongPress: {
+                    onEnterEditMode: {
                         withAnimation {
                             viewModel.isEditMode = true
                         }
@@ -106,19 +115,13 @@ struct BlockCard: View {
     let isEditMode: Bool
     let onToggle: () -> Void
     let onRemove: () -> Void
-    let onLongPress: () -> Void
+    let onEnterEditMode: () -> Void
     @State private var showDeleteConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
             // Header - always visible, tappable to expand/collapse
             HStack {
-                if isEditMode {
-                    Image(systemName: "line.3.horizontal")
-                        .foregroundStyle(.secondary)
-                        .frame(width: 24)
-                }
-
                 Image(systemName: block.type?.systemImage ?? "square")
                     .foregroundStyle(accentColor)
                     .frame(width: 24)
@@ -155,9 +158,6 @@ struct BlockCard: View {
                     onToggle()
                 }
             }
-            .onLongPressGesture {
-                onLongPress()
-            }
             .accessibilityIdentifier("blockCard_\(block.displayTitle)")
 
             // Content - visible when expanded and not in edit mode
@@ -172,6 +172,20 @@ struct BlockCard: View {
                 .stroke(isEditMode ? Color.accentColor.opacity(0.5) : Color(.quaternaryLabel), lineWidth: isEditMode ? 2 : 1)
         )
         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .contextMenu {
+            if !isEditMode {
+                Button {
+                    onEnterEditMode()
+                } label: {
+                    Label("Rearrange Widgets", systemImage: "arrow.up.arrow.down")
+                }
+            }
+            Button(role: .destructive) {
+                showDeleteConfirmation = true
+            } label: {
+                Label("Remove Widget", systemImage: "trash")
+            }
+        }
         .confirmationDialog(
             "Remove \(block.displayTitle)?",
             isPresented: $showDeleteConfirmation,
