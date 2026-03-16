@@ -18,6 +18,31 @@ struct UserProfile: Codable {
     var skills: [Skill]
     var jobs: [UserJob]
 
+    enum CodingKeys: String, CodingKey {
+        case id, handle, firstName, lastName, email, bio, workBio, photoPath
+        case timezone, city, latitude, longitude, createdAt, friendCount, skills, jobs
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        handle = try container.decode(String.self, forKey: .handle)
+        firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        bio = try container.decodeIfPresent(String.self, forKey: .bio)
+        workBio = try container.decodeIfPresent(String.self, forKey: .workBio)
+        photoPath = try container.decodeIfPresent(String.self, forKey: .photoPath)
+        timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
+        city = try container.decodeIfPresent(String.self, forKey: .city)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        friendCount = try container.decodeIfPresent(Int.self, forKey: .friendCount) ?? 0
+        skills = try container.decodeIfPresent([Skill].self, forKey: .skills) ?? []
+        jobs = try container.decodeIfPresent([UserJob].self, forKey: .jobs) ?? []
+    }
+
     var displayName: String {
         let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
         return parts.isEmpty ? handle : parts.joined(separator: " ")
