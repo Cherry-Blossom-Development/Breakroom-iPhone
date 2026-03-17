@@ -37,7 +37,7 @@ struct ChatRoom: Codable, Identifiable {
     }
 }
 
-struct ChatMessage: Codable, Identifiable {
+struct ChatMessage: Codable, Identifiable, Hashable {
     let id: Int
     let roomId: Int?
     let userId: Int?
@@ -56,6 +56,17 @@ struct ChatMessage: Codable, Identifiable {
         case imagePath = "image_path"
         case videoPath = "video_path"
         case createdAt = "created_at"
+    }
+
+    init(id: Int, roomId: Int?, userId: Int?, handle: String?, message: String?, imagePath: String?, videoPath: String?, createdAt: String?) {
+        self.id = id
+        self.roomId = roomId
+        self.userId = userId
+        self.handle = handle
+        self.message = message
+        self.imagePath = imagePath
+        self.videoPath = videoPath
+        self.createdAt = createdAt
     }
 }
 
@@ -77,6 +88,10 @@ struct ChatMessageResponse: Decodable {
 // MARK: - Request Types
 
 struct SendMessageRequest: Encodable {
+    let message: String
+}
+
+struct EditMessageRequest: Encodable {
     let message: String
 }
 

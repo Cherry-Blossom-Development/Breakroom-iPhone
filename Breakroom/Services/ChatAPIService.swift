@@ -34,6 +34,23 @@ enum ChatAPIService {
         return response.message
     }
 
+    static func editMessage(roomId: Int, messageId: Int, message: String) async throws -> ChatMessage {
+        let body = EditMessageRequest(message: message)
+        let response: ChatMessageResponse = try await APIClient.shared.request(
+            "/api/chat/rooms/\(roomId)/messages/\(messageId)",
+            method: "PUT",
+            body: body
+        )
+        return response.message
+    }
+
+    static func deleteMessage(roomId: Int, messageId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/chat/rooms/\(roomId)/messages/\(messageId)",
+            method: "DELETE"
+        )
+    }
+
     static func createRoom(name: String, description: String?) async throws -> ChatRoom {
         let body = CreateRoomRequest(name: name, description: description)
         let response: ChatRoomResponse = try await APIClient.shared.request(

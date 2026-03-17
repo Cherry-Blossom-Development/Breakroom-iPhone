@@ -12,6 +12,8 @@ final class ChatSocketManager {
 
     private(set) var connectionState: ConnectionState = .disconnected
     var onNewMessage: (@MainActor (ChatMessage) -> Void)?
+    var onMessageEdited: (@MainActor (Int, ChatMessage) -> Void)?
+    var onMessageDeleted: (@MainActor (Int, Int) -> Void)?
     var onUserTyping: (@MainActor (Int, String, Bool) -> Void)?
 
     private var manager: SocketIO.SocketManager?
@@ -122,6 +124,42 @@ final class ChatSocketManager {
 
             Task { @MainActor in
                 self?.onNewMessage?(message)
+            }
+        }
+
+        socket?.on("message_edited") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let roomId = dict["roomId"] as? Int,
+                  let messageDict = dict["message"] as? [String: Any],
+                  let id = messageDict["id"] as? Int else {
+                return
+            }
+
+            let message = ChatMessage(
+                id: id,
+                roomId: roomId,
+                userId: messageDict["user_id"] as? Int,
+                handle: messageDict["handle"] as? String,
+                message: messageDict["message"] as? String,
+                imagePath: messageDict["image_path"] as? String,
+                videoPath: messageDict["video_path"] as? String,
+                createdAt: messageDict["created_at"] as? String
+            )
+
+            Task { @MainActor in
+                self?.onMessageEdited?(roomId, message)
+            }
+        }
+
+        socket?.on("message_deleted") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let roomId = dict["roomId"] as? Int,
+                  let messageId = dict["messageId"] as? Int else {
+                return
+            }
+
+            Task { @MainActor in
+                self?.onMessageDeleted?(roomId, messageId)
             }
         }
 

@@ -9,6 +9,10 @@ struct ChatRoomView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var suppressScrollToBottom = false
     @State private var messageToFlag: ChatMessage?
+    @State private var messageToEdit: ChatMessage?
+    @State private var editedMessageText = ""
+    @State private var showDeleteConfirmation = false
+    @State private var messageToDelete: ChatMessage?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,9 +45,18 @@ struct ChatRoomView: View {
                         }
 
                         ForEach(chatViewModel.messages) { message in
-                            MessageBubble(message: message) {
-                                messageToFlag = message
-                            }
+                            MessageBubble(
+                                message: message,
+                                onFlag: { messageToFlag = message },
+                                onEdit: {
+                                    editedMessageText = message.message ?? ""
+                                    messageToEdit = message
+                                },
+                                onDelete: {
+                                    messageToDelete = message
+                                    showDeleteConfirmation = true
+                                }
+                            )
                             .id(message.id)
                         }
                     }
@@ -166,6 +179,40 @@ struct ChatRoomView: View {
             )
             .presentationDetents([.medium])
         }
+        .alert("Edit Message", isPresented: Binding(
+            get: { messageToEdit != nil },
+            set: { if !$0 { messageToEdit = nil } }
+        )) {
+            TextField("Message", text: $editedMessageText)
+            Button("Cancel", role: .cancel) {
+                messageToEdit = nil
+                editedMessageText = ""
+            }
+            Button("Save") {
+                if let message = messageToEdit {
+                    Task {
+                        await chatViewModel.editMessage(message.id, newText: editedMessageText)
+                        messageToEdit = nil
+                        editedMessageText = ""
+                    }
+                }
+            }
+        }
+        .alert("Delete Message", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                messageToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let message = messageToDelete {
+                    Task {
+                        await chatViewModel.deleteMessage(message.id)
+                        messageToDelete = nil
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this message? This cannot be undone.")
+        }
     }
 
     private func handlePickedMedia(_ item: PhotosPickerItem) async {
@@ -182,11 +229,19 @@ struct ChatRoomView: View {
 struct MessageBubble: View {
     let message: ChatMessage
     let onFlag: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     private var isCurrentUser: Bool {
         guard let storedId = KeychainManager.get(.userId),
               let currentUserId = Int(storedId) else { return false }
         return message.userId == currentUserId
+    }
+
+    private var isTextOnlyMessage: Bool {
+        let hasImage = message.imagePath != nil && !message.imagePath!.isEmpty
+        let hasVideo = message.videoPath != nil && !message.videoPath!.isEmpty
+        return !hasImage && !hasVideo
     }
 
     var body: some View {
@@ -221,7 +276,20 @@ struct MessageBubble: View {
                 }
             }
             .contextMenu {
-                if !isCurrentUser {
+                if isCurrentUser {
+                    if isTextOnlyMessage {
+                        Button {
+                            onEdit()
+                        } label: {
+                            Label("Edit Message", systemImage: "pencil")
+                        }
+                    }
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Label("Delete Message", systemImage: "trash")
+                    }
+                } else {
                     Button(role: .destructive) {
                         onFlag()
                     } label: {

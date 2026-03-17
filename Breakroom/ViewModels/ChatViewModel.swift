@@ -311,6 +311,36 @@ final class ChatViewModel {
         isUploadingMedia = false
     }
 
+    // MARK: - Edit & Delete Messages
+
+    func editMessage(_ messageId: Int, newText: String) async {
+        guard let room = selectedRoom else { return }
+
+        do {
+            let updated = try await ChatAPIService.editMessage(roomId: room.id, messageId: messageId, message: newText)
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
+                messages[index] = updated
+            }
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteMessage(_ messageId: Int) async {
+        guard let room = selectedRoom else { return }
+
+        do {
+            try await ChatAPIService.deleteMessage(roomId: room.id, messageId: messageId)
+            messages.removeAll { $0.id == messageId }
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Typing
 
     func handleTypingChanged() {
@@ -342,6 +372,16 @@ final class ChatViewModel {
                     self.messages.append(message)
                 }
             }
+        }
+        socketManager?.onMessageEdited = { [weak self] roomId, message in
+            guard let self, roomId == self.selectedRoom?.id else { return }
+            if let index = self.messages.firstIndex(where: { $0.id == message.id }) {
+                self.messages[index] = message
+            }
+        }
+        socketManager?.onMessageDeleted = { [weak self] roomId, messageId in
+            guard let self, roomId == self.selectedRoom?.id else { return }
+            self.messages.removeAll { $0.id == messageId }
         }
         socketManager?.onUserTyping = { [weak self] roomId, user, isTyping in
             guard let self, roomId == self.selectedRoom?.id else { return }
