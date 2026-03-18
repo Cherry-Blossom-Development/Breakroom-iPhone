@@ -5,6 +5,9 @@ struct PublicProfileView: View {
     @State private var profile: UserProfile?
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var showBlockConfirmation = false
+    @State private var isBlocking = false
+    @State private var didBlock = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -42,6 +45,9 @@ struct PublicProfileView: View {
                         if !profile.jobs.isEmpty {
                             jobsSection(profile.jobs)
                         }
+
+                        // Block user button
+                        blockUserButton(profile)
                     }
                     .padding()
                 }
@@ -52,6 +58,52 @@ struct PublicProfileView: View {
         .task {
             await loadProfile()
         }
+        .confirmationDialog(
+            "Block @\(handle)?",
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Block", role: .destructive) {
+                Task { await blockUser() }
+            }
+        } message: {
+            Text("They won't be able to see your content or contact you. You can unblock them from your Friends page.")
+        }
+    }
+
+    private func blockUserButton(_ profile: UserProfile) -> some View {
+        Button(role: .destructive) {
+            showBlockConfirmation = true
+        } label: {
+            HStack {
+                if isBlocking {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(.white)
+                } else {
+                    Image(systemName: didBlock ? "hand.raised.slash.fill" : "hand.raised.slash")
+                }
+                Text(didBlock ? "Blocked" : "Block User")
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(didBlock ? Color.gray : Color.red)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .disabled(isBlocking || didBlock)
+    }
+
+    private func blockUser() async {
+        guard let profile else { return }
+        isBlocking = true
+        do {
+            try await FriendsAPIService.blockUser(userId: profile.id)
+            didBlock = true
+        } catch {
+            errorMessage = "Failed to block user"
+        }
+        isBlocking = false
     }
 
     private func profileHeader(_ profile: UserProfile) -> some View {

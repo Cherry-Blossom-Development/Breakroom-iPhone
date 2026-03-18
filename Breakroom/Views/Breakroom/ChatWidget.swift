@@ -27,6 +27,8 @@ struct ChatWidget: View {
     @State private var editedMessageText = ""
     @State private var messageToDelete: ChatMessage?
     @State private var showDeleteConfirmation = false
+    @State private var showBlockConfirmation = false
+    @State private var userToBlock: (id: Int, handle: String)?
 
     private var roomId: Int? { block.contentId }
 
@@ -141,6 +143,24 @@ struct ChatWidget: View {
         } message: {
             Text("Are you sure you want to delete this message? This cannot be undone.")
         }
+        .confirmationDialog(
+            "Block @\(userToBlock?.handle ?? "")?",
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Block", role: .destructive) {
+                if let user = userToBlock {
+                    Task {
+                        try? await FriendsAPIService.blockUser(userId: user.id)
+                        // Remove all messages from this user
+                        messages.removeAll { $0.userId == user.id }
+                        userToBlock = nil
+                    }
+                }
+            }
+        } message: {
+            Text("They won't be able to see your content or contact you. You can unblock them from your Friends page.")
+        }
     }
 
     private var typingIndicator: some View {
@@ -204,6 +224,12 @@ struct ChatWidget: View {
                                 onDelete: {
                                     messageToDelete = message
                                     showDeleteConfirmation = true
+                                },
+                                onBlock: {
+                                    if let userId = message.userId, let handle = message.handle {
+                                        userToBlock = (id: userId, handle: handle)
+                                        showBlockConfirmation = true
+                                    }
                                 }
                             )
                             .id(message.id)
@@ -410,6 +436,7 @@ struct ChatWidgetMessageRow: View {
     let onFlag: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    let onBlock: () -> Void
 
     private var isCurrentUser: Bool {
         guard let storedId = KeychainManager.get(.userId),
@@ -472,6 +499,11 @@ struct ChatWidgetMessageRow: View {
                         onFlag()
                     } label: {
                         Label("Report Message", systemImage: "flag")
+                    }
+                    Button(role: .destructive) {
+                        onBlock()
+                    } label: {
+                        Label("Block User", systemImage: "hand.raised.slash")
                     }
                 }
             } label: {
