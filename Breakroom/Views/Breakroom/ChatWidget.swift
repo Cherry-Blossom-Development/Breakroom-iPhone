@@ -21,8 +21,12 @@ struct ChatWidget: View {
     @State private var isLoadingOlderMessages = false
     @State private var suppressScrollToBottom = false
 
-    // Flagging
+    // Message actions
     @State private var messageToFlag: ChatMessage?
+    @State private var messageToEdit: ChatMessage?
+    @State private var editedMessageText = ""
+    @State private var messageToDelete: ChatMessage?
+    @State private var showDeleteConfirmation = false
 
     private var roomId: Int? { block.contentId }
 
@@ -66,6 +70,16 @@ struct ChatWidget: View {
                     }
                 }
             }
+            socketManager.onMessageEdited = { eventRoomId, message in
+                guard eventRoomId == roomId else { return }
+                if let index = messages.firstIndex(where: { $0.id == message.id }) {
+                    messages[index] = message
+                }
+            }
+            socketManager.onMessageDeleted = { eventRoomId, messageId in
+                guard eventRoomId == roomId else { return }
+                messages.removeAll { $0.id == messageId }
+            }
             socketManager.onUserTyping = { eventRoomId, user, isTyping in
                 guard eventRoomId == roomId else { return }
                 if isTyping {
@@ -92,6 +106,40 @@ struct ChatWidget: View {
                 }
             )
             .presentationDetents([.medium])
+        }
+        .alert("Edit Message", isPresented: Binding(
+            get: { messageToEdit != nil },
+            set: { if !$0 { messageToEdit = nil } }
+        )) {
+            TextField("Message", text: $editedMessageText)
+            Button("Cancel", role: .cancel) {
+                messageToEdit = nil
+                editedMessageText = ""
+            }
+            Button("Save") {
+                if let message = messageToEdit {
+                    Task {
+                        await editMessage(roomId: roomId, messageId: message.id, newText: editedMessageText)
+                        messageToEdit = nil
+                        editedMessageText = ""
+                    }
+                }
+            }
+        }
+        .alert("Delete Message", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                messageToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let message = messageToDelete {
+                    Task {
+                        await deleteMessage(roomId: roomId, messageId: message.id)
+                        messageToDelete = nil
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this message? This cannot be undone.")
         }
     }
 
@@ -146,9 +194,18 @@ struct ChatWidget: View {
                         }
 
                         ForEach(messages) { message in
-                            ChatWidgetMessageRow(message: message) {
-                                messageToFlag = message
-                            }
+                            ChatWidgetMessageRow(
+                                message: message,
+                                onFlag: { messageToFlag = message },
+                                onEdit: {
+                                    editedMessageText = message.message ?? ""
+                                    messageToEdit = message
+                                },
+                                onDelete: {
+                                    messageToDelete = message
+                                    showDeleteConfirmation = true
+                                }
+                            )
                             .id(message.id)
                         }
                     }
@@ -324,6 +381,26 @@ struct ChatWidget: View {
 
         isSending = false
     }
+
+    private func editMessage(roomId: Int, messageId: Int, newText: String) async {
+        do {
+            let updated = try await ChatAPIService.editMessage(roomId: roomId, messageId: messageId, message: newText)
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
+                messages[index] = updated
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func deleteMessage(roomId: Int, messageId: Int) async {
+        do {
+            try await ChatAPIService.deleteMessage(roomId: roomId, messageId: messageId)
+            messages.removeAll { $0.id == messageId }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 }
 
 // MARK: - Message Row
@@ -331,11 +408,19 @@ struct ChatWidget: View {
 struct ChatWidgetMessageRow: View {
     let message: ChatMessage
     let onFlag: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     private var isCurrentUser: Bool {
         guard let storedId = KeychainManager.get(.userId),
               let currentUserId = Int(storedId) else { return false }
         return message.userId == currentUserId
+    }
+
+    private var isTextOnlyMessage: Bool {
+        let hasImage = message.imagePath != nil && !message.imagePath!.isEmpty
+        let hasVideo = message.videoPath != nil && !message.videoPath!.isEmpty
+        return !hasImage && !hasVideo
     }
 
     var body: some View {
@@ -358,16 +443,33 @@ struct ChatWidgetMessageRow: View {
             Text(formattedTime)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            // Report button for other users' messages
-            if !isCurrentUser {
-                Button {
-                    onFlag()
-                } label: {
-                    Image(systemName: "flag")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            // Meatballs menu for all messages
+            Menu {
+                if isCurrentUser {
+                    if isTextOnlyMessage {
+                        Button {
+                            onEdit()
+                        } label: {
+                            Label("Edit Message", systemImage: "pencil")
+                        }
+                    }
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Label("Delete Message", systemImage: "trash")
+                    }
+                } else {
+                    Button(role: .destructive) {
+                        onFlag()
+                    } label: {
+                        Label("Report Message", systemImage: "flag")
+                    }
                 }
-                .buttonStyle(.plain)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
             }
         }
     }
@@ -407,36 +509,10 @@ struct ChatWidgetMessageRow: View {
     }
 
     private func formatDate(_ date: Date) -> String {
-        let calendar = Calendar.current
         let timeFormatter = DateFormatter()
-
-        if calendar.isDateInToday(date) {
-            timeFormatter.dateFormat = "h:mm a"
-        } else {
-            timeFormatter.dateFormat = "M/d h:mm a"
-        }
-
+        // Always show month/day and time
+        timeFormatter.dateFormat = "MMM d, h:mm a"
         return timeFormatter.string(from: date)
-    }
-}
-
-/// Context menu modifier that only adds menu for non-current-user messages
-struct ReportContextMenu: ViewModifier {
-    let isCurrentUser: Bool
-    let onFlag: () -> Void
-
-    func body(content: Content) -> some View {
-        if isCurrentUser {
-            content
-        } else {
-            content.contextMenu {
-                Button(role: .destructive) {
-                    onFlag()
-                } label: {
-                    Label("Report Message", systemImage: "flag")
-                }
-            }
-        }
     }
 }
 

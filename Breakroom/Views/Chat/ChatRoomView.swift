@@ -244,15 +244,73 @@ struct MessageBubble: View {
         return !hasImage && !hasVideo
     }
 
+    private var formattedTime: String {
+        guard let dateString = message.createdAt else { return "" }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        guard let date = formatter.date(from: dateString) else {
+            // Try without fractional seconds
+            formatter.formatOptions = [.withInternetDateTime]
+            guard let date = formatter.date(from: dateString) else { return "" }
+            return formatDate(date)
+        }
+        return formatDate(date)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let timeFormatter = DateFormatter()
+        // Always show month/day and time
+        timeFormatter.dateFormat = "MMM d, h:mm a"
+        return timeFormatter.string(from: date)
+    }
+
     var body: some View {
-        HStack {
+        HStack(alignment: .top, spacing: 8) {
             if isCurrentUser { Spacer(minLength: 60) }
 
-            VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 2) {
-                if !isCurrentUser, let handle = message.handle {
-                    Text(handle)
-                        .font(.caption)
+            VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 4) {
+                // Header row with handle, timestamp, and menu
+                HStack(spacing: 6) {
+                    if !isCurrentUser, let handle = message.handle {
+                        Text(handle)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+
+                    Text(formattedTime)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
+
+                    // Meatballs menu
+                    Menu {
+                        if isCurrentUser {
+                            if isTextOnlyMessage {
+                                Button {
+                                    onEdit()
+                                } label: {
+                                    Label("Edit Message", systemImage: "pencil")
+                                }
+                            }
+                            Button(role: .destructive) {
+                                onDelete()
+                            } label: {
+                                Label("Delete Message", systemImage: "trash")
+                            }
+                        } else {
+                            Button(role: .destructive) {
+                                onFlag()
+                            } label: {
+                                Label("Report Message", systemImage: "flag")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24, height: 24)
+                    }
                 }
 
                 // Image attachment
@@ -273,28 +331,6 @@ struct MessageBubble: View {
                         .background(isCurrentUser ? Color.accentColor : Color(.systemGray5))
                         .foregroundStyle(isCurrentUser ? .white : .primary)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-            }
-            .contextMenu {
-                if isCurrentUser {
-                    if isTextOnlyMessage {
-                        Button {
-                            onEdit()
-                        } label: {
-                            Label("Edit Message", systemImage: "pencil")
-                        }
-                    }
-                    Button(role: .destructive) {
-                        onDelete()
-                    } label: {
-                        Label("Delete Message", systemImage: "trash")
-                    }
-                } else {
-                    Button(role: .destructive) {
-                        onFlag()
-                    } label: {
-                        Label("Report Message", systemImage: "flag")
-                    }
                 }
             }
 

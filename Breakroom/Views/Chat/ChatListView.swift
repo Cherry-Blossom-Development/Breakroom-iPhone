@@ -57,67 +57,70 @@ struct ChatListView: View {
                         // Rooms section
                         Section("Rooms") {
                             ForEach(chatViewModel.rooms) { room in
-                                NavigationLink(value: room) {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            HStack(spacing: 4) {
-                                                Text("# \(room.name)")
-                                                    .font(.headline)
-                                                if chatViewModel.isRoomOwner(room) {
-                                                    Image(systemName: "crown.fill")
-                                                        .font(.caption)
-                                                        .foregroundStyle(.orange)
+                                HStack(spacing: 12) {
+                                    // Kebab menu on the left
+                                    Menu {
+                                        if chatViewModel.isRoomOwner(room) {
+                                            Button {
+                                                chatViewModel.roomToEdit = room
+                                                chatViewModel.showInviteUsers = true
+                                            } label: {
+                                                Label("Invite", systemImage: "person.badge.plus")
+                                            }
+
+                                            Button {
+                                                chatViewModel.roomToEdit = room
+                                                chatViewModel.showEditRoom = true
+                                            } label: {
+                                                Label("Edit", systemImage: "pencil")
+                                            }
+
+                                            Button(role: .destructive) {
+                                                chatViewModel.roomToDelete = room
+                                                chatViewModel.showDeleteConfirmation = true
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
+
+                                        Button(role: .destructive) {
+                                            chatViewModel.roomToLeave = room
+                                            chatViewModel.showLeaveConfirmation = true
+                                        } label: {
+                                            Label("Leave", systemImage: "arrow.left.circle")
+                                        }
+                                    } label: {
+                                        Image(systemName: "ellipsis")
+                                            .rotationEffect(.degrees(90))
+                                            .font(.body)
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 24, height: 24)
+                                    }
+
+                                    NavigationLink(value: room) {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                HStack(spacing: 4) {
+                                                    Text("# \(room.name)")
+                                                        .font(.headline)
+                                                    if chatViewModel.isRoomOwner(room) {
+                                                        Image(systemName: "crown.fill")
+                                                            .font(.caption)
+                                                            .foregroundStyle(.orange)
+                                                    }
+                                                }
+                                                if let description = room.description, !description.isEmpty {
+                                                    Text(description)
+                                                        .font(.subheadline)
+                                                        .foregroundStyle(.secondary)
+                                                        .lineLimit(1)
                                                 }
                                             }
-                                            if let description = room.description, !description.isEmpty {
-                                                Text(description)
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(1)
-                                            }
+                                            Spacer()
                                         }
-                                        Spacer()
+                                        .padding(.vertical, 4)
                                     }
-                                    .padding(.vertical, 4)
-                                }
-                                .accessibilityIdentifier("roomItem")
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    // Leave action for all rooms
-                                    Button {
-                                        chatViewModel.roomToLeave = room
-                                        chatViewModel.showLeaveConfirmation = true
-                                    } label: {
-                                        Label("Leave", systemImage: "arrow.left.circle")
-                                    }
-                                    .tint(.yellow)
-
-                                    if chatViewModel.isRoomOwner(room) {
-                                        Button(role: .destructive) {
-                                            chatViewModel.roomToDelete = room
-                                            chatViewModel.showDeleteConfirmation = true
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-
-                                        Button {
-                                            chatViewModel.roomToEdit = room
-                                            chatViewModel.showEditRoom = true
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                        }
-                                        .tint(.orange)
-                                    }
-                                }
-                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                                    if chatViewModel.isRoomOwner(room) {
-                                        Button {
-                                            chatViewModel.roomToEdit = room
-                                            chatViewModel.showInviteUsers = true
-                                        } label: {
-                                            Label("Invite", systemImage: "person.badge.plus")
-                                        }
-                                        .tint(.blue)
-                                    }
+                                    .accessibilityIdentifier("roomItem")
                                 }
                             }
                         }
