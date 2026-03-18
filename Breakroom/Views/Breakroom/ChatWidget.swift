@@ -436,9 +436,18 @@ struct ChatWidgetMessageRow: View {
 
     private var headerRow: some View {
         HStack {
-            Text(message.handle ?? "Unknown")
-                .font(.caption2)
-                .fontWeight(.semibold)
+            if let handle = message.handle {
+                NavigationLink(value: handle) {
+                    Text(handle)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.accentColor)
+                }
+            } else {
+                Text("Unknown")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+            }
             Spacer()
             Text(formattedTime)
                 .font(.caption2)

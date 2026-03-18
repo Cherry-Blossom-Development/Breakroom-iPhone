@@ -8,6 +8,13 @@ enum ProfileAPIService {
         return response.user
     }
 
+    static func getPublicProfile(handle: String) async throws -> UserProfile {
+        let response: ProfileResponse = try await APIClient.shared.request(
+            "/api/profile/user/\(handle)"
+        )
+        return response.user
+    }
+
     static func updateProfile(firstName: String, lastName: String, bio: String, workBio: String) async throws {
         let body = UpdateProfileRequest(firstName: firstName, lastName: lastName, bio: bio, workBio: workBio)
         try await APIClient.shared.requestVoid(

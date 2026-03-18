@@ -213,6 +213,9 @@ struct ChatRoomView: View {
         } message: {
             Text("Are you sure you want to delete this message? This cannot be undone.")
         }
+        .navigationDestination(for: String.self) { handle in
+            PublicProfileView(handle: handle)
+        }
     }
 
     private func handlePickedMedia(_ item: PhotosPickerItem) async {
@@ -274,9 +277,12 @@ struct MessageBubble: View {
                 // Header row with handle, timestamp, and menu
                 HStack(spacing: 6) {
                     if !isCurrentUser, let handle = message.handle {
-                        Text(handle)
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                        NavigationLink(value: handle) {
+                            Text(handle)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
 
                     Text(formattedTime)

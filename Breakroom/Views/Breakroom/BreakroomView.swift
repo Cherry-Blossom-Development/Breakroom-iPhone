@@ -59,6 +59,9 @@ struct BreakroomView: View {
         .navigationDestination(for: BlogPost.self) { post in
             BlogPostView(post: post)
         }
+        .navigationDestination(for: String.self) { handle in
+            PublicProfileView(handle: handle)
+        }
     }
 
     private var blockList: some View {
