@@ -53,6 +53,7 @@
 		7CE96892285A2CD9C863A5CB /* KanbanRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */; };
 		7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45139 /* ProfileView.swift */; };
 		7F6E36601F22FCAFFF8D3976 /* PublicProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45140 /* PublicProfileView.swift */; };
+		7F6E36601F22FCAFFF8D3977 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45141 /* LegalView.swift */; };
 		8104417291596650AADA807B /* GalleryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33066537C65EE3DB5A792F8 /* GalleryModels.swift */; };
 		8ED1BE434925E642E556EB9C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028A3743D482F0346A079BAD /* SongDetailView.swift */; };
 		9CB6DD631C40F07AC1A7B9EA /* BreakroomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */; };
@@ -117,6 +118,7 @@
 		34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyModels.swift; sourceTree = "<group>"; };
 		37CEED3E11E64EEDC2E45139 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		37CEED3E11E64EEDC2E45140 /* PublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileView.swift; sourceTree = "<group>"; };
+		37CEED3E11E64EEDC2E45141 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		3AA0A819B1816531F0433D4C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoomView.swift; sourceTree = "<group>"; };
 		3F2C80D347C141FABF0FEC7F /* EmploymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmploymentView.swift; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 			children = (
 				37CEED3E11E64EEDC2E45139 /* ProfileView.swift */,
 				37CEED3E11E64EEDC2E45140 /* PublicProfileView.swift */,
+				37CEED3E11E64EEDC2E45141 /* LegalView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -527,6 +530,7 @@
 				C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */,
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				7F6E36601F22FCAFFF8D3976 /* PublicProfileView.swift in Sources */,
+				7F6E36601F22FCAFFF8D3977 /* LegalView.swift in Sources */,
 				E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */,
 				CD18A639CBC86C5C3EA86874 /* SessionsView.swift in Sources */,
 				36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */,

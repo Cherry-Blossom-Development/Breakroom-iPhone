@@ -67,6 +67,7 @@ struct ResetPasswordResponse: Decodable {
 struct EulaStatusResponse: Decodable {
     let accepted: Bool
     let notificationId: Int?
+    let acceptedAt: String?
 }
 
 struct NotificationStatusRequest: Encodable {

@@ -44,7 +44,7 @@ struct EulaView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
-                        Text("Effective Date: March 14, 2026")
+                        Text("Effective Date: March 18, 2026")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -132,36 +132,52 @@ struct EulaView: View {
 
                     EulaSectionView(
                         number: "7",
+                        title: "Automated Content Moderation",
+                        body: """
+                        To help maintain a safe environment, the Service uses automated tools to review user-submitted content for violations of this Agreement. These tools include:
+
+                        • Keyword filtering — content is scanned against a list of prohibited terms maintained by Cherry Blossom Development LLC.
+
+                        • OpenAI Moderation API — content is submitted to OpenAI's moderation service, which analyzes text for hate speech, harassment, sexual content, violence, and related categories. This processing is performed by OpenAI, L.L.C., a third-party service provider, and is subject to OpenAI's Privacy Policy.
+
+                        Content flagged by either system may be automatically hidden and queued for human review. Automated moderation is not perfect — false positives can occur. If you believe your content was incorrectly removed, you may contact us at abuse@cherryblossomdevelopment.com to request a review.
+
+                        By using the Service, you consent to your user-submitted content being processed by these automated systems as described above.
+                        """
+                    )
+
+                    EulaSectionView(
+                        number: "8",
                         title: "Enforcement and Account Termination",
                         body: "Cherry Blossom Development LLC reserves the right to suspend or permanently terminate any account, at any time and without prior notice, for any violation of this Agreement or for any conduct we determine to be harmful.\n\nUpon termination: your license to use the Service is immediately revoked, access to your account and all associated content will be disabled, active subscription fees are non-refundable in cases of policy violation, and we may retain records of your account and activity as required by law or for abuse prevention."
                     )
 
                     EulaSectionView(
-                        number: "8",
+                        number: "9",
                         title: "Disclaimer of Warranties",
                         body: "The Service is provided \"as is\" and \"as available,\" without warranties of any kind, express or implied. We do not warrant that the Service will be uninterrupted, error-free, or free of harmful components."
                     )
 
                     EulaSectionView(
-                        number: "9",
+                        number: "10",
                         title: "Limitation of Liability",
                         body: "To the maximum extent permitted by applicable law, Cherry Blossom Development LLC and its officers, directors, employees, and agents shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the Service."
                     )
 
                     EulaSectionView(
-                        number: "10",
+                        number: "11",
                         title: "Governing Law",
                         body: "This Agreement is governed by the laws of the State of Washington, United States. Any disputes shall be resolved exclusively in the state or federal courts located in Spokane County, Washington."
                     )
 
                     EulaSectionView(
-                        number: "11",
+                        number: "12",
                         title: "Changes to This Agreement",
                         body: "We may update this EULA at any time. Your continued use of the Service after any changes constitutes your acceptance of the updated Agreement."
                     )
 
                     EulaSectionView(
-                        number: "12",
+                        number: "13",
                         title: "Contact Us",
                         body: "If you have questions or concerns about this Agreement, please contact us:\n\nCherry Blossom Development LLC\nSpokane, Washington, United States\nlegal@cherryblossomdevelopment.com"
                     )

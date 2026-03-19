@@ -37,6 +37,7 @@ struct MainTabView: View {
     @State private var showBlogManagement = false
     @State private var showProfile = false
     @State private var showFriends = false
+    @State private var showLegal = false
 
     // Account deletion
     @State private var showDeleteAccountConfirmation = false
@@ -62,6 +63,9 @@ struct MainTabView: View {
                     .navigationDestination(isPresented: $showFriends) {
                         FriendsView()
                     }
+                    .navigationDestination(isPresented: $showLegal) {
+                        LegalView()
+                    }
                     .navigationDestination(item: $selectedShortcut) { shortcut in
                         shortcutDestination(shortcut)
                     }
@@ -80,6 +84,9 @@ struct MainTabView: View {
                                 }
                                 Button("Blog", systemImage: "doc.richtext") {
                                     showBlogManagement = true
+                                }
+                                Button("Legal", systemImage: "doc.text") {
+                                    showLegal = true
                                 }
 
                                 if !shortcuts.isEmpty {
