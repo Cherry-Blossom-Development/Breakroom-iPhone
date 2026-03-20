@@ -20,7 +20,7 @@ struct LoginView: View {
 
                 VStack(spacing: 16) {
                     TextField("Handle", text: $handle)
-                        .textContentType(.username)
+                        .textContentType(.oneTimeCode)  // Prevents password autofill dialog
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .padding()
@@ -29,7 +29,7 @@ struct LoginView: View {
                         .accessibilityIdentifier("usernameField")
 
                     SecureField("Password", text: $password)
-                        .textContentType(.password)
+                        .textContentType(.oneTimeCode)  // Prevents password autofill dialog
                         .padding()
                         .background(.fill.tertiary)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -75,6 +75,13 @@ struct LoginView: View {
                 }
                 .font(.callout)
                 .accessibilityIdentifier("signupButton")
+
+                #if DEBUG
+                Text("API: \(APIClient.shared.baseURL)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("debugAPIURL")
+                #endif
             }
             .padding(.horizontal, 32)
             .navigationDestination(isPresented: $showSignup) {

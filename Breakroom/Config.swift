@@ -4,8 +4,8 @@ import Foundation
 /// Do not edit manually; use: ./switch-env.sh <environment>
 enum Config {
     /// Current environment name
-    static let environment = "production"
+    static let environment = "test"
 
     /// API base URL for the current environment
-    static let baseURL = "https://www.prosaurus.com"
+    static let baseURL = "http://localhost:3001"
 }

@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let authLogger = Logger(subsystem: "com.cherryblossomdev.Breakroom", category: "AuthViewModel")
 
 @MainActor
 @Observable

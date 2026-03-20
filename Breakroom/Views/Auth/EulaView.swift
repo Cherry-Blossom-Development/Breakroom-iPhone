@@ -1,4 +1,7 @@
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.cherryblossomdev.Breakroom", category: "EulaView")
 
 struct EulaView: View {
     let onAccepted: () -> Void
@@ -209,6 +212,7 @@ struct EulaView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(isAccepting || notificationId == nil)
+                .accessibilityIdentifier("acceptEulaButton")
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -217,20 +221,29 @@ struct EulaView: View {
     }
 
     private func checkStatus() async {
+        logger.info("checkStatus() called")
+        logger.info("APIClient baseURL: \(APIClient.shared.baseURL)")
         isLoading = true
         do {
+            logger.info("Calling getEulaStatus()...")
             let status = try await AuthService.getEulaStatus()
+            logger.info("Got status: accepted=\(status.accepted), notificationId=\(status.notificationId ?? -1)")
             isAccepted = status.accepted
             notificationId = status.notificationId
 
             if isAccepted {
+                logger.info("EULA already accepted, calling onAccepted()")
                 onAccepted()
+            } else {
+                logger.info("EULA not accepted, showing form")
             }
         } catch {
+            logger.error("Error fetching status: \(error)")
             // If we can't fetch status, don't block the user
             onAccepted()
         }
         isLoading = false
+        logger.info("checkStatus() completed, isLoading=\(isLoading)")
     }
 
     private func acceptEula() async {
