@@ -130,7 +130,15 @@ struct EulaView: View {
                     EulaSectionView(
                         number: "6",
                         title: "Reporting Violations",
-                        body: "If you encounter content or behavior that violates this Agreement, please report it immediately to:\n\nabuse@cherryblossomdevelopment.com\n\nReports submitted in good faith will be treated confidentially. We do not tolerate retaliation against users who report violations."
+                        body: """
+                        If you encounter content or behavior that violates this Agreement, please report it immediately using the in-app reporting tools or by contacting us at:
+
+                        abuse@cherryblossomdevelopment.com
+
+                        When content is reported or detected by our automated systems, it is immediately hidden from all users pending review. Users never see reported content while awaiting moderation. Our team reviews flagged content to confirm removal and take action against repeat offenders, including permanent account termination.
+
+                        Reports submitted in good faith will be treated confidentially. We do not tolerate retaliation against users who report violations.
+                        """
                     )
 
                     EulaSectionView(
