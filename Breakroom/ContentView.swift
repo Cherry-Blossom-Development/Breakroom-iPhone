@@ -213,6 +213,8 @@ struct MainTabView: View {
         switch url {
         case "/lyrics":
             return "music.mic"
+        case "/sessions":
+            return "music.note"
         case "/art-gallery":
             return "photo.artframe"
         case "/blog":
@@ -232,6 +234,8 @@ struct MainTabView: View {
         switch shortcut.url {
         case "/lyrics":
             LyricLabView()
+        case "/sessions":
+            SessionsView()
         case "/art-gallery":
             ArtGalleryView()
         default:

@@ -282,8 +282,7 @@ enum ToolCategory: CaseIterable {
                     description: "Track and manage your recording sessions, log progress, and keep notes on each session.",
                     icon: "music.note",
                     destination: .sessions,
-                    shortcutUrl: "/sessions",
-                    featureKey: "sessions"
+                    shortcutUrl: "/sessions"
                 )
             ]
         case .artist:

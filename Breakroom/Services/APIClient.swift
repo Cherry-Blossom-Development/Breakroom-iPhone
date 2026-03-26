@@ -240,10 +240,143 @@ final class APIClient: @unchecked Sendable {
         }
     }
 
+    /// Upload multipart form data with additional text fields
+    func uploadMultipartWithFields<T: Decodable>(
+        _ path: String,
+        fileData: Data,
+        fieldName: String,
+        filename: String,
+        mimeType: String,
+        additionalFields: [String: String],
+        authenticated: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+
+        // Add file field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n".data(using: .utf8)!)
+
+        // Add additional text fields
+        for (key, value) in additionalFields {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+
+        // Close boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        handleTokenRefresh(httpResponse)
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingError(error)
+            }
+        case 401:
+            await handleUnauthorized()
+            throw APIError.unauthorized
+        default:
+            if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
+                throw APIError.serverError(errorResponse.displayMessage)
+            }
+            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+        }
+    }
+
+    /// Get redirect location URL from a 302 response (used for S3 streaming URLs)
+    func getRedirectLocation(_ path: String, authenticated: Bool = true) async throws -> URL {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        // Use a session that doesn't follow redirects
+        let noRedirectDelegate = NoRedirectDelegate()
+        let noRedirectSession = URLSession(configuration: .default, delegate: noRedirectDelegate, delegateQueue: nil)
+
+        let (_, response): (Data, URLResponse)
+        do {
+            (_, response) = try await noRedirectSession.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 302:
+            guard let location = httpResponse.value(forHTTPHeaderField: "Location"),
+                  let redirectURL = URL(string: location) else {
+                throw APIError.serverError("No redirect location in response")
+            }
+            return redirectURL
+        case 401:
+            await handleUnauthorized()
+            throw APIError.unauthorized
+        default:
+            throw APIError.serverError("Expected redirect, got status \(httpResponse.statusCode)")
+        }
+    }
+
     /// Handle 401 unauthorized response by posting notification to trigger logout
     private func handleUnauthorized() async {
         await MainActor.run {
             NotificationCenter.default.post(name: .sessionExpired, object: nil)
         }
+    }
+}
+
+// MARK: - No Redirect Delegate
+
+/// URLSession delegate that prevents automatic redirect following
+private final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        // Return nil to prevent following the redirect
+        completionHandler(nil)
     }
 }
