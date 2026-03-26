@@ -253,13 +253,17 @@ struct ChatWidget: View {
     }
 
     private func messageInput(roomId: Int) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
+            // Media picker button - constrained to prevent tap target expansion
             PhotosPicker(selection: $selectedPhoto, matching: .any(of: [.images, .videos])) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title3)
+                    .font(.system(size: 24))
                     .foregroundStyle(Color.accentColor)
             }
+            .buttonStyle(.plain)
+            .fixedSize()
             .disabled(isUploadingMedia)
+            .accessibilityIdentifier("widgetMediaButton")
 
             TextField("Message", text: $messageText)
                 .textFieldStyle(.plain)
@@ -280,22 +284,27 @@ struct ChatWidget: View {
                     }
                 }
 
+            // Send button - explicit button style to ensure proper touch handling
             Button {
                 Task { await sendMessage(roomId: roomId) }
             } label: {
-                if isSending {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title3)
+                Group {
+                    if isSending {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 24))
+                    }
                 }
+                .frame(width: 28, height: 28)
             }
+            .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)
             .accessibilityIdentifier("widgetSendButton")
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .onChange(of: selectedPhoto) {
             guard let item = selectedPhoto else { return }
             selectedPhoto = nil
