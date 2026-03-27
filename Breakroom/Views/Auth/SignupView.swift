@@ -86,13 +86,12 @@ struct SignupView: View {
                     }
                 }
 
-                if let error = authViewModel.errorMessage {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .font(.callout)
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("errorMessage")
-                }
+                // Error message display - always present for accessibility
+                Text(authViewModel.errorMessage ?? "")
+                    .foregroundStyle(.red)
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("errorMessage")
 
                 Button {
                     Task {
@@ -123,6 +122,13 @@ struct SignupView: View {
                 }
                 .font(.callout)
                 .accessibilityIdentifier("loginButton")
+
+                #if DEBUG
+                Text("API: \(APIClient.shared.baseURL)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("debugAPIURL")
+                #endif
             }
             .padding(.horizontal, 32)
         }
