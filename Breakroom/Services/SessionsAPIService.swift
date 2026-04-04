@@ -47,9 +47,9 @@ enum SessionsAPIService {
         return response.session
     }
 
-    /// Get the S3 streaming URL for a session
-    static func getStreamURL(sessionId: Int) async throws -> URL {
-        return try await APIClient.shared.getRedirectLocation("/api/sessions/\(sessionId)/stream")
+    /// Build the streaming URL for a session (streams through backend with auth)
+    static func buildStreamURL(sessionId: Int) -> URL? {
+        return URL(string: "\(APIClient.shared.baseURL)/api/sessions/\(sessionId)/stream")
     }
 
     /// Rate a session (1-10) or clear rating (nil)

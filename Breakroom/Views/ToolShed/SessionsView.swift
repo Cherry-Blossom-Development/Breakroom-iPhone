@@ -1365,10 +1365,20 @@ struct SessionsView: View {
                 try audioSession.setCategory(.playback, mode: .default)
                 try audioSession.setActive(true)
 
-                let streamURL = try await SessionsAPIService.getStreamURL(sessionId: session.id)
+                guard let streamURL = SessionsAPIService.buildStreamURL(sessionId: session.id) else {
+                    throw NSError(domain: "SessionsView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid stream URL"])
+                }
                 nowPlayingURL = streamURL
 
-                audioPlayer = AVPlayer(url: streamURL)
+                // Create AVURLAsset with Authorization header
+                var headers: [String: String] = [:]
+                if let bearerToken = KeychainManager.bearerToken {
+                    headers["Authorization"] = bearerToken
+                }
+                let asset = AVURLAsset(url: streamURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+                let playerItem = AVPlayerItem(asset: asset)
+
+                audioPlayer = AVPlayer(playerItem: playerItem)
                 audioPlayer?.play()
             } catch {
                 await MainActor.run {
