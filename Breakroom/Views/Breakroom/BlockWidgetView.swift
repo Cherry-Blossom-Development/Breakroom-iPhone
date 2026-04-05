@@ -218,12 +218,49 @@ private struct CalendarDay: Identifiable {
     let isToday: Bool
 }
 
+// Isolated live time display - timer updates only affect this view, not parent
+private struct LiveTimeDisplay: View {
+    let timezone: TimeZone
+    @State private var currentTime = Date()
+
+    private var formattedTime: String {
+        let f = DateFormatter()
+        f.timeZone = timezone
+        f.dateFormat = "h:mm:ss a"
+        return f.string(from: currentTime)
+    }
+
+    private var formattedDate: String {
+        let f = DateFormatter()
+        f.timeZone = timezone
+        f.dateFormat = "EEEE, MMMM d, yyyy"
+        return f.string(from: currentTime)
+    }
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(formattedTime)
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+
+            Text(formattedDate)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                currentTime = Date()
+            }
+        }
+    }
+}
+
 struct CalendarWidget: View {
     let block: BreakroomBlock
 
-    @State private var currentTime = Date()
     @State private var selectedTimezone: String = TimeZone.current.identifier
-    @State private var showTimezonePicker = false
     @State private var isSaving = false
 
     private var effectiveTimeZone: TimeZone {
@@ -236,38 +273,23 @@ struct CalendarWidget: View {
         return cal
     }
 
-    // MARK: - Formatted strings
-
-    private var formattedTime: String {
-        let f = DateFormatter()
-        f.timeZone = effectiveTimeZone
-        f.dateFormat = "h:mm:ss a"
-        return f.string(from: currentTime)
-    }
-
-    private var formattedDate: String {
-        let f = DateFormatter()
-        f.timeZone = effectiveTimeZone
-        f.dateFormat = "EEEE, MMMM d, yyyy"
-        return f.string(from: currentTime)
-    }
-
     private var timezoneAbbr: String {
-        effectiveTimeZone.abbreviation(for: currentTime) ?? effectiveTimeZone.identifier
+        effectiveTimeZone.abbreviation(for: Date()) ?? effectiveTimeZone.identifier
     }
 
-    // MARK: - Calendar data
+    // MARK: - Calendar data (only updates on day change, not every second)
 
     private var monthYearTitle: String {
         let f = DateFormatter()
         f.timeZone = effectiveTimeZone
         f.dateFormat = "MMMM yyyy"
-        return f.string(from: currentTime)
+        return f.string(from: Date())
     }
 
     private var calendarWeeks: [[CalendarDay]] {
         let cal = self.calendar
-        let comps = cal.dateComponents([.year, .month, .day], from: currentTime)
+        let now = Date()
+        let comps = cal.dateComponents([.year, .month, .day], from: now)
         let year = comps.year!
         let month = comps.month!
         let today = comps.day!
@@ -326,27 +348,13 @@ struct CalendarWidget: View {
         .task {
             await fetchTimezone()
         }
-        .task(id: "timer") {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                currentTime = Date()
-            }
-        }
     }
 
     // MARK: - Time Section
 
     private var timeSection: some View {
         VStack(spacing: 2) {
-            Text(formattedTime)
-                .font(.system(size: 28, weight: .light))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-
-            Text(formattedDate)
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.9))
-
+            LiveTimeDisplay(timezone: effectiveTimeZone)
             timezoneButton
         }
         .padding(.vertical, 4)

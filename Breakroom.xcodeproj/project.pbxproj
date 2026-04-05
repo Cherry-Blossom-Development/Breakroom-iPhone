@@ -82,6 +82,8 @@
 		EEC190D582906DC62F3A85A9 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E88739A60E372810A63A28 /* StringExtensions.swift */; };
 		FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */; };
 		FE1EF55A761C9A80859ABE56 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9AC9F72B4CED61F085EAD7 /* User.swift */; };
+		SC1A2B3C4D5E6F7G8H9I0J1K /* ScrollCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */; };
+		CS1A2B3C4D5E6F7G8H9I0J1K /* CoordinatedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -108,6 +110,8 @@
 		1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogSettingsView.swift; sourceTree = "<group>"; };
 		1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomViewModel.swift; sourceTree = "<group>"; };
 		1D9AC9F72B4CED61F085EAD7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollCoordinator.swift; sourceTree = "<group>"; };
+		CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatedScrollView.swift; sourceTree = "<group>"; };
 		1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomAPIService.swift; sourceTree = "<group>"; };
 		22966EA63DE25C92D69E99DD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		23E95654769587A5CE156387 /* LyricAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricAPIService.swift; sourceTree = "<group>"; };
@@ -324,6 +328,8 @@
 				6CE02A450FDF8385DEF3420E /* BlogPostView.swift */,
 				664D6C1E857ACE07479BED4B /* BreakroomView.swift */,
 				EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */,
+				SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */,
+				CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */,
 			);
 			path = Breakroom;
 			sourceTree = "<group>";
@@ -503,6 +509,8 @@
 				762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */,
 				FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */,
 				AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */,
+				SC1A2B3C4D5E6F7G8H9I0J1K /* ScrollCoordinator.swift in Sources */,
+				CS1A2B3C4D5E6F7G8H9I0J1K /* CoordinatedScrollView.swift in Sources */,
 				2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */,
 				C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */,
 				455C3D404A3E42B04CA5F7DA /* CompanyPortalView.swift in Sources */,

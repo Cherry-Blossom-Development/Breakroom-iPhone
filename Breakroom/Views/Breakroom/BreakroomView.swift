@@ -82,12 +82,8 @@ struct BreakroomView: View {
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .onMove { from, to in
-                viewModel.moveBlock(from: from, to: to)
-            }
         }
         .listStyle(.plain)
-        .environment(\.editMode, viewModel.isEditMode ? .constant(.active) : .constant(.inactive))
     }
 
     private var emptyState: some View {
