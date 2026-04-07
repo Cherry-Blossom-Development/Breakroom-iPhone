@@ -176,14 +176,6 @@ struct MainTabView: View {
         .sheet(isPresented: $showManageShortcuts) {
             ManageShortcutsSheet(shortcuts: $shortcuts)
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-            }
-        }
     }
 
     private func performDeleteAccount() async {
