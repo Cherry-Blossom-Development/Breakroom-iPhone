@@ -9,8 +9,6 @@ struct SignupView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @FocusState private var isKeyboardFocused: Bool
-
     private var passwordsMatch: Bool {
         !password.isEmpty && password == confirmPassword
     }
@@ -131,7 +129,7 @@ struct SignupView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    isKeyboardFocused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
             }
         }

@@ -6,8 +6,6 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showSignup = false
     @State private var showForgotPassword = false
-    @FocusState private var isKeyboardFocused: Bool
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
@@ -95,7 +93,7 @@ struct LoginView: View {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") {
-                        isKeyboardFocused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                 }
             }

@@ -7,8 +7,6 @@ struct ForgotPasswordView: View {
     @State private var isSubmitting = false
     @State private var isSubmitted = false
     @State private var errorMessage: String?
-    @FocusState private var isKeyboardFocused: Bool
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
@@ -101,7 +99,7 @@ struct ForgotPasswordView: View {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") {
-                        isKeyboardFocused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                 }
             }

@@ -50,8 +50,6 @@ struct MainTabView: View {
     @State private var selectedShortcut: Shortcut?
     @State private var showManageShortcuts = false
 
-    // Keyboard dismissal
-    @FocusState private var isKeyboardFocused: Bool
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -182,7 +180,7 @@ struct MainTabView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    isKeyboardFocused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
             }
         }
