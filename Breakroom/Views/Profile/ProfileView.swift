@@ -29,8 +29,7 @@ struct ProfileView: View {
     // Jobs
     @State private var showJobForm = false
     @State private var editingJob: UserJob?
-    @State private var jobToDelete: UserJob?
-    @State private var showDeleteJobConfirmation = false
+    @State private var expandedJobIds: Set<Int> = []
 
     var body: some View {
         Group {
@@ -62,21 +61,12 @@ struct ProfileView: View {
         } message: {
             Text("Are you sure you want to remove your profile photo?")
         }
-        .confirmationDialog(
-            "Delete Job",
-            isPresented: $showDeleteJobConfirmation,
-            presenting: jobToDelete
-        ) { job in
-            Button("Delete", role: .destructive) {
-                Task { await deleteJob(job) }
-            }
-        } message: { job in
-            Text("Are you sure you want to remove \"\(job.title)\" at \(job.company)?")
-        }
         .sheet(isPresented: $showJobForm) {
-            JobFormView(existingJob: editingJob) { savedJob in
+            JobFormView(existingJob: editingJob, onSave: { savedJob in
                 handleJobSaved(savedJob)
-            }
+            }, onDelete: { job in
+                Task { await deleteJob(job) }
+            })
         }
         .refreshable {
             await loadProfile()
@@ -342,7 +332,9 @@ struct ProfileView: View {
     }
 
     private func jobCard(_ job: UserJob) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let isExpanded = expandedJobIds.contains(job.id)
+
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(job.title)
@@ -354,22 +346,13 @@ struct ProfileView: View {
 
                 Spacer()
 
-                HStack(spacing: 8) {
-                    Button {
-                        editingJob = job
-                        showJobForm = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.caption)
-                    }
-
-                    Button(role: .destructive) {
-                        jobToDelete = job
-                        showDeleteJobConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.caption)
-                    }
+                Button {
+                    editingJob = job
+                    showJobForm = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -390,7 +373,23 @@ struct ProfileView: View {
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(isExpanded ? nil : 2)
+
+                if description.count > 80 {
+                    Button {
+                        withAnimation {
+                            if isExpanded {
+                                expandedJobIds.remove(job.id)
+                            } else {
+                                expandedJobIds.insert(job.id)
+                            }
+                        }
+                    } label: {
+                        Text(isExpanded ? "Show less" : "Show more")
+                            .font(.caption)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
             }
         }
         .padding(12)
@@ -685,6 +684,7 @@ struct ProfileView: View {
 struct JobFormView: View {
     let existingJob: UserJob?
     let onSave: (UserJob) -> Void
+    let onDelete: ((UserJob) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -698,10 +698,12 @@ struct JobFormView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var showDeleteConfirmation = false
 
-    init(existingJob: UserJob?, onSave: @escaping (UserJob) -> Void) {
+    init(existingJob: UserJob?, onSave: @escaping (UserJob) -> Void, onDelete: ((UserJob) -> Void)? = nil) {
         self.existingJob = existingJob
         self.onSave = onSave
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -725,7 +727,21 @@ struct JobFormView: View {
 
                 Section("Description (optional)") {
                     TextEditor(text: $description)
-                        .frame(minHeight: 80)
+                        .frame(minHeight: 150)
+                }
+
+                if existingJob != nil {
+                    Section {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("Delete Job")
+                                Spacer()
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle(existingJob != nil ? "Edit Job" : "Add Job")
@@ -742,11 +758,31 @@ struct JobFormView: View {
                               company.trimmingCharacters(in: .whitespaces).isEmpty ||
                               isSaving)
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                }
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK") { }
             } message: {
                 Text(errorMessage ?? "An unknown error occurred")
+            }
+            .confirmationDialog(
+                "Delete Job",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let job = existingJob {
+                        onDelete?(job)
+                        dismiss()
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to delete this job? This cannot be undone.")
             }
             .onAppear { loadExistingJob() }
         }
