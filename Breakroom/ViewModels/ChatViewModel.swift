@@ -201,12 +201,14 @@ final class ChatViewModel {
     func selectRoom(_ room: ChatRoom) async {
         if let previous = selectedRoom {
             socketManager?.leaveRoom(previous.id)
+            socketManager?.removeListeners(roomId: previous.id)
         }
 
         selectedRoom = room
         hasOlderMessages = false
         oldestMessageDate = nil
         socketManager?.joinRoom(room.id)
+        registerSocketListeners(for: room.id)
         await loadMessages(for: room.id)
     }
 
@@ -365,26 +367,28 @@ final class ChatViewModel {
     // MARK: - Socket
 
     func connectSocket() {
-        socketManager?.onNewMessage = { [weak self] message in
+        // Initial connection - listeners are registered in selectRoom
+    }
+
+    private func registerSocketListeners(for roomId: Int) {
+        socketManager?.addMessageListener(roomId: roomId) { [weak self] message in
             guard let self else { return }
-            if message.roomId == self.selectedRoom?.id {
-                if !self.messages.contains(where: { $0.id == message.id }) {
-                    self.messages.append(message)
-                }
+            if !self.messages.contains(where: { $0.id == message.id }) {
+                self.messages.append(message)
             }
         }
-        socketManager?.onMessageEdited = { [weak self] roomId, message in
-            guard let self, roomId == self.selectedRoom?.id else { return }
+        socketManager?.addEditListener(roomId: roomId) { [weak self] message in
+            guard let self else { return }
             if let index = self.messages.firstIndex(where: { $0.id == message.id }) {
                 self.messages[index] = message
             }
         }
-        socketManager?.onMessageDeleted = { [weak self] roomId, messageId in
-            guard let self, roomId == self.selectedRoom?.id else { return }
+        socketManager?.addDeleteListener(roomId: roomId) { [weak self] messageId in
+            guard let self else { return }
             self.messages.removeAll { $0.id == messageId }
         }
-        socketManager?.onUserTyping = { [weak self] roomId, user, isTyping in
-            guard let self, roomId == self.selectedRoom?.id else { return }
+        socketManager?.addTypingListener(roomId: roomId) { [weak self] user, isTyping in
+            guard let self else { return }
             if isTyping {
                 if !self.typingUsers.contains(user) {
                     self.typingUsers.append(user)
@@ -398,6 +402,7 @@ final class ChatViewModel {
     func disconnectSocket() {
         if let room = selectedRoom {
             socketManager?.leaveRoom(room.id)
+            socketManager?.removeListeners(roomId: room.id)
         }
     }
 }

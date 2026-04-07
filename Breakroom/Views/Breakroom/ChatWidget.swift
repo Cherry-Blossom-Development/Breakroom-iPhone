@@ -65,25 +65,22 @@ struct ChatWidget: View {
         .task {
             await loadMessages(roomId: roomId)
             socketManager.joinRoom(roomId)
-            socketManager.onNewMessage = { message in
-                if message.roomId == roomId || message.roomId == nil {
-                    if !messages.contains(where: { $0.id == message.id }) {
-                        messages.append(message)
-                    }
+
+            // Register listeners for this room
+            socketManager.addMessageListener(roomId: roomId) { message in
+                if !messages.contains(where: { $0.id == message.id }) {
+                    messages.append(message)
                 }
             }
-            socketManager.onMessageEdited = { eventRoomId, message in
-                guard eventRoomId == roomId else { return }
+            socketManager.addEditListener(roomId: roomId) { message in
                 if let index = messages.firstIndex(where: { $0.id == message.id }) {
                     messages[index] = message
                 }
             }
-            socketManager.onMessageDeleted = { eventRoomId, messageId in
-                guard eventRoomId == roomId else { return }
+            socketManager.addDeleteListener(roomId: roomId) { messageId in
                 messages.removeAll { $0.id == messageId }
             }
-            socketManager.onUserTyping = { eventRoomId, user, isTyping in
-                guard eventRoomId == roomId else { return }
+            socketManager.addTypingListener(roomId: roomId) { user, isTyping in
                 if isTyping {
                     if !typingUsers.contains(user) {
                         typingUsers.append(user)
@@ -95,6 +92,7 @@ struct ChatWidget: View {
         }
         .onDisappear {
             socketManager.leaveRoom(roomId)
+            socketManager.removeListeners(roomId: roomId)
         }
         .sheet(item: $messageToFlag) { message in
             FlagDialogView(

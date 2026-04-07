@@ -105,6 +105,44 @@ enum TicketAPIService {
             assignedTo: nil
         )
     }
+
+    // MARK: - Ticket Comments
+
+    /// Get all comments for a ticket
+    static func getComments(ticketId: Int) async throws -> [TicketComment] {
+        let response: TicketCommentsResponse = try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/comments"
+        )
+        return response.comments
+    }
+
+    /// Add a comment to a ticket
+    static func addComment(ticketId: Int, content: String) async throws -> TicketComment {
+        let response: TicketCommentResponse = try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/comments",
+            method: "POST",
+            body: ["content": content]
+        )
+        return response.comment
+    }
+
+    /// Edit own comment
+    static func editComment(commentId: Int, content: String) async throws -> TicketComment {
+        let response: TicketCommentResponse = try await APIClient.shared.request(
+            "/api/helpdesk/comment/\(commentId)",
+            method: "PUT",
+            body: ["content": content]
+        )
+        return response.comment
+    }
+
+    /// Delete own comment (soft delete)
+    static func deleteComment(commentId: Int) async throws {
+        let _: MessageResponse = try await APIClient.shared.request(
+            "/api/helpdesk/comment/\(commentId)",
+            method: "DELETE"
+        )
+    }
 }
 
 // MARK: - Helper Request Type

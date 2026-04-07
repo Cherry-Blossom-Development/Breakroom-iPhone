@@ -301,6 +301,7 @@ struct EditTicketSheet: View {
     let onSave: (Ticket) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthViewModel.self) private var authViewModel
 
     @State private var title: String
     @State private var description: String
@@ -309,6 +310,18 @@ struct EditTicketSheet: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var showError = false
+
+    // Comments state
+    @State private var comments: [TicketComment] = []
+    @State private var isLoadingComments = true
+    @State private var newCommentText = ""
+    @State private var isPostingComment = false
+    @State private var editingCommentId: Int?
+    @State private var editCommentText = ""
+
+    private var currentUsername: String? {
+        authViewModel.currentUsername
+    }
 
     init(ticket: Ticket, onSave: @escaping (Ticket) -> Void) {
         self.ticket = ticket
@@ -352,6 +365,8 @@ struct EditTicketSheet: View {
                         LabeledContent("Assigned to", value: assignee)
                     }
                 }
+
+                commentsSection
             }
             .navigationTitle("Edit Ticket")
             .navigationBarTitleDisplayMode(.inline)
@@ -377,7 +392,146 @@ struct EditTicketSheet: View {
             } message: {
                 Text(errorMessage ?? "An unknown error occurred")
             }
+            .task {
+                await loadComments()
+            }
         }
+    }
+
+    @ViewBuilder
+    private var commentsSection: some View {
+        let visibleComments = comments.filter { !$0.isDeletedBool }
+
+        Section {
+            if isLoadingComments {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+            } else if comments.isEmpty {
+                Text("No comments yet")
+                    .foregroundStyle(.secondary)
+                    .italic()
+            } else {
+                ForEach(comments) { comment in
+                    commentRow(comment)
+                }
+            }
+
+            // Add comment input
+            HStack(alignment: .top, spacing: 8) {
+                TextField("Add a comment...", text: $newCommentText, axis: .vertical)
+                    .lineLimit(1...4)
+                    .textFieldStyle(.roundedBorder)
+
+                Button {
+                    Task { await postComment() }
+                } label: {
+                    if isPostingComment {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                    }
+                }
+                .disabled(newCommentText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
+            }
+        } header: {
+            Text("Comments (\(visibleComments.count))")
+        }
+    }
+
+    @ViewBuilder
+    private func commentRow(_ comment: TicketComment) -> some View {
+        if comment.isDeletedBool {
+            Text("Comment deleted")
+                .foregroundStyle(.secondary)
+                .italic()
+        } else if editingCommentId == comment.id {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Edit comment", text: $editCommentText, axis: .vertical)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack {
+                    Button("Save") {
+                        Task { await saveEditedComment(comment.id) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(editCommentText.trimmingCharacters(in: .whitespaces).isEmpty)
+
+                    Button("Cancel") {
+                        editingCommentId = nil
+                        editCommentText = ""
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .padding(.vertical, 4)
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(comment.handle)
+                        .font(.caption.weight(.semibold))
+
+                    if let date = comment.createdAt {
+                        Text(formatCommentDate(date))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if comment.wasEdited {
+                        Text("(edited)")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .italic()
+                    }
+
+                    Spacer()
+
+                    if comment.handle == currentUsername {
+                        Menu {
+                            Button("Edit") {
+                                editingCommentId = comment.id
+                                editCommentText = comment.content
+                            }
+                            Button("Delete", role: .destructive) {
+                                Task { await deleteComment(comment.id) }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Text(comment.content)
+                    .font(.subheadline)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func formatCommentDate(_ dateStr: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateStr) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .short
+            displayFormatter.timeStyle = .short
+            return displayFormatter.string(from: date)
+        }
+        // Try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: dateStr) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .short
+            displayFormatter.timeStyle = .short
+            return displayFormatter.string(from: date)
+        }
+        return dateStr
     }
 
     private func save() async {
@@ -401,6 +555,68 @@ struct EditTicketSheet: View {
         }
         isSaving = false
     }
+
+    private func loadComments() async {
+        do {
+            comments = try await TicketAPIService.getComments(ticketId: ticket.id)
+        } catch {
+            // Silently fail - comments are supplementary
+        }
+        isLoadingComments = false
+    }
+
+    private func postComment() async {
+        let content = newCommentText.trimmingCharacters(in: .whitespaces)
+        guard !content.isEmpty else { return }
+
+        isPostingComment = true
+        do {
+            let comment = try await TicketAPIService.addComment(ticketId: ticket.id, content: content)
+            comments.append(comment)
+            newCommentText = ""
+        } catch {
+            // Could show error alert
+        }
+        isPostingComment = false
+    }
+
+    private func saveEditedComment(_ commentId: Int) async {
+        let content = editCommentText.trimmingCharacters(in: .whitespaces)
+        guard !content.isEmpty else { return }
+
+        do {
+            let updated = try await TicketAPIService.editComment(commentId: commentId, content: content)
+            if let idx = comments.firstIndex(where: { $0.id == commentId }) {
+                comments[idx] = updated
+            }
+            editingCommentId = nil
+            editCommentText = ""
+        } catch {
+            // Could show error alert
+        }
+    }
+
+    private func deleteComment(_ commentId: Int) async {
+        do {
+            try await TicketAPIService.deleteComment(commentId: commentId)
+            if let idx = comments.firstIndex(where: { $0.id == commentId }) {
+                // Mark as deleted locally
+                let old = comments[idx]
+                comments[idx] = TicketComment(
+                    id: old.id,
+                    ticketId: old.ticketId,
+                    userId: old.userId,
+                    content: old.content,
+                    isDeleted: 1,
+                    createdAt: old.createdAt,
+                    updatedAt: old.updatedAt,
+                    handle: old.handle
+                )
+            }
+        } catch {
+            // Could show error alert
+        }
+    }
 }
 
 // MARK: - View Ticket Sheet (Read-Only)
@@ -409,6 +625,18 @@ struct ViewTicketSheet: View {
     let ticket: Ticket
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AuthViewModel.self) private var authViewModel
+
+    @State private var comments: [TicketComment] = []
+    @State private var isLoadingComments = true
+    @State private var newCommentText = ""
+    @State private var isPostingComment = false
+    @State private var editingCommentId: Int?
+    @State private var editCommentText = ""
+
+    private var currentUsername: String? {
+        authViewModel.currentUsername
+    }
 
     var body: some View {
         NavigationStack {
@@ -438,6 +666,8 @@ struct ViewTicketSheet: View {
                         LabeledContent("Assigned to", value: assignee)
                     }
                 }
+
+                commentsSection
             }
             .navigationTitle("Ticket Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -446,6 +676,207 @@ struct ViewTicketSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .task {
+                await loadComments()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var commentsSection: some View {
+        let visibleComments = comments.filter { !$0.isDeletedBool }
+
+        Section {
+            if isLoadingComments {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+            } else if comments.isEmpty {
+                Text("No comments yet")
+                    .foregroundStyle(.secondary)
+                    .italic()
+            } else {
+                ForEach(comments) { comment in
+                    commentRow(comment)
+                }
+            }
+
+            // Add comment input
+            HStack(alignment: .top, spacing: 8) {
+                TextField("Add a comment...", text: $newCommentText, axis: .vertical)
+                    .lineLimit(1...4)
+                    .textFieldStyle(.roundedBorder)
+
+                Button {
+                    Task { await postComment() }
+                } label: {
+                    if isPostingComment {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                    }
+                }
+                .disabled(newCommentText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
+            }
+        } header: {
+            Text("Comments (\(visibleComments.count))")
+        }
+    }
+
+    @ViewBuilder
+    private func commentRow(_ comment: TicketComment) -> some View {
+        if comment.isDeletedBool {
+            Text("Comment deleted")
+                .foregroundStyle(.secondary)
+                .italic()
+        } else if editingCommentId == comment.id {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Edit comment", text: $editCommentText, axis: .vertical)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack {
+                    Button("Save") {
+                        Task { await saveEditedComment(comment.id) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(editCommentText.trimmingCharacters(in: .whitespaces).isEmpty)
+
+                    Button("Cancel") {
+                        editingCommentId = nil
+                        editCommentText = ""
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .padding(.vertical, 4)
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(comment.handle)
+                        .font(.caption.weight(.semibold))
+
+                    if let date = comment.createdAt {
+                        Text(formatCommentDate(date))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if comment.wasEdited {
+                        Text("(edited)")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .italic()
+                    }
+
+                    Spacer()
+
+                    if comment.handle == currentUsername {
+                        Menu {
+                            Button("Edit") {
+                                editingCommentId = comment.id
+                                editCommentText = comment.content
+                            }
+                            Button("Delete", role: .destructive) {
+                                Task { await deleteComment(comment.id) }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Text(comment.content)
+                    .font(.subheadline)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func formatCommentDate(_ dateStr: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateStr) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .short
+            displayFormatter.timeStyle = .short
+            return displayFormatter.string(from: date)
+        }
+        // Try without fractional seconds
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: dateStr) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .short
+            displayFormatter.timeStyle = .short
+            return displayFormatter.string(from: date)
+        }
+        return dateStr
+    }
+
+    private func loadComments() async {
+        do {
+            comments = try await TicketAPIService.getComments(ticketId: ticket.id)
+        } catch {
+            // Silently fail - comments are supplementary
+        }
+        isLoadingComments = false
+    }
+
+    private func postComment() async {
+        let content = newCommentText.trimmingCharacters(in: .whitespaces)
+        guard !content.isEmpty else { return }
+
+        isPostingComment = true
+        do {
+            let comment = try await TicketAPIService.addComment(ticketId: ticket.id, content: content)
+            comments.append(comment)
+            newCommentText = ""
+        } catch {
+            // Could show error alert
+        }
+        isPostingComment = false
+    }
+
+    private func saveEditedComment(_ commentId: Int) async {
+        let content = editCommentText.trimmingCharacters(in: .whitespaces)
+        guard !content.isEmpty else { return }
+
+        do {
+            let updated = try await TicketAPIService.editComment(commentId: commentId, content: content)
+            if let idx = comments.firstIndex(where: { $0.id == commentId }) {
+                comments[idx] = updated
+            }
+            editingCommentId = nil
+            editCommentText = ""
+        } catch {
+            // Could show error alert
+        }
+    }
+
+    private func deleteComment(_ commentId: Int) async {
+        do {
+            try await TicketAPIService.deleteComment(commentId: commentId)
+            if let idx = comments.firstIndex(where: { $0.id == commentId }) {
+                // Mark as deleted locally
+                let old = comments[idx]
+                comments[idx] = TicketComment(
+                    id: old.id,
+                    ticketId: old.ticketId,
+                    userId: old.userId,
+                    content: old.content,
+                    isDeleted: 1,
+                    createdAt: old.createdAt,
+                    updatedAt: old.updatedAt,
+                    handle: old.handle
+                )
+            }
+        } catch {
+            // Could show error alert
         }
     }
 }

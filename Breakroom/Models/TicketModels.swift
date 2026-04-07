@@ -111,10 +111,47 @@ struct Ticket: Codable, Identifiable {
     }
 }
 
+// MARK: - Ticket Comment Model
+
+struct TicketComment: Codable, Identifiable {
+    let id: Int
+    let ticketId: Int
+    let userId: Int
+    let content: String
+    let isDeleted: Int
+    let createdAt: String?
+    let updatedAt: String?
+    let handle: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, content, handle
+        case ticketId = "ticket_id"
+        case userId = "user_id"
+        case isDeleted = "is_deleted"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    var isDeletedBool: Bool { isDeleted != 0 }
+
+    var wasEdited: Bool {
+        guard let created = createdAt, let updated = updatedAt else { return false }
+        return created != updated
+    }
+}
+
 // MARK: - API Response Types
 
 struct TicketsResponse: Decodable {
     let tickets: [Ticket]
+}
+
+struct TicketCommentsResponse: Decodable {
+    let comments: [TicketComment]
+}
+
+struct TicketCommentResponse: Decodable {
+    let comment: TicketComment
 }
 
 struct TicketResponse: Decodable {

@@ -11,13 +11,54 @@ final class ChatSocketManager {
     }
 
     private(set) var connectionState: ConnectionState = .disconnected
-    var onNewMessage: (@MainActor (ChatMessage) -> Void)?
-    var onMessageEdited: (@MainActor (Int, ChatMessage) -> Void)?
-    var onMessageDeleted: (@MainActor (Int, Int) -> Void)?
-    var onUserTyping: (@MainActor (Int, String, Bool) -> Void)?
+
+    // Multiple listeners per room - keyed by room ID
+    private var messageListeners: [Int: [@MainActor (ChatMessage) -> Void]] = [:]
+    private var editListeners: [Int: [@MainActor (ChatMessage) -> Void]] = [:]
+    private var deleteListeners: [Int: [@MainActor (Int) -> Void]] = [:]
+    private var typingListeners: [Int: [@MainActor (String, Bool) -> Void]] = [:]
 
     private var manager: SocketIO.SocketManager?
     private var socket: SocketIOClient?
+
+    // MARK: - Listener Registration
+
+    /// Register a listener for new messages in a room. Returns an ID to use for unregistering.
+    func addMessageListener(roomId: Int, handler: @escaping @MainActor (ChatMessage) -> Void) {
+        if messageListeners[roomId] == nil {
+            messageListeners[roomId] = []
+        }
+        messageListeners[roomId]?.append(handler)
+    }
+
+    func addEditListener(roomId: Int, handler: @escaping @MainActor (ChatMessage) -> Void) {
+        if editListeners[roomId] == nil {
+            editListeners[roomId] = []
+        }
+        editListeners[roomId]?.append(handler)
+    }
+
+    func addDeleteListener(roomId: Int, handler: @escaping @MainActor (Int) -> Void) {
+        if deleteListeners[roomId] == nil {
+            deleteListeners[roomId] = []
+        }
+        deleteListeners[roomId]?.append(handler)
+    }
+
+    func addTypingListener(roomId: Int, handler: @escaping @MainActor (String, Bool) -> Void) {
+        if typingListeners[roomId] == nil {
+            typingListeners[roomId] = []
+        }
+        typingListeners[roomId]?.append(handler)
+    }
+
+    /// Remove all listeners for a room (called when widget disappears)
+    func removeListeners(roomId: Int) {
+        messageListeners.removeValue(forKey: roomId)
+        editListeners.removeValue(forKey: roomId)
+        deleteListeners.removeValue(forKey: roomId)
+        typingListeners.removeValue(forKey: roomId)
+    }
 
     func connect() {
         guard let token = KeychainManager.token else { return }
@@ -25,7 +66,7 @@ final class ChatSocketManager {
 
         connectionState = .connecting
 
-        let url = URL(string: "https://www.prosaurus.com")!
+        let url = URL(string: Config.baseURL)!
         manager = SocketIO.SocketManager(socketURL: url, config: [
             .log(false),
             .compress,
@@ -111,9 +152,10 @@ final class ChatSocketManager {
                 return
             }
 
+            let roomId = dict["roomId"] as? Int
             let message = ChatMessage(
                 id: id,
-                roomId: dict["roomId"] as? Int,
+                roomId: roomId,
                 userId: messageDict["user_id"] as? Int,
                 handle: messageDict["handle"] as? String,
                 message: messageDict["message"] as? String,
@@ -123,7 +165,13 @@ final class ChatSocketManager {
             )
 
             Task { @MainActor in
-                self?.onNewMessage?(message)
+                guard let self = self, let roomId = roomId else { return }
+                // Notify all listeners for this room
+                if let listeners = self.messageListeners[roomId] {
+                    for listener in listeners {
+                        listener(message)
+                    }
+                }
             }
         }
 
@@ -147,7 +195,12 @@ final class ChatSocketManager {
             )
 
             Task { @MainActor in
-                self?.onMessageEdited?(roomId, message)
+                guard let self = self else { return }
+                if let listeners = self.editListeners[roomId] {
+                    for listener in listeners {
+                        listener(message)
+                    }
+                }
             }
         }
 
@@ -159,7 +212,12 @@ final class ChatSocketManager {
             }
 
             Task { @MainActor in
-                self?.onMessageDeleted?(roomId, messageId)
+                guard let self = self else { return }
+                if let listeners = self.deleteListeners[roomId] {
+                    for listener in listeners {
+                        listener(messageId)
+                    }
+                }
             }
         }
 
@@ -171,7 +229,12 @@ final class ChatSocketManager {
             }
 
             Task { @MainActor in
-                self?.onUserTyping?(roomId, user, true)
+                guard let self = self else { return }
+                if let listeners = self.typingListeners[roomId] {
+                    for listener in listeners {
+                        listener(user, true)
+                    }
+                }
             }
         }
 
@@ -183,7 +246,12 @@ final class ChatSocketManager {
             }
 
             Task { @MainActor in
-                self?.onUserTyping?(roomId, user, false)
+                guard let self = self else { return }
+                if let listeners = self.typingListeners[roomId] {
+                    for listener in listeners {
+                        listener(user, false)
+                    }
+                }
             }
         }
     }
