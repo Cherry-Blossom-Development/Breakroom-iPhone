@@ -50,6 +50,9 @@ struct MainTabView: View {
     @State private var selectedShortcut: Shortcut?
     @State private var showManageShortcuts = false
 
+    // Keyboard dismissal
+    @FocusState private var isKeyboardFocused: Bool
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -174,6 +177,14 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showManageShortcuts) {
             ManageShortcutsSheet(shortcuts: $shortcuts)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isKeyboardFocused = false
+                }
+            }
         }
     }
 

@@ -6,6 +6,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showSignup = false
     @State private var showForgotPassword = false
+    @FocusState private var isKeyboardFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -89,6 +90,14 @@ struct LoginView: View {
             }
             .sheet(isPresented: $showForgotPassword) {
                 ForgotPasswordView()
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isKeyboardFocused = false
+                    }
+                }
             }
         }
     }

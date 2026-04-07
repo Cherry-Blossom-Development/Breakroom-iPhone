@@ -9,6 +9,7 @@ struct SignupView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @FocusState private var isKeyboardFocused: Bool
 
     private var passwordsMatch: Bool {
         !password.isEmpty && password == confirmPassword
@@ -125,6 +126,14 @@ struct SignupView: View {
                 .accessibilityIdentifier("loginButton")
             }
             .padding(.horizontal, 32)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isKeyboardFocused = false
+                }
+            }
         }
     }
 }

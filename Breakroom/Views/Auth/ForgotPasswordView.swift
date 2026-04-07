@@ -7,6 +7,7 @@ struct ForgotPasswordView: View {
     @State private var isSubmitting = false
     @State private var isSubmitted = false
     @State private var errorMessage: String?
+    @FocusState private var isKeyboardFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -95,6 +96,12 @@ struct ForgotPasswordView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
+                    }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isKeyboardFocused = false
                     }
                 }
             }
