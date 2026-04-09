@@ -112,12 +112,14 @@ struct MainTabView: View {
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right") {
                                     Task { await authViewModel.logout() }
                                 }
+                                .accessibilityIdentifier("menuLogoutButton")
                                 Button("Delete Account", systemImage: "trash", role: .destructive) {
                                     showDeleteAccountConfirmation = true
                                 }
                             } label: {
                                 Image(systemName: "line.3.horizontal")
                             }
+                            .accessibilityIdentifier("menuButton")
                         }
                         ToolbarItem(placement: .principal) {
                             HStack(spacing: 6) {
