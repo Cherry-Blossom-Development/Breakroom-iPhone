@@ -13,6 +13,7 @@ struct BreakroomView: View {
                 blockList
             }
         }
+        .accessibilityIdentifier("screenHome")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {

@@ -77,18 +77,23 @@ struct MainTabView: View {
                                 Button("Profile", systemImage: "person") {
                                     showProfile = true
                                 }
+                                .accessibilityIdentifier("menuProfile")
                                 Button("Chat", systemImage: "bubble.left.and.bubble.right") {
                                     selectedTab = 1
                                 }
+                                .accessibilityIdentifier("menuChat")
                                 Button("Friends", systemImage: "person.2") {
                                     showFriends = true
                                 }
+                                .accessibilityIdentifier("menuFriends")
                                 Button("Blog", systemImage: "doc.richtext") {
                                     showBlogManagement = true
                                 }
+                                .accessibilityIdentifier("menuBlog")
                                 Button("Legal", systemImage: "doc.text") {
                                     showLegal = true
                                 }
+                                .accessibilityIdentifier("menuLegal")
 
                                 if !shortcuts.isEmpty {
                                     Divider()
@@ -137,15 +142,19 @@ struct MainTabView: View {
             .tag(0)
             .accessibilityIdentifier("tabBreakroom")
 
-            ChatListView()
-                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
-                .tag(1)
-                .accessibilityIdentifier("tabChat")
+            NavigationStack {
+                ChatListView()
+            }
+            .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
+            .tag(1)
+            .accessibilityIdentifier("tabChat")
 
-            EmploymentView()
-                .tabItem { Label("Jobs", systemImage: "briefcase") }
-                .tag(2)
-                .accessibilityIdentifier("tabJobs")
+            NavigationStack {
+                EmploymentView()
+            }
+            .tabItem { Label("Jobs", systemImage: "briefcase") }
+            .tag(2)
+            .accessibilityIdentifier("tabJobs")
 
             NavigationStack {
                 CompanyPortalView()
@@ -154,10 +163,12 @@ struct MainTabView: View {
             .tag(3)
             .accessibilityIdentifier("tabCompany")
 
-            ToolShedView()
-                .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
-                .tag(4)
-                .accessibilityIdentifier("tabToolShed")
+            NavigationStack {
+                ToolShedView()
+            }
+            .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
+            .tag(4)
+            .accessibilityIdentifier("tabToolShed")
         }
         .confirmationDialog(
             "Delete Account",

@@ -18,7 +18,9 @@ struct BlogManagementView: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
             if isLoading {
                 ProgressView()
             } else if posts.isEmpty {
@@ -31,6 +33,9 @@ struct BlogManagementView: View {
                 postList
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screenBlog")
         .navigationTitle("My Blog")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

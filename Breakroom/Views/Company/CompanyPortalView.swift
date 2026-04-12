@@ -66,6 +66,7 @@ struct CompanyPortalView: View {
                 }
             }
         }
+        .accessibilityIdentifier("screenCompanyPortal")
         .navigationTitle("Company")
         .navigationDestination(isPresented: isShowingDetail) {
             if let id = selectedCompanyId {

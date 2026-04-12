@@ -71,6 +71,7 @@ struct FriendsView: View {
                 }
             }
         }
+        .accessibilityIdentifier("screenFriends")
         .navigationTitle("Friends")
         .alert("Error", isPresented: $showError) {
             Button("OK") { }

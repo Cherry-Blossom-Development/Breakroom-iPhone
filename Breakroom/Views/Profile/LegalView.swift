@@ -7,7 +7,9 @@ struct LegalView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        Group {
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
             if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -49,6 +51,9 @@ struct LegalView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screenLegal")
         .navigationTitle("Legal Documents")
         .task {
             await loadEulaStatus()

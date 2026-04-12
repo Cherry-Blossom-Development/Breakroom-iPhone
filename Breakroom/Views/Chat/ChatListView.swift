@@ -6,9 +6,10 @@ struct ChatListView: View {
     @State private var selectedRoom: ChatRoom?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if chatViewModel.isLoadingRooms {
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
+            if chatViewModel.isLoadingRooms {
                     ProgressView("Loading rooms...")
                 } else if chatViewModel.rooms.isEmpty && chatViewModel.pendingInvites.isEmpty {
                     ContentUnavailableView(
@@ -126,8 +127,11 @@ struct ChatListView: View {
                         }
                     }
                 }
-            }
-            .navigationTitle("Chat")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screenChat")
+        .navigationTitle("Chat")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     connectionDot
@@ -204,13 +208,12 @@ struct ChatListView: View {
                     Text(msg)
                 }
             }
-            .task {
-                chatViewModel.socketManager = socketManager
-                await chatViewModel.loadRooms()
-                await chatViewModel.loadInvites()
-                await chatViewModel.checkPermissions()
-                chatViewModel.connectSocket()
-            }
+        .task {
+            chatViewModel.socketManager = socketManager
+            await chatViewModel.loadRooms()
+            await chatViewModel.loadInvites()
+            await chatViewModel.checkPermissions()
+            chatViewModel.connectSocket()
         }
     }
 

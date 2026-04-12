@@ -7,45 +7,50 @@ struct ToolShedView: View {
     @State private var isLoadingFeatures = true
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Intro
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Welcome to the Tool Shed")
-                            .font(.title2.bold())
-                        Text("A collection of optional tools to help with your creative and professional work. Add your favorites to shortcuts for quick access.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal)
-
-                    // Tool Categories
-                    ForEach(ToolCategory.allCases, id: \.self) { category in
-                        toolCategorySection(category)
-                    }
-
-                    // Feedback
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Have a tool idea?")
-                            .font(.headline)
-                        Text("We're always looking to add useful tools. Submit your suggestions through the Help Desk.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.tertiarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
+            VStack(alignment: .leading, spacing: 24) {
+                // Intro
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Welcome to the Tool Shed")
+                        .font(.title2.bold())
+                    Text("A collection of optional tools to help with your creative and professional work. Add your favorites for quick access.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.vertical)
+                .padding(.horizontal)
+
+                // Tool Categories
+                ForEach(ToolCategory.allCases, id: \.self) { category in
+                    toolCategorySection(category)
+                }
+
+                // Feedback
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Have a tool idea?")
+                        .font(.headline)
+                    Text("We're always looking to add useful tools. Submit your suggestions through the Help Desk.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.tertiarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal)
             }
-            .navigationTitle("Tool Shed")
-            .task {
-                await loadFeatures()
-                await loadShortcuts()
+            .padding(.vertical)
             }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screenToolShed")
+        .navigationTitle("Tool Shed")
+        .task {
+            await loadFeatures()
+            await loadShortcuts()
         }
     }
 

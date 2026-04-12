@@ -32,7 +32,9 @@ struct ProfileView: View {
     @State private var expandedJobIds: Set<Int> = []
 
     var body: some View {
-        Group {
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
             if isLoading {
                 ProgressView()
             } else if let profile {
@@ -45,6 +47,8 @@ struct ProfileView: View {
                 )
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityIdentifier("screenProfile")
         .navigationTitle("Profile")
         .alert("Error", isPresented: $showError) {
             Button("OK") { }

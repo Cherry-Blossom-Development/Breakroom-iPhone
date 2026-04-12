@@ -49,44 +49,47 @@ struct EmploymentView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxHeight: .infinity)
-                } else if positions.isEmpty {
-                    ContentUnavailableView(
-                        "No Positions",
-                        systemImage: "briefcase",
-                        description: Text("No open positions are currently available.")
-                    )
-                } else {
-                    positionsListWithHeader
-                }
+        ZStack {
+            Color.clear // Ensures accessibility identifier anchor is always present
+
+            if isLoading {
+                ProgressView()
+                    .frame(maxHeight: .infinity)
+            } else if positions.isEmpty {
+                ContentUnavailableView(
+                    "No Positions",
+                    systemImage: "briefcase",
+                    description: Text("No open positions are currently available.")
+                )
+            } else {
+                positionsListWithHeader
             }
-            .navigationTitle("Jobs")
-            .searchable(text: $searchText, prompt: "Search jobs by title, company...")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    filterMenu
-                }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("screenEmployment")
+        .navigationTitle("Jobs")
+        .searchable(text: $searchText, prompt: "Search jobs by title, company...")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                filterMenu
             }
-            .navigationDestination(isPresented: isEditing) {
-                if let position = selectedPosition {
-                    PositionDetailView(position: position)
-                }
+        }
+        .navigationDestination(isPresented: isEditing) {
+            if let position = selectedPosition {
+                PositionDetailView(position: position)
             }
-            .refreshable {
-                await loadPositions()
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK") { }
-            } message: {
-                Text(errorMessage ?? "An unknown error occurred")
-            }
-            .task {
-                await loadPositions()
-            }
+        }
+        .refreshable {
+            await loadPositions()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage ?? "An unknown error occurred")
+        }
+        .task {
+            await loadPositions()
         }
     }
 
