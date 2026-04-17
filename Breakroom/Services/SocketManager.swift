@@ -18,6 +18,11 @@ final class ChatSocketManager {
     private var deleteListeners: [Int: [@MainActor (Int) -> Void]] = [:]
     private var typingListeners: [Int: [@MainActor (String, Bool) -> Void]] = [:]
 
+    // Badge update handlers (set by BadgeStore)
+    var onChatBadgeUpdate: ((Int) -> Void)?
+    var onFriendBadgeUpdate: (() -> Void)?
+    var onBlogBadgeUpdate: ((Int) -> Void)?
+
     private var manager: SocketIO.SocketManager?
     private var socket: SocketIOClient?
 
@@ -252,6 +257,33 @@ final class ChatSocketManager {
                         listener(user, false)
                     }
                 }
+            }
+        }
+
+        // Badge update events
+        socket?.on("chat_badge_update") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let roomId = dict["roomId"] as? Int else {
+                return
+            }
+            Task { @MainActor in
+                self?.onChatBadgeUpdate?(roomId)
+            }
+        }
+
+        socket?.on("friend_badge_update") { [weak self] _, _ in
+            Task { @MainActor in
+                self?.onFriendBadgeUpdate?()
+            }
+        }
+
+        socket?.on("blog_badge_update") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let postId = dict["postId"] as? Int else {
+                return
+            }
+            Task { @MainActor in
+                self?.onBlogBadgeUpdate?(postId)
             }
         }
     }

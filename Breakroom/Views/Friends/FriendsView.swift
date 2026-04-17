@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FriendsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(BadgeStore.self) private var badgeStore
 
     enum Tab: String, CaseIterable {
         case friends = "Friends"
@@ -105,6 +106,7 @@ struct FriendsView: View {
         }
         .task {
             await loadAll()
+            await badgeStore.markFriendsRead()
         }
     }
 

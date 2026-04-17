@@ -5,6 +5,7 @@ struct ChatRoomView: View {
     let room: ChatRoom
     @Bindable var chatViewModel: ChatViewModel
     @Environment(ChatSocketManager.self) private var socketManager
+    @Environment(BadgeStore.self) private var badgeStore
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var suppressScrollToBottom = false
@@ -178,6 +179,7 @@ struct ChatRoomView: View {
         }
         .task {
             await chatViewModel.selectRoom(room)
+            await badgeStore.markRoomRead(room.id)
         }
         .sheet(item: $messageToFlag) { message in
             FlagDialogView(

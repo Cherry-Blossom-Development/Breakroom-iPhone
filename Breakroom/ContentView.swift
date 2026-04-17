@@ -4,6 +4,7 @@ struct ContentView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(ChatSocketManager.self) private var socketManager
     @Environment(ModerationStore.self) private var moderationStore
+    @Environment(BadgeStore.self) private var badgeStore
 
     var body: some View {
         Group {
@@ -22,17 +23,35 @@ struct ContentView: View {
         .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 socketManager.connect()
-                Task { await moderationStore.loadBlockList() }
+                setupBadgeHandlers()
+                Task {
+                    await moderationStore.loadBlockList()
+                    await badgeStore.fetchAll()
+                }
             } else {
                 socketManager.disconnect()
                 moderationStore.clear()
+                badgeStore.clear()
             }
+        }
+    }
+
+    private func setupBadgeHandlers() {
+        socketManager.onChatBadgeUpdate = { roomId in
+            badgeStore.onChatBadgeUpdate(roomId: roomId)
+        }
+        socketManager.onFriendBadgeUpdate = {
+            badgeStore.onFriendBadgeUpdate()
+        }
+        socketManager.onBlogBadgeUpdate = { postId in
+            badgeStore.onBlogBadgeUpdate(postId: postId)
         }
     }
 }
 
 struct MainTabView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(BadgeStore.self) private var badgeStore
     @State private var selectedTab = 0
     @State private var showBlogManagement = false
     @State private var showProfile = false
@@ -82,12 +101,46 @@ struct MainTabView: View {
                                     selectedTab = 1
                                 }
                                 .accessibilityIdentifier("menuChat")
-                                Button("Friends", systemImage: "person.2") {
+                                Button {
                                     showFriends = true
+                                } label: {
+                                    Label {
+                                        HStack {
+                                            Text("Friends")
+                                            if badgeStore.friendRequestsUnread > 0 {
+                                                Text("\(badgeStore.friendRequestsUnread)")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(.white)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(.red)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    } icon: {
+                                        Image(systemName: "person.2")
+                                    }
                                 }
                                 .accessibilityIdentifier("menuFriends")
-                                Button("Blog", systemImage: "doc.richtext") {
+                                Button {
                                     showBlogManagement = true
+                                } label: {
+                                    Label {
+                                        HStack {
+                                            Text("Blog")
+                                            if badgeStore.blogCommentsUnread > 0 {
+                                                Text("\(badgeStore.blogCommentsUnread)")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(.white)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(.red)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    } icon: {
+                                        Image(systemName: "doc.richtext")
+                                    }
                                 }
                                 .accessibilityIdentifier("menuBlog")
                                 Button("Legal", systemImage: "doc.text") {
@@ -122,9 +175,20 @@ struct MainTabView: View {
                                     showDeleteAccountConfirmation = true
                                 }
                             } label: {
-                                Image(systemName: "line.3.horizontal")
+                                ZStack(alignment: .topTrailing) {
+                                    Image(systemName: "line.3.horizontal")
+                                    if badgeStore.hasUnseenBadges || badgeStore.totalNonChat > 0 {
+                                        Circle()
+                                            .fill(.red)
+                                            .frame(width: 8, height: 8)
+                                            .offset(x: 4, y: -4)
+                                    }
+                                }
                             }
                             .accessibilityIdentifier("menuButton")
+                            .onTapGesture {
+                                badgeStore.onMenuOpen()
+                            }
                         }
                         ToolbarItem(placement: .principal) {
                             HStack(spacing: 6) {
@@ -147,6 +211,7 @@ struct MainTabView: View {
             }
             .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
             .tag(1)
+            .badge(badgeStore.totalChatUnread)
             .accessibilityIdentifier("tabChat")
 
             NavigationStack {

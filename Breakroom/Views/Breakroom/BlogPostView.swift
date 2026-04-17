@@ -5,6 +5,7 @@ struct BlogPostView: View {
     let post: BlogPost
 
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(BadgeStore.self) private var badgeStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var fullPost: BlogPost?
@@ -76,6 +77,10 @@ struct BlogPostView: View {
         }
         .task {
             await loadFullPost()
+            // Mark comments as read if this is the user's own post
+            if isOwnPost {
+                await badgeStore.markBlogPostRead(post.id)
+            }
         }
         .sheet(isPresented: $showFlagDialog) {
             FlagDialogView(

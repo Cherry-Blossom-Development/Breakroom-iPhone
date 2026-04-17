@@ -5,6 +5,7 @@ struct BreakroomApp: App {
     @State private var authViewModel = AuthViewModel()
     @State private var socketManager = ChatSocketManager()
     @State private var moderationStore = ModerationStore()
+    @State private var badgeStore = BadgeStore()
 
     var body: some Scene {
         WindowGroup {
@@ -12,6 +13,7 @@ struct BreakroomApp: App {
                 .environment(authViewModel)
                 .environment(socketManager)
                 .environment(moderationStore)
+                .environment(badgeStore)
         }
     }
 }

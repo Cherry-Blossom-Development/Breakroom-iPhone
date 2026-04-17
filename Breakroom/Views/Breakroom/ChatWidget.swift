@@ -5,6 +5,7 @@ import AVKit
 struct ChatWidget: View {
     let block: BreakroomBlock
     @Environment(ChatSocketManager.self) private var socketManager
+    @Environment(BadgeStore.self) private var badgeStore
     @State private var messages: [ChatMessage] = []
     @State private var messageText = ""
     @State private var isLoading = true
@@ -64,6 +65,7 @@ struct ChatWidget: View {
         .frame(maxWidth: .infinity, minHeight: 200)
         .task {
             await loadMessages(roomId: roomId)
+            await badgeStore.markRoomRead(roomId)
             socketManager.joinRoom(roomId)
 
             // Register listeners for this room
