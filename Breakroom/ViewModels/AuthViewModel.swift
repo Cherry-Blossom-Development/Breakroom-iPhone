@@ -54,6 +54,9 @@ final class AuthViewModel {
             currentUserId = me.userId
             currentUsername = me.username
             isAuthenticated = true
+
+            // Register FCM token for push notifications
+            await PushNotificationManager.shared.registerTokenWithServer()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -78,6 +81,9 @@ final class AuthViewModel {
             currentUserId = me.userId
             currentUsername = me.username
             isAuthenticated = true
+
+            // Register FCM token for push notifications
+            await PushNotificationManager.shared.registerTokenWithServer()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -88,6 +94,9 @@ final class AuthViewModel {
     }
 
     func logout() async {
+        // Unregister FCM token before logging out
+        await PushNotificationManager.shared.unregisterToken()
+
         await AuthService.logout()
         isAuthenticated = false
         hasAcceptedEula = false

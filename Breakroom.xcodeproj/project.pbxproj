@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00GS1A5WE1A2B3C4D5E6F7G8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */; };
+		00PN1A5WE1A2B3C4D5E6F7G8 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */; };
+		B63C82B12F94296400AEBFA7 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82B02F94296400AEBFA7 /* FirebaseMessaging */; };
 		00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */; };
 		00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */; };
 		00FD1A5WE1A2B3C4D5E6F7G8 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */; };
@@ -67,6 +70,9 @@
 		ABE24D913BA4284A8A0AEBC8 /* LyricModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */; };
 		AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */; };
 		B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */; };
+		B63C82AB2F94296400AEBFA7 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AA2F94296400AEBFA7 /* FirebaseAnalytics */; };
+		B63C82AD2F94296400AEBFA7 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AC2F94296400AEBFA7 /* FirebaseAnalyticsCore */; };
+		B63C82AF2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AE2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport */; };
 		B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */; };
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
@@ -89,6 +95,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00EN1A5WE1A2B3C4D5E6F7G9 /* Breakroom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Breakroom.entitlements; sourceTree = "<group>"; };
+		00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
 		00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
@@ -176,6 +185,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B63C82AF2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport in Frameworks */,
+				B63C82AB2F94296400AEBFA7 /* FirebaseAnalytics in Frameworks */,
+				B63C82AD2F94296400AEBFA7 /* FirebaseAnalyticsCore in Frameworks */,
+				B63C82B12F94296400AEBFA7 /* FirebaseMessaging in Frameworks */,
 				4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -249,6 +262,7 @@
 				00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */,
 				A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */,
 				127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */,
+				00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */,
 				00SA1A5WE1A2B3C4D5E6F7G9 /* SessionsAPIService.swift */,
 				28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */,
 				6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */,
@@ -301,9 +315,11 @@
 			isa = PBXGroup;
 			children = (
 				93641ABA680BAA7434EC3C66 /* Assets.xcassets */,
+				00EN1A5WE1A2B3C4D5E6F7G9 /* Breakroom.entitlements */,
 				3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */,
 				00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */,
 				22966EA63DE25C92D69E99DD /* ContentView.swift */,
+				00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */,
 				283F4AD6ADFBC48040009216 /* Info.plist */,
 				4C46CE9F16F513C97E7B2C86 /* Components */,
 				A6841191FCF3B49A453510AD /* Models */,
@@ -431,6 +447,10 @@
 			name = Breakroom;
 			packageProductDependencies = (
 				05BB53121E6C9220E5091E05 /* SocketIO */,
+				B63C82AA2F94296400AEBFA7 /* FirebaseAnalytics */,
+				B63C82AC2F94296400AEBFA7 /* FirebaseAnalyticsCore */,
+				B63C82AE2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport */,
+				B63C82B02F94296400AEBFA7 /* FirebaseMessaging */,
 			);
 			productName = Breakroom;
 			productReference = 0A8D398682165173267FE358 /* Breakroom.app */;
@@ -462,7 +482,8 @@
 			mainGroup = 727682F0A609E51FDA008095;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */,
+				B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 6F510BCC0EE43DA5F9143C59 /* Products */;
 			projectDirPath = "";
@@ -479,6 +500,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				62668FF4CE7AB705BA98C472 /* Assets.xcassets in Resources */,
+				00GS1A5WE1A2B3C4D5E6F7G8 /* GoogleService-Info.plist in Resources */,
 				A548310E89878F6952E2B87C /* Preview Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -550,6 +572,7 @@
 				B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */,
 				C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */,
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
+				00PN1A5WE1A2B3C4D5E6F7G8 /* PushNotificationManager.swift in Sources */,
 				7F6E36601F22FCAFFF8D3976 /* PublicProfileView.swift in Sources */,
 				7F6E36601F22FCAFFF8D3977 /* LegalView.swift in Sources */,
 				E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */,
@@ -702,6 +725,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Breakroom/Breakroom.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
@@ -733,6 +757,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Breakroom/Breakroom.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
@@ -783,7 +808,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+		B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -796,8 +829,28 @@
 /* Begin XCSwiftPackageProductDependency section */
 		05BB53121E6C9220E5091E05 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
+		};
+		B63C82AA2F94296400AEBFA7 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		B63C82AC2F94296400AEBFA7 /* FirebaseAnalyticsCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsCore;
+		};
+		B63C82AE2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsIdentitySupport;
+		};
+		B63C82B02F94296400AEBFA7 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
