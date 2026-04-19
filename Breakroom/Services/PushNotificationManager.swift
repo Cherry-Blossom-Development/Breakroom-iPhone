@@ -58,6 +58,20 @@ final class PushNotificationManager: NSObject {
         permissionStatus = settings.authorizationStatus
     }
 
+    // MARK: - Notification Clearing
+
+    /// Clears all delivered notifications and resets the app badge
+    func clearAllNotifications() {
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UIApplication.shared.applicationIconBadgeNumber = 0
+        pushLogger.info("Cleared all notifications and badge")
+    }
+
+    /// Clears the app badge only
+    func clearBadge() {
+        UIApplication.shared.applicationIconBadgeNumber = 0
+    }
+
     // MARK: - Token Management
 
     func handleNewToken(_ token: String) {
@@ -71,11 +85,12 @@ final class PushNotificationManager: NSObject {
             return
         }
 
+        pushLogger.warning("Registering FCM token: \(token.prefix(20))...")
         do {
             try await FCMAPIService.registerToken(token)
-            pushLogger.info("FCM token registered with server")
+            pushLogger.warning("FCM token registered with server successfully!")
         } catch {
-            pushLogger.error("Failed to register FCM token: \(error.localizedDescription)")
+            pushLogger.error("Failed to register FCM token: \(String(describing: error))")
         }
     }
 
@@ -149,13 +164,16 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
 
 extension PushNotificationManager: MessagingDelegate {
     nonisolated func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("[PUSH DEBUG] MessagingDelegate received token: \(fcmToken?.prefix(20) ?? "nil")...")
         guard let token = fcmToken else { return }
 
         Task { @MainActor in
             self.handleNewToken(token)
 
             // If user is already logged in, register the new token
-            if KeychainManager.token != nil {
+            let isLoggedIn = KeychainManager.token != nil
+            print("[PUSH DEBUG] User logged in: \(isLoggedIn)")
+            if isLoggedIn {
                 await self.registerTokenWithServer()
             }
         }
@@ -166,16 +184,23 @@ extension PushNotificationManager: MessagingDelegate {
 
 enum FCMAPIService {
     static func registerToken(_ fcmToken: String) async throws {
-        let body = FCMTokenRequest(fcmToken: fcmToken, platform: "ios")
-        try await APIClient.shared.requestVoid(
-            "/api/auth/fcm-token",
-            method: "POST",
-            body: body
-        )
+        let body = FCMTokenRequest(fcmToken: fcmToken)
+        pushLogger.warning("Making POST to /api/auth/fcm-token with token: \(fcmToken.prefix(20))...")
+        do {
+            try await APIClient.shared.requestVoid(
+                "/api/auth/fcm-token",
+                method: "POST",
+                body: body
+            )
+            pushLogger.warning("POST /api/auth/fcm-token succeeded!")
+        } catch {
+            pushLogger.error("POST /api/auth/fcm-token failed: \(String(describing: error))")
+            throw error
+        }
     }
 
     static func removeToken(_ fcmToken: String) async throws {
-        let body = FCMTokenRequest(fcmToken: fcmToken, platform: "ios")
+        let body = FCMTokenRequest(fcmToken: fcmToken)
         try await APIClient.shared.requestVoid(
             "/api/auth/fcm-token",
             method: "DELETE",
@@ -186,10 +211,4 @@ enum FCMAPIService {
 
 private struct FCMTokenRequest: Encodable {
     let fcmToken: String
-    let platform: String
-
-    enum CodingKeys: String, CodingKey {
-        case fcmToken = "fcm_token"
-        case platform
-    }
 }
