@@ -75,6 +75,10 @@ struct LoginView: View {
                 .font(.callout)
                 .accessibilityIdentifier("signupButton")
 
+                Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
                 #if DEBUG
                 Text("API: \(APIClient.shared.baseURL)")
                     .font(.caption2)
