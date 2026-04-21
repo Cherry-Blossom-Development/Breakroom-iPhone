@@ -240,6 +240,14 @@ struct ChatWidget: View {
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 300)
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.bottom)
+            .onChange(of: isLoading) { wasLoading, nowLoading in
+                // Scroll to bottom when initial load completes
+                if wasLoading && !nowLoading, let last = messages.last {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
+                }
+            }
             .onChange(of: messages.count) {
                 if suppressScrollToBottom {
                     suppressScrollToBottom = false
