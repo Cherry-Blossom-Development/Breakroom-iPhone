@@ -250,3 +250,26 @@ struct InviteMemberRequest: Encodable {
 struct RespondToInviteRequest: Encodable {
     let action: String
 }
+
+// MARK: - Audio Defaults
+
+struct AudioDefaults: Codable {
+    var echoCancellation: Bool
+    var noiseSuppression: Bool
+    var autoGainControl: Bool
+    var playbackVolume: Double
+
+    enum CodingKeys: String, CodingKey {
+        case echoCancellation = "echo_cancellation"
+        case noiseSuppression = "noise_suppression"
+        case autoGainControl = "auto_gain_control"
+        case playbackVolume = "playback_volume"
+    }
+
+    static let `default` = AudioDefaults(
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        playbackVolume: 0.75
+    )
+}

@@ -167,4 +167,20 @@ enum SessionsAPIService {
             method: "DELETE"
         )
     }
+
+    // MARK: - Audio Defaults
+
+    /// Get user's audio recording defaults
+    static func getAudioDefaults() async throws -> AudioDefaults {
+        return try await APIClient.shared.request("/api/user/audio-defaults")
+    }
+
+    /// Save user's audio recording defaults
+    static func saveAudioDefaults(_ defaults: AudioDefaults) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/user/audio-defaults",
+            method: "PUT",
+            body: defaults
+        )
+    }
 }

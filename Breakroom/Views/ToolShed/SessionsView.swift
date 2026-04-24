@@ -17,6 +17,10 @@ struct SessionsView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
+    // Audio defaults
+    @State private var audioDefaults = AudioDefaults.default
+    @State private var showAudioDefaults = false
+
     // Bands & Instruments
     @State private var bands: [Band] = []
     @State private var instruments: [Instrument] = []
@@ -105,6 +109,21 @@ struct SessionsView: View {
         }
         .navigationTitle("Sessions")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showAudioDefaults = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                }
+            }
+        }
+        .sheet(isPresented: $showAudioDefaults) {
+            AudioDefaultsSheet(
+                defaults: $audioDefaults,
+                onSave: { Task { await saveAudioDefaults() } }
+            )
+        }
         .task {
             await loadAllData()
         }
@@ -991,8 +1010,25 @@ struct SessionsView: View {
         async let bandMemberTask: () = loadBandMemberSessions()
         async let bandsTask: () = loadBands()
         async let instrumentsTask: () = loadInstruments()
+        async let audioDefaultsTask: () = loadAudioDefaults()
 
-        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask)
+        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask)
+    }
+
+    private func loadAudioDefaults() async {
+        do {
+            audioDefaults = try await SessionsAPIService.getAudioDefaults()
+        } catch {
+            // Non-critical - use defaults
+        }
+    }
+
+    private func saveAudioDefaults() async {
+        do {
+            try await SessionsAPIService.saveAudioDefaults(audioDefaults)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func loadSessions() async {
@@ -1379,6 +1415,7 @@ struct SessionsView: View {
                 let playerItem = AVPlayerItem(asset: asset)
 
                 audioPlayer = AVPlayer(playerItem: playerItem)
+                audioPlayer?.volume = Float(audioDefaults.playbackVolume)
                 audioPlayer?.play()
             } catch {
                 await MainActor.run {
@@ -1780,6 +1817,60 @@ private struct EditSessionView: View {
                 .disabled(name.isEmpty)
             }
         }
+    }
+}
+
+// MARK: - Audio Defaults Sheet
+
+private struct AudioDefaultsSheet: View {
+    @Binding var defaults: AudioDefaults
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Echo Cancellation", isOn: $defaults.echoCancellation)
+                    Toggle("Noise Suppression", isOn: $defaults.noiseSuppression)
+                    Toggle("Auto Gain Control", isOn: $defaults.autoGainControl)
+                } header: {
+                    Text("Recording Settings")
+                } footer: {
+                    Text("These settings are applied when recording audio.")
+                }
+
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Playback Volume")
+                            Spacer()
+                            Text("\(Int(defaults.playbackVolume * 100))%")
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $defaults.playbackVolume, in: 0...1, step: 0.05)
+                    }
+                } header: {
+                    Text("Playback Settings")
+                }
+            }
+            .navigationTitle("Audio Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 
