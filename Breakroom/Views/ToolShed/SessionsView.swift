@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
 private let monthNames = [
     "", "January", "February", "March", "April", "May", "June",
@@ -20,6 +21,12 @@ struct SessionsView: View {
     // Audio defaults
     @State private var audioDefaults = AudioDefaults.default
     @State private var showAudioDefaults = false
+
+    // Device tracking
+    @State private var currentDevice: UserDevice?
+    @State private var deviceEditing = false
+    @State private var deviceNameInput = ""
+    @State private var deviceNameSaving = false
 
     // Bands & Instruments
     @State private var bands: [Band] = []
@@ -121,7 +128,14 @@ struct SessionsView: View {
         .sheet(isPresented: $showAudioDefaults) {
             AudioDefaultsSheet(
                 defaults: $audioDefaults,
-                onSave: { Task { await saveAudioDefaults() } }
+                currentDevice: currentDevice,
+                deviceEditing: $deviceEditing,
+                deviceNameInput: $deviceNameInput,
+                deviceNameSaving: deviceNameSaving,
+                onSave: { Task { await saveAudioDefaults() } },
+                onStartRename: { startRenameDevice() },
+                onCancelRename: { cancelRenameDevice() },
+                onSaveDeviceName: { Task { await saveDeviceName() } }
             )
         }
         .task {
@@ -1011,8 +1025,9 @@ struct SessionsView: View {
         async let bandsTask: () = loadBands()
         async let instrumentsTask: () = loadInstruments()
         async let audioDefaultsTask: () = loadAudioDefaults()
+        async let deviceTask: () = registerDevice()
 
-        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask)
+        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask, deviceTask)
     }
 
     private func loadAudioDefaults() async {
@@ -1026,6 +1041,94 @@ struct SessionsView: View {
     private func saveAudioDefaults() async {
         do {
             try await SessionsAPIService.saveAudioDefaults(audioDefaults)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Device Methods
+
+    private static let deviceTokenKey = "breakroom_device_token"
+
+    private func getDeviceToken() -> String {
+        if let existing = UserDefaults.standard.string(forKey: Self.deviceTokenKey) {
+            return existing
+        }
+        let newToken = UUID().uuidString
+        UserDefaults.standard.set(newToken, forKey: Self.deviceTokenKey)
+        return newToken
+    }
+
+    private func buildSystemName() -> String {
+        let device = UIDevice.current
+        let modelName = device.model // "iPhone", "iPad", etc.
+        let systemVersion = device.systemVersion
+        return "\(modelName) · iOS \(systemVersion)"
+    }
+
+    private func isEmulator() -> Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    private func registerDevice() async {
+        do {
+            let deviceToken = getDeviceToken()
+            let systemName = buildSystemName()
+            let device = UIDevice.current
+
+            let deviceInfo: [String: String] = [
+                "model": device.model,
+                "name": device.name,
+                "systemName": device.systemName,
+                "systemVersion": device.systemVersion,
+                "identifierForVendor": device.identifierForVendor?.uuidString ?? "unknown"
+            ]
+
+            currentDevice = try await SessionsAPIService.registerDevice(
+                deviceToken: deviceToken,
+                systemName: systemName,
+                platform: "ios",
+                isEmulator: isEmulator(),
+                deviceInfo: deviceInfo
+            )
+        } catch {
+            // Non-critical - device registration can fail silently
+        }
+    }
+
+    private func startRenameDevice() {
+        deviceNameInput = currentDevice?.userName ?? ""
+        deviceEditing = true
+    }
+
+    private func cancelRenameDevice() {
+        deviceEditing = false
+        deviceNameInput = ""
+    }
+
+    private func saveDeviceName() async {
+        guard let device = currentDevice else { return }
+        deviceNameSaving = true
+        defer { deviceNameSaving = false }
+
+        let trimmedName = deviceNameInput.trimmingCharacters(in: .whitespaces)
+        let userName: String? = trimmedName.isEmpty ? nil : trimmedName
+
+        do {
+            try await SessionsAPIService.saveDeviceName(deviceToken: device.deviceToken, userName: userName)
+            currentDevice = UserDevice(
+                deviceToken: device.deviceToken,
+                systemName: device.systemName,
+                userName: userName,
+                platform: device.platform,
+                isEmulator: device.isEmulator
+            )
+            deviceEditing = false
+            deviceNameInput = ""
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1824,12 +1927,64 @@ private struct EditSessionView: View {
 
 private struct AudioDefaultsSheet: View {
     @Binding var defaults: AudioDefaults
+    let currentDevice: UserDevice?
+    @Binding var deviceEditing: Bool
+    @Binding var deviceNameInput: String
+    let deviceNameSaving: Bool
     let onSave: () -> Void
+    let onStartRename: () -> Void
+    let onCancelRename: () -> Void
+    let onSaveDeviceName: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
+                // Device section
+                if let device = currentDevice {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("This Device")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Button(deviceEditing ? "Cancel" : "Rename") {
+                                    if deviceEditing {
+                                        onCancelRename()
+                                    } else {
+                                        onStartRename()
+                                    }
+                                }
+                                .font(.caption)
+                            }
+
+                            if !deviceEditing {
+                                Text(device.userName ?? device.systemName)
+                                    .font(.body.weight(.semibold))
+                            } else {
+                                HStack(spacing: 8) {
+                                    TextField(device.systemName, text: $deviceNameInput)
+                                        .textFieldStyle(.roundedBorder)
+
+                                    Button {
+                                        onSaveDeviceName()
+                                    } label: {
+                                        if deviceNameSaving {
+                                            ProgressView()
+                                                .frame(width: 14, height: 14)
+                                        } else {
+                                            Text("Save")
+                                        }
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(deviceNameSaving)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     Toggle("Echo Cancellation", isOn: $defaults.echoCancellation)
                     Toggle("Noise Suppression", isOn: $defaults.noiseSuppression)
@@ -1870,7 +2025,7 @@ private struct AudioDefaultsSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }
 

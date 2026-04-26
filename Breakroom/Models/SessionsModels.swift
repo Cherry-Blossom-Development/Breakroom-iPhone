@@ -273,3 +273,37 @@ struct AudioDefaults: Codable {
         playbackVolume: 0.75
     )
 }
+
+// MARK: - User Device
+
+struct UserDevice: Codable {
+    let deviceToken: String
+    let systemName: String
+    let userName: String?
+    let platform: String
+    let isEmulator: Int
+
+    enum CodingKeys: String, CodingKey {
+        case deviceToken = "device_token"
+        case systemName = "system_name"
+        case userName = "user_name"
+        case platform
+        case isEmulator = "is_emulator"
+    }
+}
+
+struct DeviceResponse: Decodable {
+    let device: UserDevice
+}
+
+struct DeviceRegistrationRequest: Encodable {
+    let deviceToken: String
+    let systemName: String
+    let platform: String
+    let isEmulator: Bool
+    let deviceInfo: [String: String]
+}
+
+struct DeviceNameRequest: Encodable {
+    let userName: String?
+}

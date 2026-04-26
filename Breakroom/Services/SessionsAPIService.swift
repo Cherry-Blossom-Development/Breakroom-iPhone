@@ -183,4 +183,39 @@ enum SessionsAPIService {
             body: defaults
         )
     }
+
+    // MARK: - Devices
+
+    /// Register or refresh a device for the current user
+    static func registerDevice(
+        deviceToken: String,
+        systemName: String,
+        platform: String = "ios",
+        isEmulator: Bool,
+        deviceInfo: [String: String]
+    ) async throws -> UserDevice {
+        let body = DeviceRegistrationRequest(
+            deviceToken: deviceToken,
+            systemName: systemName,
+            platform: platform,
+            isEmulator: isEmulator,
+            deviceInfo: deviceInfo
+        )
+        let response: DeviceResponse = try await APIClient.shared.request(
+            "/api/user/devices",
+            method: "POST",
+            body: body
+        )
+        return response.device
+    }
+
+    /// Update the user-friendly name for a device
+    static func saveDeviceName(deviceToken: String, userName: String?) async throws {
+        let body = DeviceNameRequest(userName: userName)
+        try await APIClient.shared.requestVoid(
+            "/api/user/devices/\(deviceToken)/name",
+            method: "PUT",
+            body: body
+        )
+    }
 }
