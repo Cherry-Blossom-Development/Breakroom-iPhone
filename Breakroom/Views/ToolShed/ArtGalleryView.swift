@@ -325,6 +325,7 @@ struct GallerySettingsSheet: View {
 
     @State private var galleryName: String
     @State private var galleryUrl: String
+    @State private var galleryBio: String
     @State private var urlAvailable: Bool? = nil
     @State private var isCheckingUrl = false
     @State private var isSaving = false
@@ -336,6 +337,7 @@ struct GallerySettingsSheet: View {
         self.onSave = onSave
         _galleryName = State(initialValue: settings.galleryName)
         _galleryUrl = State(initialValue: settings.galleryUrl)
+        _galleryBio = State(initialValue: settings.bio ?? "")
     }
 
     var body: some View {
@@ -360,6 +362,13 @@ struct GallerySettingsSheet: View {
                                 .foregroundStyle(available ? .green : .red)
                         }
                     }
+                }
+
+                Section {
+                    TextField("Gallery Description", text: $galleryBio, axis: .vertical)
+                        .lineLimit(2...4)
+                } footer: {
+                    Text("Leave blank to use your profile bio on the public gallery.")
                 }
 
                 Section {
@@ -418,10 +427,12 @@ struct GallerySettingsSheet: View {
 
     private func save() async {
         isSaving = true
+        let trimmedBio = galleryBio.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             let updated = try await GalleryAPIService.updateSettings(
                 galleryUrl: galleryUrl,
-                galleryName: galleryName
+                galleryName: galleryName,
+                bio: trimmedBio.isEmpty ? nil : trimmedBio
             )
             onSave(updated)
             dismiss()
@@ -442,6 +453,7 @@ struct CreateGallerySheet: View {
 
     @State private var galleryName = ""
     @State private var galleryUrl = ""
+    @State private var galleryBio = ""
     @State private var urlAvailable: Bool? = nil
     @State private var isCheckingUrl = false
     @State private var isSaving = false
@@ -470,6 +482,13 @@ struct CreateGallerySheet: View {
                                 .foregroundStyle(available ? .green : .red)
                         }
                     }
+                }
+
+                Section {
+                    TextField("Gallery Description", text: $galleryBio, axis: .vertical)
+                        .lineLimit(2...4)
+                } footer: {
+                    Text("Leave blank to use your profile bio on the public gallery.")
                 }
 
                 Section {
@@ -526,10 +545,12 @@ struct CreateGallerySheet: View {
 
     private func create() async {
         isSaving = true
+        let trimmedBio = galleryBio.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             let created = try await GalleryAPIService.createSettings(
                 galleryUrl: galleryUrl,
-                galleryName: galleryName
+                galleryName: galleryName,
+                bio: trimmedBio.isEmpty ? nil : trimmedBio
             )
             onCreate(created)
             dismiss()

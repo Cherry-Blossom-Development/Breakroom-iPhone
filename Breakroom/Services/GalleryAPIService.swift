@@ -10,8 +10,8 @@ enum GalleryAPIService {
     }
 
     /// Create gallery settings
-    static func createSettings(galleryUrl: String?, galleryName: String?) async throws -> GallerySettings {
-        let body = CreateGallerySettingsRequest(galleryUrl: galleryUrl, galleryName: galleryName)
+    static func createSettings(galleryUrl: String?, galleryName: String?, bio: String? = nil) async throws -> GallerySettings {
+        let body = CreateGallerySettingsRequest(galleryUrl: galleryUrl, galleryName: galleryName, bio: bio)
         let response: GallerySettingsResponse = try await APIClient.shared.request(
             "/api/gallery/settings",
             method: "POST",
@@ -24,8 +24,8 @@ enum GalleryAPIService {
     }
 
     /// Update gallery settings
-    static func updateSettings(galleryUrl: String?, galleryName: String?) async throws -> GallerySettings {
-        let body = UpdateGallerySettingsRequest(galleryUrl: galleryUrl, galleryName: galleryName)
+    static func updateSettings(galleryUrl: String?, galleryName: String?, bio: String? = nil) async throws -> GallerySettings {
+        let body = UpdateGallerySettingsRequest(galleryUrl: galleryUrl, galleryName: galleryName, bio: bio)
         let response: GallerySettingsResponse = try await APIClient.shared.request(
             "/api/gallery/settings",
             method: "PUT",

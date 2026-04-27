@@ -7,11 +7,12 @@ struct GallerySettings: Codable, Identifiable {
     let userId: Int?
     let galleryUrl: String
     let galleryName: String
+    let bio: String?
     let createdAt: String?
     let updatedAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case id
+        case id, bio
         case userId = "user_id"
         case galleryUrl = "gallery_url"
         case galleryName = "gallery_name"
@@ -124,8 +125,10 @@ struct GalleryUrlCheckResponse: Decodable {
 struct CreateGallerySettingsRequest: Encodable {
     let galleryUrl: String?
     let galleryName: String?
+    let bio: String?
 
     enum CodingKeys: String, CodingKey {
+        case bio
         case galleryUrl = "gallery_url"
         case galleryName = "gallery_name"
     }
@@ -134,8 +137,10 @@ struct CreateGallerySettingsRequest: Encodable {
 struct UpdateGallerySettingsRequest: Encodable {
     let galleryUrl: String?
     let galleryName: String?
+    let bio: String?
 
     enum CodingKeys: String, CodingKey {
+        case bio
         case galleryUrl = "gallery_url"
         case galleryName = "gallery_name"
     }
