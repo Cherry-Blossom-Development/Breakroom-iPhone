@@ -7,20 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00GS1A5WE1A2B3C4D5E6F7G8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */; };
-		00PN1A5WE1A2B3C4D5E6F7G8 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */; };
-		B63C82B12F94296400AEBFA7 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82B02F94296400AEBFA7 /* FirebaseMessaging */; };
 		00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */; };
 		00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */; };
 		00FD1A5WE1A2B3C4D5E6F7G8 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */; };
+		00GS1A5WE1A2B3C4D5E6F7G8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */; };
 		00MM1A5WE1A2B3C4D5E6F7G8 /* ModerationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MM1A5WE1A2B3C4D5E6F7G9 /* ModerationModels.swift */; };
 		00MS1A5WE1A2B3C4D5E6F7G8 /* ModerationAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */; };
 		00MT1A5WE1A2B3C4D5E6F7G8 /* ModerationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00MT1A5WE1A2B3C4D5E6F7G9 /* ModerationStore.swift */; };
+		00PN1A5WE1A2B3C4D5E6F7G8 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */; };
 		00PP1A5WE1A2B3C4D5E6F7G8 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */; };
+		00PW1A5WE1A2B3C4D5E6F7G8 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PW1A5WE1A2B3C4D5E6F7G9 /* PaywallView.swift */; };
 		00SA1A5WE1A2B3C4D5E6F7G8 /* SessionsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00SA1A5WE1A2B3C4D5E6F7G9 /* SessionsAPIService.swift */; };
 		00SE1A5WE1A2B3C4D5E6F7G8 /* SessionsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00SE1A5WE1A2B3C4D5E6F7G9 /* SessionsModels.swift */; };
 		00SK1A5WE1A2B3C4D5E6F7G8 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00SK1A5WE1A2B3C4D5E6F7G9 /* StoreKitManager.swift */; };
-		00PW1A5WE1A2B3C4D5E6F7G8 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00PW1A5WE1A2B3C4D5E6F7G9 /* PaywallView.swift */; };
 		00SM1A5WE1A2B3C4D5E6F7G8 /* SubscriptionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00SM1A5WE1A2B3C4D5E6F7G9 /* SubscriptionModels.swift */; };
 		00SU1A5WE1A2B3C4D5E6F7G8 /* SubscriptionAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00SU1A5WE1A2B3C4D5E6F7G9 /* SubscriptionAPIService.swift */; };
 		04CC645E800401B901D9696F /* BlogSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */; };
@@ -77,6 +76,7 @@
 		B63C82AB2F94296400AEBFA7 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AA2F94296400AEBFA7 /* FirebaseAnalytics */; };
 		B63C82AD2F94296400AEBFA7 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AC2F94296400AEBFA7 /* FirebaseAnalyticsCore */; };
 		B63C82AF2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82AE2F94296400AEBFA7 /* FirebaseAnalyticsIdentitySupport */; };
+		B63C82B12F94296400AEBFA7 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B63C82B02F94296400AEBFA7 /* FirebaseMessaging */; };
 		B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */; };
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
@@ -99,20 +99,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		00EN1A5WE1A2B3C4D5E6F7G9 /* Breakroom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Breakroom.entitlements; sourceTree = "<group>"; };
-		00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		00EN1A5WE1A2B3C4D5E6F7G9 /* Breakroom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Breakroom.entitlements; sourceTree = "<group>"; };
 		00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
 		00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
+		00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		00MM1A5WE1A2B3C4D5E6F7G9 /* ModerationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationModels.swift; sourceTree = "<group>"; };
 		00MS1A5WE1A2B3C4D5E6F7G9 /* ModerationAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationAPIService.swift; sourceTree = "<group>"; };
 		00MT1A5WE1A2B3C4D5E6F7G9 /* ModerationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationStore.swift; sourceTree = "<group>"; };
+		00PN1A5WE1A2B3C4D5E6F7G9 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		00PP1A5WE1A2B3C4D5E6F7G9 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
+		00PW1A5WE1A2B3C4D5E6F7G9 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		00SA1A5WE1A2B3C4D5E6F7G9 /* SessionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsAPIService.swift; sourceTree = "<group>"; };
 		00SE1A5WE1A2B3C4D5E6F7G9 /* SessionsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsModels.swift; sourceTree = "<group>"; };
 		00SK1A5WE1A2B3C4D5E6F7G9 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
-		00PW1A5WE1A2B3C4D5E6F7G9 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		00SM1A5WE1A2B3C4D5E6F7G9 /* SubscriptionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionModels.swift; sourceTree = "<group>"; };
 		00SU1A5WE1A2B3C4D5E6F7G9 /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
 		013B71C54903F120BD58452A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -744,7 +744,7 @@
 				CODE_SIGN_ENTITLEMENTS = Breakroom/Breakroom.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"Breakroom/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -776,7 +776,7 @@
 				CODE_SIGN_ENTITLEMENTS = Breakroom/Breakroom.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"Breakroom/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
