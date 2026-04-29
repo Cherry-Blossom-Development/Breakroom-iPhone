@@ -234,6 +234,17 @@ struct ChatWidget: View {
                             )
                             .id(message.id)
                         }
+
+                        // Bottom anchor for reliable scrolling
+                        Color.clear
+                            .frame(height: 1)
+                            .id("bottomAnchor")
+                            .onAppear {
+                                // Scroll to bottom when anchor first appears
+                                if !isLoading && !messages.isEmpty {
+                                    proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                                }
+                            }
                     }
                 }
             }
@@ -242,18 +253,23 @@ struct ChatWidget: View {
             .defaultScrollAnchor(.bottom)
             .onChange(of: isLoading) { wasLoading, nowLoading in
                 // Scroll to bottom when initial load completes
-                if wasLoading && !nowLoading, let last = messages.last {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        proxy.scrollTo(last.id, anchor: .bottom)
+                if wasLoading && !nowLoading && !messages.isEmpty {
+                    // Multiple scroll attempts to handle lazy loading
+                    Task {
+                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                        try? await Task.sleep(for: .milliseconds(100))
+                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                        try? await Task.sleep(for: .milliseconds(200))
+                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
                     }
                 }
             }
             .onChange(of: messages.count) {
                 if suppressScrollToBottom {
                     suppressScrollToBottom = false
-                } else if let last = messages.last {
+                } else if !messages.isEmpty {
                     withAnimation {
-                        proxy.scrollTo(last.id, anchor: .bottom)
+                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
                     }
                 }
             }

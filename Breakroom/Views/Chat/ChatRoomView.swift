@@ -68,6 +68,11 @@ struct ChatRoomView: View {
                             )
                             .id(message.id)
                         }
+
+                        // Bottom anchor for scrolling
+                        Color.clear
+                            .frame(height: 1)
+                            .id("bottomAnchor")
                     }
                     .padding()
                 }
@@ -78,6 +83,17 @@ struct ChatRoomView: View {
                     } else if let lastMessage = chatViewModel.messages.last {
                         withAnimation {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: chatViewModel.isLoadingMessages) { oldValue, newValue in
+                    // Scroll to bottom when initial load completes
+                    if oldValue == true && newValue == false && !chatViewModel.messages.isEmpty {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(100))
+                            withAnimation {
+                                proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                            }
                         }
                     }
                 }
