@@ -28,6 +28,10 @@ struct SessionsView: View {
     @State private var deviceNameInput = ""
     @State private var deviceNameSaving = false
 
+    // Subscription
+    @State private var storeKitManager = StoreKitManager.shared
+    @State private var showPaywall = false
+
     // Bands & Instruments
     @State private var bands: [Band] = []
     @State private var instruments: [Instrument] = []
@@ -118,10 +122,25 @@ struct SessionsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showAudioDefaults = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
+                HStack(spacing: 12) {
+                    if !storeKitManager.isSubscribed {
+                        Button {
+                            showPaywall = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                Text("Upgrade")
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.purple)
+                        }
+                    }
+
+                    Button {
+                        showAudioDefaults = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
                 }
             }
         }
@@ -176,6 +195,16 @@ struct SessionsView: View {
             }
         } message: {
             Text("Delete \"\(bandToDelete?.name ?? "")\"? This cannot be undone.")
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(
+                onDismiss: {
+                    showPaywall = false
+                },
+                onSubscribed: {
+                    showPaywall = false
+                }
+            )
         }
     }
 
@@ -1026,8 +1055,16 @@ struct SessionsView: View {
         async let instrumentsTask: () = loadInstruments()
         async let audioDefaultsTask: () = loadAudioDefaults()
         async let deviceTask: () = registerDevice()
+        async let subscriptionTask: () = checkSubscriptionStatus()
 
-        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask, deviceTask)
+        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask, deviceTask, subscriptionTask)
+    }
+
+    private func checkSubscriptionStatus() async {
+        // Check local entitlements first for quick UI update
+        await storeKitManager.checkLocalEntitlements()
+        // Then verify with backend
+        await storeKitManager.checkSubscriptionStatus()
     }
 
     private func loadAudioDefaults() async {
