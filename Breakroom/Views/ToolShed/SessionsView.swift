@@ -1324,6 +1324,9 @@ struct SessionsView: View {
             showCreateBand = false
             newBandName = ""
             newBandDescription = ""
+        } catch APIError.subscriptionRequired {
+            // Show paywall when free limit is reached
+            showPaywall = true
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1506,6 +1509,10 @@ struct SessionsView: View {
 
             try? FileManager.default.removeItem(at: fileURL)
             pendingRecordingURL = nil
+        } catch APIError.subscriptionRequired {
+            // Show paywall when free limit is reached
+            // Keep the recording file so user can retry after subscribing
+            showPaywall = true
         } catch {
             errorMessage = error.localizedDescription
         }

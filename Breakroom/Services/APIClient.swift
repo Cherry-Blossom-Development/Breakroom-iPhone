@@ -10,6 +10,7 @@ enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
     case unauthorized
+    case subscriptionRequired
     case serverError(String)
     case decodingError(Error)
     case networkError(Error)
@@ -23,6 +24,8 @@ enum APIError: LocalizedError {
         case .unauthorized:
             // This shouldn't be shown to users - the app auto-redirects to login
             return "Session expired"
+        case .subscriptionRequired:
+            return "Subscription required"
         case .serverError(let message):
             return message
         case .decodingError(let error):
@@ -132,6 +135,8 @@ final class APIClient: @unchecked Sendable {
         case 401:
             await handleUnauthorized()
             throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
@@ -192,6 +197,8 @@ final class APIClient: @unchecked Sendable {
         case 401:
             await handleUnauthorized()
             throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
@@ -232,6 +239,8 @@ final class APIClient: @unchecked Sendable {
         case 401:
             await handleUnauthorized()
             throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
@@ -306,6 +315,8 @@ final class APIClient: @unchecked Sendable {
         case 401:
             await handleUnauthorized()
             throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
         default:
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
