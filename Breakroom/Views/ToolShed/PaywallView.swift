@@ -47,6 +47,10 @@ struct PaywallView: View {
                             .foregroundStyle(.purple)
                     }
 
+                    Text("Auto-renews monthly. Cancel anytime.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
                     if let error = storeKitManager.errorMessage {
                         Text(error)
                             .font(.caption)
@@ -86,6 +90,29 @@ struct PaywallView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .disabled(storeKitManager.isPurchasing)
+
+                    // Legal links required by App Store
+                    HStack(spacing: 16) {
+                        NavigationLink {
+                            TermsOfUseView()
+                        } label: {
+                            Text("Terms of Use")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        NavigationLink {
+                            PrivacyPolicyView()
+                        } label: {
+                            Text("Privacy Policy")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .padding(.bottom, 32)
             }
