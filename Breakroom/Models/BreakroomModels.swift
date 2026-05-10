@@ -58,7 +58,7 @@ struct BreakroomBlock: Codable, Identifiable {
     }
 
     var displayTitle: String {
-        title ?? type?.defaultTitle ?? blockType.capitalized
+        title ?? contentName ?? type?.defaultTitle ?? blockType.capitalized
     }
 
     var heightMultiplier: Int {
