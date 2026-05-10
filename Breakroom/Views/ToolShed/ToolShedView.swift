@@ -156,6 +156,8 @@ struct ToolShedView: View {
             SessionsView()
         case .artGallery:
             ArtGalleryView()
+        case .collections:
+            CollectionsView()
         case .blog:
             BlogManagementView()
         case .kanban:
@@ -207,6 +209,7 @@ enum ToolDestination: Hashable {
     case lyricLab
     case sessions
     case artGallery
+    case collections
     case blog
     case kanban
 }
@@ -298,6 +301,13 @@ enum ToolCategory: CaseIterable {
                     icon: "photo.artframe",
                     destination: .artGallery,
                     shortcutUrl: "/art-gallery"
+                ),
+                Tool(
+                    name: "Collections",
+                    description: "Create and manage collections of your work for sale. Set prices, availability, and shipping details.",
+                    icon: "square.stack.3d.up",
+                    destination: .collections,
+                    shortcutUrl: "/collections"
                 )
             ]
         case .writer:

@@ -7,7 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00CA1A5WE1A2B3C4D5E6F7G8 /* CollectionsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CA1A5WE1A2B3C4D5E6F7G9 /* CollectionsAPIService.swift */; };
+		00CD1A5WE1A2B3C4D5E6F7G8 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CD1A5WE1A2B3C4D5E6F7G9 /* CollectionDetailView.swift */; };
 		00CF1G5WE1A2B3C4D5E6F7G8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */; };
+		00CM1A5WE1A2B3C4D5E6F7G8 /* CollectionsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CM1A5WE1A2B3C4D5E6F7G9 /* CollectionsModels.swift */; };
+		00CV1A5WE1A2B3C4D5E6F7G8 /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CV1A5WE1A2B3C4D5E6F7G9 /* CollectionsView.swift */; };
 		00EU1A5WE1A2B3C4D5E6F7G8 /* EulaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */; };
 		00FD1A5WE1A2B3C4D5E6F7G8 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */; };
 		00GS1A5WE1A2B3C4D5E6F7G8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00GS1A5WE1A2B3C4D5E6F7G9 /* GoogleService-Info.plist */; };
@@ -100,7 +104,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00CA1A5WE1A2B3C4D5E6F7G9 /* CollectionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsAPIService.swift; sourceTree = "<group>"; };
+		00CD1A5WE1A2B3C4D5E6F7G9 /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
 		00CF1G5WE1A2B3C4D5E6F7G9 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		00CM1A5WE1A2B3C4D5E6F7G9 /* CollectionsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsModels.swift; sourceTree = "<group>"; };
+		00CV1A5WE1A2B3C4D5E6F7G9 /* CollectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsView.swift; sourceTree = "<group>"; };
 		00EN1A5WE1A2B3C4D5E6F7G9 /* Breakroom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Breakroom.entitlements; sourceTree = "<group>"; };
 		00EU1A5WE1A2B3C4D5E6F7G9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
 		00FD1A5WE1A2B3C4D5E6F7G9 /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
@@ -238,6 +246,7 @@
 				E2DF196B5E353D644DD9FDE9 /* Blog */,
 				8CD871E9860C7645C09AE129 /* Breakroom */,
 				8AE094EB25F9EBB7F753CE91 /* Chat */,
+				00CG1A5WE1A2B3C4D5E6F7G9 /* Collections */,
 				DD6EE17AE2DD8CCBED7A2625 /* Company */,
 				F80DEE2EB9A8D15C04843203 /* Employment */,
 				D15A831D02FE70184711F26C /* Friends */,
@@ -265,6 +274,7 @@
 				A77C18853F8F4E57876C8998 /* BlogAPIService.swift */,
 				1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */,
 				837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */,
+				00CA1A5WE1A2B3C4D5E6F7G9 /* CollectionsAPIService.swift */,
 				5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */,
 				D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */,
 				4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */,
@@ -357,6 +367,15 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
+		00CG1A5WE1A2B3C4D5E6F7G9 /* Collections */ = {
+			isa = PBXGroup;
+			children = (
+				00CD1A5WE1A2B3C4D5E6F7G9 /* CollectionDetailView.swift */,
+				00CV1A5WE1A2B3C4D5E6F7G9 /* CollectionsView.swift */,
+			);
+			path = Collections;
+			sourceTree = "<group>";
+		};
 		8CD871E9860C7645C09AE129 /* Breakroom */ = {
 			isa = PBXGroup;
 			children = (
@@ -377,6 +396,7 @@
 				40740E66D14A56BE618FCEB7 /* BlogModels.swift */,
 				4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */,
 				D7B4B3CB776F4FF533F31177 /* ChatModels.swift */,
+				00CM1A5WE1A2B3C4D5E6F7G9 /* CollectionsModels.swift */,
 				34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */,
 				5E6A7AB807A923430F64364A /* FriendsModels.swift */,
 				B33066537C65EE3DB5A792F8 /* GalleryModels.swift */,
@@ -549,6 +569,10 @@
 				9CB6DD631C40F07AC1A7B9EA /* BreakroomViewModel.swift in Sources */,
 				B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */,
 				A74769456CE90C1D9159FBF9 /* ChatListView.swift in Sources */,
+				00CA1A5WE1A2B3C4D5E6F7G8 /* CollectionsAPIService.swift in Sources */,
+				00CD1A5WE1A2B3C4D5E6F7G8 /* CollectionDetailView.swift in Sources */,
+				00CM1A5WE1A2B3C4D5E6F7G8 /* CollectionsModels.swift in Sources */,
+				00CV1A5WE1A2B3C4D5E6F7G8 /* CollectionsView.swift in Sources */,
 				44D936346020D1B0CEE657B4 /* ChatModels.swift in Sources */,
 				762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */,
 				FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */,
