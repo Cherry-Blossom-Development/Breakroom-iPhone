@@ -18,7 +18,7 @@ struct CollectionsView: View {
     @State private var isSaving = false
 
     var body: some View {
-        Group {
+        ZStack {
             if isLoading {
                 ProgressView("Loading collections...")
                     .accessibilityIdentifier("collectionsLoading")

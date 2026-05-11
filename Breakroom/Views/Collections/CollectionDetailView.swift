@@ -17,7 +17,7 @@ struct CollectionDetailView: View {
     @State private var showDeleteConfirmation = false
 
     var body: some View {
-        Group {
+        ZStack {
             if isLoading {
                 ProgressView("Loading items...")
                     .accessibilityIdentifier("collectionItemsLoading")
