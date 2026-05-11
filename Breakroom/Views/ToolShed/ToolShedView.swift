@@ -7,10 +7,7 @@ struct ToolShedView: View {
     @State private var isLoadingFeatures = true
 
     var body: some View {
-        ZStack {
-            Color.clear // Ensures accessibility identifier anchor is always present
-
-            ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 // Intro
                 VStack(alignment: .leading, spacing: 8) {
@@ -42,12 +39,12 @@ struct ToolShedView: View {
                 .padding(.horizontal)
             }
             .padding(.vertical)
-            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screenToolShed")
         .navigationTitle("Tool Shed")
+        .navigationDestination(for: ToolDestination.self) { destination in
+            destinationView(destination)
+        }
         .task {
             await loadFeatures()
             await loadShortcuts()
@@ -142,9 +139,6 @@ struct ToolShedView: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
-        .navigationDestination(for: ToolDestination.self) { destination in
-            destinationView(destination)
-        }
     }
 
     @ViewBuilder

@@ -38,9 +38,8 @@ struct CollectionItem: Codable, Identifiable {
     let description: String?
     let imagePath: String?
     let displayOrder: Int?
-    let settings: CollectionItemSettings?
     let priceCents: Int?
-    let isAvailable: Bool?
+    let isAvailable: Bool
     let shippingCostCents: Int?
     let weightOz: Double?
     let lengthIn: Double?
@@ -57,7 +56,6 @@ struct CollectionItem: Codable, Identifiable {
         case description
         case imagePath = "image_path"
         case displayOrder = "display_order"
-        case settings
         case priceCents = "price_cents"
         case isAvailable = "is_available"
         case shippingCostCents = "shipping_cost_cents"
@@ -67,6 +65,46 @@ struct CollectionItem: Codable, Identifiable {
         case heightIn = "height_in"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        collectionId = try container.decodeIfPresent(Int.self, forKey: .collectionId)
+        userId = try container.decodeIfPresent(Int.self, forKey: .userId)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
+        displayOrder = try container.decodeIfPresent(Int.self, forKey: .displayOrder)
+        priceCents = try container.decodeIfPresent(Int.self, forKey: .priceCents)
+        shippingCostCents = try container.decodeIfPresent(Int.self, forKey: .shippingCostCents)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+
+        // Handle is_available as Int (0/1) or Bool
+        if let intValue = try? container.decode(Int.self, forKey: .isAvailable) {
+            isAvailable = intValue != 0
+        } else if let boolValue = try? container.decode(Bool.self, forKey: .isAvailable) {
+            isAvailable = boolValue
+        } else {
+            isAvailable = false
+        }
+
+        // Handle numeric fields that may come as strings from the API
+        weightOz = Self.decodeDoubleOrString(from: container, forKey: .weightOz)
+        lengthIn = Self.decodeDoubleOrString(from: container, forKey: .lengthIn)
+        widthIn = Self.decodeDoubleOrString(from: container, forKey: .widthIn)
+        heightIn = Self.decodeDoubleOrString(from: container, forKey: .heightIn)
+    }
+
+    private static func decodeDoubleOrString(from container: KeyedDecodingContainer<CodingKeys>, forKey key: CodingKeys) -> Double? {
+        if let doubleValue = try? container.decodeIfPresent(Double.self, forKey: key) {
+            return doubleValue
+        }
+        if let stringValue = try? container.decodeIfPresent(String.self, forKey: key) {
+            return Double(stringValue)
+        }
+        return nil
     }
 
     // MARK: - Computed Properties
@@ -85,7 +123,7 @@ struct CollectionItem: Codable, Identifiable {
     }
 
     var isListed: Bool {
-        isAvailable ?? false
+        isAvailable
     }
 }
 

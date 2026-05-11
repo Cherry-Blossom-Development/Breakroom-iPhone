@@ -126,8 +126,28 @@ struct CollectionDetailView: View {
         error = nil
         do {
             items = try await CollectionsAPIService.getItems(collectionId: collection.id)
+        } catch let decodingError as DecodingError {
+            // Get raw response for debugging
+            var rawResponse = ""
+            if let raw = try? await CollectionsAPIService.getItemsRaw(collectionId: collection.id) {
+                // Show first 500 chars of raw response
+                rawResponse = "\n\nRaw (first 500 chars): " + String(raw.prefix(500))
+            }
+
+            switch decodingError {
+            case .typeMismatch(let type, let context):
+                self.error = "Type mismatch: \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))" + rawResponse
+            case .valueNotFound(let type, let context):
+                self.error = "Value not found: \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))" + rawResponse
+            case .keyNotFound(let key, let context):
+                self.error = "Key not found: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))" + rawResponse
+            case .dataCorrupted(let context):
+                self.error = "Data corrupted at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")): \(context.debugDescription)" + rawResponse
+            @unknown default:
+                self.error = "Decoding error: \(decodingError.localizedDescription)" + rawResponse
+            }
         } catch {
-            self.error = error.localizedDescription
+            self.error = String(describing: error)
         }
         isLoading = false
     }
@@ -154,12 +174,13 @@ private struct ItemCard: View {
             // Image
             if let imagePath = item.imagePath, !imagePath.isEmpty {
                 CollectionItemImage(path: imagePath)
-                    .aspectRatio(4/3, contentMode: .fill)
+                    .frame(height: 120)
+                    .frame(maxWidth: .infinity)
                     .clipped()
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
-                    .aspectRatio(4/3, contentMode: .fill)
+                    .frame(height: 120)
                     .overlay {
                         Image(systemName: "photo")
                             .font(.largeTitle)
@@ -407,7 +428,7 @@ private struct ItemFormSheet: View {
                     if let cents = item.priceCents {
                         priceString = String(format: "%.2f", Double(cents) / 100.0)
                     }
-                    isAvailable = item.isAvailable ?? false
+                    isAvailable = item.isAvailable
                     if let cents = item.shippingCostCents {
                         shippingCostString = String(format: "%.2f", Double(cents) / 100.0)
                     }

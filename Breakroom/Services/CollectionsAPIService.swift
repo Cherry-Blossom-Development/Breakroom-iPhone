@@ -6,8 +6,7 @@ enum CollectionsAPIService {
 
     /// Get all collections for the authenticated user
     static func getCollections() async throws -> [Collection] {
-        let response: CollectionsResponse = try await APIClient.shared.request("/api/collections")
-        return response.collections
+        try await APIClient.shared.request("/api/collections")
     }
 
     /// Get a specific collection
@@ -38,10 +37,18 @@ enum CollectionsAPIService {
 
     /// Get all items in a collection
     static func getItems(collectionId: Int) async throws -> [CollectionItem] {
-        let response: CollectionItemsResponse = try await APIClient.shared.request(
-            "/api/collections/\(collectionId)/items"
-        )
-        return response.items
+        try await APIClient.shared.request("/api/collections/\(collectionId)/items")
+    }
+
+    /// Debug: Get raw JSON response for items
+    static func getItemsRaw(collectionId: Int) async throws -> String {
+        let url = URL(string: "\(APIClient.shared.baseURL)/api/collections/\(collectionId)/items")!
+        var request = URLRequest(url: url)
+        if let token = KeychainManager.bearerToken {
+            request.setValue(token, forHTTPHeaderField: "Authorization")
+        }
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return String(data: data, encoding: .utf8) ?? "Could not decode response"
     }
 
     /// Create a new item in a collection

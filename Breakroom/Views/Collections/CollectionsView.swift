@@ -18,68 +18,66 @@ struct CollectionsView: View {
     @State private var isSaving = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Loading collections...")
-                } else if let error {
-                    ContentUnavailableView {
-                        Label("Error", systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Retry") {
-                            Task { await loadCollections() }
-                        }
+        Group {
+            if isLoading {
+                ProgressView("Loading collections...")
+            } else if let error {
+                ContentUnavailableView {
+                    Label("Error", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Retry") {
+                        Task { await loadCollections() }
                     }
-                } else if collections.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Collections", systemImage: "square.stack.3d.up")
-                    } description: {
-                        Text("Create your first collection to start showcasing your work.")
-                    } actions: {
-                        Button("Create Collection") {
-                            showCreateSheet = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                } else {
-                    collectionsList
                 }
-            }
-            .navigationTitle("Collections")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        editName = ""
-                        editBackgroundColor = "#6366f1"
-                        collectionToEdit = nil
+            } else if collections.isEmpty {
+                ContentUnavailableView {
+                    Label("No Collections", systemImage: "square.stack.3d.up")
+                } description: {
+                    Text("Create your first collection to start showcasing your work.")
+                } actions: {
+                    Button("Create Collection") {
                         showCreateSheet = true
-                    } label: {
-                        Image(systemName: "plus")
                     }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                collectionsList
+            }
+        }
+        .navigationTitle("Collections")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    editName = ""
+                    editBackgroundColor = "#6366f1"
+                    collectionToEdit = nil
+                    showCreateSheet = true
+                } label: {
+                    Image(systemName: "plus")
                 }
             }
-            .task {
-                await loadCollections()
+        }
+        .task {
+            await loadCollections()
+        }
+        .sheet(isPresented: $showCreateSheet) {
+            collectionFormSheet
+        }
+        .sheet(item: $collectionToEdit) { collection in
+            collectionFormSheet
+        }
+        .confirmationDialog(
+            "Delete Collection?",
+            isPresented: $showDeleteConfirmation,
+            presenting: collectionToDelete
+        ) { collection in
+            Button("Delete \"\(collection.name)\"", role: .destructive) {
+                Task { await deleteCollection(collection) }
             }
-            .sheet(isPresented: $showCreateSheet) {
-                collectionFormSheet
-            }
-            .sheet(item: $collectionToEdit) { collection in
-                collectionFormSheet
-            }
-            .confirmationDialog(
-                "Delete Collection?",
-                isPresented: $showDeleteConfirmation,
-                presenting: collectionToDelete
-            ) { collection in
-                Button("Delete \"\(collection.name)\"", role: .destructive) {
-                    Task { await deleteCollection(collection) }
-                }
-            } message: { collection in
-                Text("This will permanently delete \"\(collection.name)\" and all its items. This cannot be undone.")
-            }
+        } message: { collection in
+            Text("This will permanently delete \"\(collection.name)\" and all its items. This cannot be undone.")
         }
     }
 
@@ -89,7 +87,9 @@ struct CollectionsView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(collections) { collection in
-                    NavigationLink(value: collection) {
+                    NavigationLink {
+                        CollectionDetailView(collection: collection)
+                    } label: {
                         CollectionCard(
                             collection: collection,
                             onEdit: {
@@ -107,9 +107,6 @@ struct CollectionsView: View {
                 }
             }
             .padding()
-        }
-        .navigationDestination(for: Collection.self) { collection in
-            CollectionDetailView(collection: collection)
         }
     }
 

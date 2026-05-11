@@ -317,6 +317,10 @@ struct MainTabView: View {
             SessionsView()
         case "/art-gallery":
             ArtGalleryView()
+        case "/collections":
+            CollectionsView()
+        case "/blog":
+            BlogManagementView()
         default:
             // Handle project shortcuts like /project/123
             if shortcut.url.hasPrefix("/project/"),
