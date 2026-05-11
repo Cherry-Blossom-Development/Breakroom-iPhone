@@ -21,6 +21,7 @@ struct CollectionsView: View {
         Group {
             if isLoading {
                 ProgressView("Loading collections...")
+                    .accessibilityIdentifier("collectionsLoading")
             } else if let error {
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
@@ -30,7 +31,9 @@ struct CollectionsView: View {
                     Button("Retry") {
                         Task { await loadCollections() }
                     }
+                    .accessibilityIdentifier("collectionsRetryButton")
                 }
+                .accessibilityIdentifier("collectionsError")
             } else if collections.isEmpty {
                 ContentUnavailableView {
                     Label("No Collections", systemImage: "square.stack.3d.up")
@@ -41,11 +44,14 @@ struct CollectionsView: View {
                         showCreateSheet = true
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("collectionsCreateFirstButton")
                 }
+                .accessibilityIdentifier("collectionsEmpty")
             } else {
                 collectionsList
             }
         }
+        .accessibilityIdentifier("screenCollections")
         .navigationTitle("Collections")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -57,6 +63,7 @@ struct CollectionsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("collectionsAddButton")
             }
         }
         .task {
@@ -104,10 +111,12 @@ struct CollectionsView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("collectionCard_\(collection.id)")
                 }
             }
             .padding()
         }
+        .accessibilityIdentifier("collectionsList")
     }
 
     // MARK: - Form Sheet
@@ -118,6 +127,7 @@ struct CollectionsView: View {
                 Section {
                     TextField("Collection Name", text: $editName)
                         .textInputAutocapitalization(.words)
+                        .accessibilityIdentifier("collectionNameField")
                 }
 
                 Section("Background Color") {
@@ -125,8 +135,10 @@ struct CollectionsView: View {
                         get: { Color(hex: editBackgroundColor) ?? .indigo },
                         set: { editBackgroundColor = $0.hexString }
                     ))
+                    .accessibilityIdentifier("collectionColorPicker")
                 }
             }
+            .accessibilityIdentifier("collectionForm")
             .navigationTitle(collectionToEdit == nil ? "New Collection" : "Edit Collection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -135,12 +147,14 @@ struct CollectionsView: View {
                         showCreateSheet = false
                         collectionToEdit = nil
                     }
+                    .accessibilityIdentifier("collectionCancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task { await saveCollection() }
                     }
                     .disabled(editName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                    .accessibilityIdentifier("collectionSaveButton")
                 }
             }
         }

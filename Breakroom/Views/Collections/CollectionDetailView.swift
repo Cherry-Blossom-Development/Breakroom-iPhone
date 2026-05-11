@@ -20,6 +20,7 @@ struct CollectionDetailView: View {
         Group {
             if isLoading {
                 ProgressView("Loading items...")
+                    .accessibilityIdentifier("collectionItemsLoading")
             } else if let error {
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
@@ -29,7 +30,9 @@ struct CollectionDetailView: View {
                     Button("Retry") {
                         Task { await loadItems() }
                     }
+                    .accessibilityIdentifier("collectionItemsRetryButton")
                 }
+                .accessibilityIdentifier("collectionItemsError")
             } else if items.isEmpty {
                 ContentUnavailableView {
                     Label("No Items", systemImage: "photo.on.rectangle")
@@ -41,11 +44,14 @@ struct CollectionDetailView: View {
                         showItemSheet = true
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("collectionAddFirstItemButton")
                 }
+                .accessibilityIdentifier("collectionItemsEmpty")
             } else {
                 itemsGrid
             }
         }
+        .accessibilityIdentifier("screenCollectionDetail")
         .navigationTitle(collection.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -55,6 +61,7 @@ struct CollectionDetailView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityIdentifier("collectionAddItemButton")
             }
         }
         .task {

@@ -107,6 +107,7 @@ struct SessionsView: View {
             }
             .pickerStyle(.segmented)
             .padding()
+            .accessibilityIdentifier("sessionsTabPicker")
 
             // Content based on tab
             switch selectedTab {
@@ -118,6 +119,7 @@ struct SessionsView: View {
                 bandsTab
             }
         }
+        .accessibilityIdentifier("screenSessions")
         .navigationTitle("Sessions")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -333,6 +335,7 @@ struct SessionsView: View {
                         newBandDescription = ""
                     }
                     .font(.subheadline.weight(.medium))
+                    .accessibilityIdentifier("sessionsNewBandButton")
                 }
                 .padding(.horizontal)
 
@@ -414,6 +417,7 @@ struct SessionsView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)
+            .accessibilityIdentifier("sessionsRecordButton")
 
         case .recording where isThisContext:
             HStack(spacing: 8) {
@@ -432,6 +436,7 @@ struct SessionsView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
+                .accessibilityIdentifier("sessionsStopButton")
             }
 
         case .saving where isThisContext:
@@ -692,6 +697,7 @@ struct SessionsView: View {
             Text(subtitle)
         }
         .frame(minHeight: 150)
+        .accessibilityIdentifier("sessionsEmptyState")
     }
 
     // MARK: - Now Playing Bar
@@ -732,6 +738,7 @@ struct SessionsView: View {
         .overlay(alignment: .top) {
             Divider()
         }
+        .accessibilityIdentifier("sessionsNowPlayingBar")
     }
 
     // MARK: - Band Components
@@ -744,15 +751,18 @@ struct SessionsView: View {
 
             TextField("Band Name", text: $newBandName)
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("sessionsBandNameField")
 
             TextField("Description (optional)", text: $newBandDescription)
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("sessionsBandDescriptionField")
 
             Button("Create Band") {
                 Task { await createBand() }
             }
             .buttonStyle(.borderedProminent)
             .disabled(newBandName.trimmingCharacters(in: .whitespaces).isEmpty)
+            .accessibilityIdentifier("sessionsCreateBandButton")
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -895,12 +905,14 @@ struct SessionsView: View {
                     TextField("@handle", text: $inviteHandle)
                         .textFieldStyle(.roundedBorder)
                         .autocapitalization(.none)
+                        .accessibilityIdentifier("sessionsInviteHandleField")
 
                     Button("Send") {
                         Task { await inviteMember() }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(inviteHandle.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityIdentifier("sessionsInviteSendButton")
                 }
                 .padding(.horizontal)
 
@@ -1633,6 +1645,7 @@ private struct SessionRow: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("sessionsPlayButton_\(session.id)")
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.name)
@@ -1706,9 +1719,11 @@ private struct SessionRow: View {
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("sessionsDeleteButton_\(session.id)")
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+        .accessibilityIdentifier("sessionsRow_\(session.id)")
     }
 }
 
@@ -1729,6 +1744,7 @@ private struct BandMemberSessionRow: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("sessionsBandMemberPlayButton_\(session.id)")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.name)
@@ -1834,7 +1850,9 @@ private struct SaveRecordingView: View {
         Form {
             Section {
                 TextField("Session name", text: $name)
+                    .accessibilityIdentifier("sessionsSessionNameField")
                 TextField("Date (YYYY-MM-DD)", text: $date)
+                    .accessibilityIdentifier("sessionsSessionDateField")
             }
 
             Section {
@@ -1844,6 +1862,7 @@ private struct SaveRecordingView: View {
                         Text(band.name).tag(band.id as Int?)
                     }
                 }
+                .accessibilityIdentifier("sessionsSessionBandPicker")
 
                 if context == "individual" {
                     Picker("Instrument", selection: $selectedInstrumentId) {
@@ -1852,20 +1871,24 @@ private struct SaveRecordingView: View {
                             Text(instrument.name).tag(instrument.id as Int?)
                         }
                     }
+                    .accessibilityIdentifier("sessionsSessionInstrumentPicker")
                 }
             }
         }
+        .accessibilityIdentifier("sessionsSaveRecordingForm")
         .navigationTitle("Save Recording")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Discard", role: .destructive, action: onDiscard)
+                    .accessibilityIdentifier("sessionsDiscardButton")
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     onSave(name, date.isEmpty ? nil : date, selectedBandId, selectedInstrumentId)
                 }
                 .disabled(name.isEmpty)
+                .accessibilityIdentifier("sessionsSaveRecordingButton")
             }
         }
     }
