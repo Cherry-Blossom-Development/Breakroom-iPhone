@@ -254,14 +254,9 @@ struct ChatWidget: View {
             .onChange(of: isLoading) { wasLoading, nowLoading in
                 // Scroll to bottom when initial load completes
                 if wasLoading && !nowLoading && !messages.isEmpty {
-                    // Multiple scroll attempts to handle lazy loading
-                    Task {
-                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
-                        try? await Task.sleep(for: .milliseconds(100))
-                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
-                        try? await Task.sleep(for: .milliseconds(200))
-                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
-                    }
+                    // Multiple scroll attempts with increasing delays to handle lazy loading
+                    // Use DispatchQueue to ensure we're after the layout pass
+                    scrollToBottom(proxy: proxy, delays: [0, 100, 300, 500])
                 }
             }
             .onChange(of: messages.count) {
@@ -388,6 +383,14 @@ struct ChatWidget: View {
         }
 
         isLoadingOlderMessages = false
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, delays: [Int]) {
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay)) {
+                proxy.scrollTo("bottomAnchor", anchor: .bottom)
+            }
+        }
     }
 
     private func handlePickedMedia(_ item: PhotosPickerItem, roomId: Int) async {
