@@ -56,7 +56,7 @@ struct ChatListView: View {
                         }
 
                         // Rooms section
-                        Section("Rooms") {
+                        Section {
                             ForEach(chatViewModel.rooms) { room in
                                 HStack(spacing: 12) {
                                     // Kebab menu on the left
@@ -131,7 +131,7 @@ struct ChatListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("screenChat")
-        .navigationTitle("Chat")
+        .navigationTitle("Chat Rooms")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     connectionDot
