@@ -9,6 +9,7 @@ struct BlogManagementView: View {
     @State private var postToDelete: BlogPost?
     @State private var showDeleteConfirmation = false
     @State private var editingPost: BlogPost?
+    @State private var blogSettings: BlogSettings?
 
     private var isEditing: Binding<Bool> {
         Binding(
@@ -38,6 +39,17 @@ struct BlogManagementView: View {
         .accessibilityIdentifier("screenBlog")
         .navigationTitle("My Blog")
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text("My Blog")
+                        .font(.headline)
+                    if let blogName = blogSettings?.blogName, !blogName.isEmpty {
+                        Text(blogName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
                     Button {
@@ -54,7 +66,9 @@ struct BlogManagementView: View {
                 }
             }
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings, onDismiss: {
+            Task { await loadSettings() }
+        }) {
             BlogSettingsView()
         }
         .navigationDestination(isPresented: isEditing) {
@@ -83,6 +97,7 @@ struct BlogManagementView: View {
         }
         .task {
             await loadPosts()
+            await loadSettings()
         }
     }
 
@@ -168,6 +183,14 @@ struct BlogManagementView: View {
             showError = true
         }
         isLoading = false
+    }
+
+    private func loadSettings() async {
+        do {
+            blogSettings = try await BlogAPIService.getSettings()
+        } catch {
+            // Silently fail - blog name is optional UI enhancement
+        }
     }
 
     private func deletePost(_ post: BlogPost) async {
