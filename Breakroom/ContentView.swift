@@ -155,7 +155,7 @@ struct MainTabView: View {
                                             Button {
                                                 handleShortcut(shortcut)
                                             } label: {
-                                                Label(shortcut.name, systemImage: shortcutIcon(for: shortcut.url))
+                                                Label(shortcut.url == "/collections" ? "Artist Showcase" : shortcut.name, systemImage: shortcutIcon(for: shortcut.url))
                                             }
                                         }
                                         Button {

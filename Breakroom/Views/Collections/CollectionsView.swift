@@ -36,11 +36,11 @@ struct CollectionsView: View {
                 .accessibilityIdentifier("collectionsError")
             } else if collections.isEmpty {
                 ContentUnavailableView {
-                    Label("No Collections", systemImage: "square.stack.3d.up")
+                    Label("No Showcases", systemImage: "square.stack.3d.up")
                 } description: {
-                    Text("Create your first collection to start showcasing your work.")
+                    Text("Create your first showcase to start displaying your work.")
                 } actions: {
-                    Button("Create Collection") {
+                    Button("Create Showcase") {
                         showCreateSheet = true
                     }
                     .buttonStyle(.borderedProminent)
@@ -52,7 +52,7 @@ struct CollectionsView: View {
             }
         }
         .accessibilityIdentifier("screenCollections")
-        .navigationTitle("Collections")
+        .navigationTitle("Artist Showcase")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

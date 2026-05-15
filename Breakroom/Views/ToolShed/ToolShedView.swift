@@ -297,7 +297,7 @@ enum ToolCategory: CaseIterable {
                     shortcutUrl: "/art-gallery"
                 ),
                 Tool(
-                    name: "Collections",
+                    name: "Artist Showcase",
                     description: "Create and manage collections of your work for sale. Set prices, availability, and shipping details.",
                     icon: "square.stack.3d.up",
                     destination: .collections,
