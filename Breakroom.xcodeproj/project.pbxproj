@@ -60,6 +60,7 @@
 		5EE4BC4A00E07A9C907EB8CB /* EmploymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2C80D347C141FABF0FEC7F /* EmploymentView.swift */; };
 		623BFF942B9FC1DDF4DEEDBC /* LyricAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E95654769587A5CE156387 /* LyricAPIService.swift */; };
 		62668FF4CE7AB705BA98C472 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93641ABA680BAA7434EC3C66 /* Assets.xcassets */; };
+		6275326607F8CA77D41902C4 /* ShippingSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0D4189F7ECD7F56BE9149 /* ShippingSetupView.swift */; };
 		74CA770CD8B0AFB4A7B79E94 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05769385EC924F9C434488B0 /* ForgotPasswordView.swift */; };
 		762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130DAB511D587688461B04EE /* ChatRoomView.swift */; };
 		7878131D248338289F832E7D /* FriendsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */; };
@@ -75,6 +76,7 @@
 		A4EF7285598344F701907D2D /* BadgeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9062F5B4D49B0AAEB39F4C6 /* BadgeStore.swift */; };
 		A548310E89878F6952E2B87C /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 013B71C54903F120BD58452A /* Preview Assets.xcassets */; };
 		A74769456CE90C1D9159FBF9 /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED8FDFB3748D4E3B76B622F /* ChatListView.swift */; };
+		AAA21CFCFF61913FE042E5A4 /* OrdersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AB30FC027F98973DFDCDBC /* OrdersView.swift */; };
 		ABE24D913BA4284A8A0AEBC8 /* LyricModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */; };
 		AE9E1A377A8F1FDC3E15AF40 /* ChatWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */; };
 		B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */; };
@@ -171,11 +173,13 @@
 		6CE02A450FDF8385DEF3420E /* BlogPostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogPostView.swift; sourceTree = "<group>"; };
 		711606DB3235C27FE38591F0 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		741C0D64D533BB2A875C97D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		78B0D4189F7ECD7F56BE9149 /* ShippingSetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShippingSetupView.swift; path = ShippingSetupView.swift; sourceTree = "<group>"; };
 		837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAPIService.swift; sourceTree = "<group>"; };
 		8D469E4060E944F33F37B557 /* PositionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionModels.swift; sourceTree = "<group>"; };
 		93641ABA680BAA7434EC3C66 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A3620C9CA4480F805E75A34A /* BlogEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogEditorView.swift; sourceTree = "<group>"; };
 		A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditorView.swift; sourceTree = "<group>"; };
+		A5AB30FC027F98973DFDCDBC /* OrdersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdersView.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		A77C18853F8F4E57876C8998 /* BlogAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogAPIService.swift; sourceTree = "<group>"; };
 		A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionsAPIService.swift; sourceTree = "<group>"; };
 		AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
@@ -214,6 +218,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		00CG1A5WE1A2B3C4D5E6F7G9 /* Collections */ = {
+			isa = PBXGroup;
+			children = (
+				00CD1A5WE1A2B3C4D5E6F7G9 /* CollectionDetailView.swift */,
+				00CV1A5WE1A2B3C4D5E6F7G9 /* CollectionsView.swift */,
+				78B0D4189F7ECD7F56BE9149 /* ShippingSetupView.swift */,
+				A5AB30FC027F98973DFDCDBC /* OrdersView.swift */,
+			);
+			path = Collections;
+			sourceTree = "<group>";
+		};
 		06E491AEF5205165C54BF1C7 /* ToolShed */ = {
 			isa = PBXGroup;
 			children = (
@@ -367,15 +382,6 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
-		00CG1A5WE1A2B3C4D5E6F7G9 /* Collections */ = {
-			isa = PBXGroup;
-			children = (
-				00CD1A5WE1A2B3C4D5E6F7G9 /* CollectionDetailView.swift */,
-				00CV1A5WE1A2B3C4D5E6F7G9 /* CollectionsView.swift */,
-			);
-			path = Collections;
-			sourceTree = "<group>";
-		};
 		8CD871E9860C7645C09AE129 /* Breakroom */ = {
 			isa = PBXGroup;
 			children = (
@@ -517,7 +523,7 @@
 			mainGroup = 727682F0A609E51FDA008095;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */,
+				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
 				B63C82A92F94296400AEBFA7 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 6F510BCC0EE43DA5F9143C59 /* Products */;
@@ -633,6 +639,8 @@
 				FE1EF55A761C9A80859ABE56 /* User.swift in Sources */,
 				A4EF7285598344F701907D2D /* BadgeStore.swift in Sources */,
 				920C7780A07BFD2CB578CCD8 /* BadgeAPIService.swift in Sources */,
+				6275326607F8CA77D41902C4 /* ShippingSetupView.swift in Sources */,
+				AAA21CFCFF61913FE042E5A4 /* OrdersView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -860,7 +868,7 @@
 				minimumVersion = 12.12.1;
 			};
 		};
-		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */ = {
+		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -873,7 +881,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		05BB53121E6C9220E5091E05 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket" */;
+			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
 			productName = SocketIO;
 		};
 		B63C82AA2F94296400AEBFA7 /* FirebaseAnalytics */ = {

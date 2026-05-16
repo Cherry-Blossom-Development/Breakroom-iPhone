@@ -92,31 +92,79 @@ struct CollectionsView: View {
 
     private var collectionsList: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(collections) { collection in
-                    NavigationLink {
-                        CollectionDetailView(collection: collection)
-                    } label: {
-                        CollectionCard(
-                            collection: collection,
-                            onEdit: {
-                                editName = collection.name
-                                editBackgroundColor = collection.settings?.backgroundColor ?? "#6366f1"
-                                collectionToEdit = collection
-                            },
-                            onDelete: {
-                                collectionToDelete = collection
-                                showDeleteConfirmation = true
-                            }
-                        )
+            LazyVStack(spacing: 24) {
+                // Store Setup section
+                storeSetupSection
+
+                // Collections section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Your Collections")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+
+                    ForEach(collections) { collection in
+                        NavigationLink {
+                            CollectionDetailView(collection: collection)
+                        } label: {
+                            CollectionCard(
+                                collection: collection,
+                                onEdit: {
+                                    editName = collection.name
+                                    editBackgroundColor = collection.settings?.backgroundColor ?? "#6366f1"
+                                    collectionToEdit = collection
+                                },
+                                onDelete: {
+                                    collectionToDelete = collection
+                                    showDeleteConfirmation = true
+                                }
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("collectionCard_\(collection.id)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("collectionCard_\(collection.id)")
                 }
             }
             .padding()
         }
         .accessibilityIdentifier("collectionsList")
+    }
+
+    // MARK: - Store Setup Section
+
+    private var storeSetupSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Store Setup")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 10) {
+                NavigationLink {
+                    ShippingSetupView()
+                } label: {
+                    SetupLinkRow(
+                        icon: "shippingbox",
+                        title: "Shipping Setup",
+                        description: "Configure shipping rates and destinations"
+                    )
+                }
+
+                NavigationLink {
+                    OrdersView()
+                } label: {
+                    SetupLinkRow(
+                        icon: "doc.text",
+                        title: "Orders",
+                        description: "View and manage incoming orders from buyers"
+                    )
+                }
+            }
+        }
     }
 
     // MARK: - Form Sheet
@@ -211,6 +259,42 @@ struct CollectionsView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+}
+
+// MARK: - Setup Link Row
+
+private struct SetupLinkRow: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 

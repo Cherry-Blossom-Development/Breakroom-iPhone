@@ -235,6 +235,35 @@ enum CollectionsAPIService {
             method: "DELETE"
         )
     }
+
+    // MARK: - Shipping Settings
+
+    /// Get shipping settings
+    static func getShippingSettings() async throws -> ShippingSettings? {
+        try await APIClient.shared.request("/api/shipping/settings")
+    }
+
+    /// Save shipping settings
+    static func saveShippingSettings(_ settings: ShippingSettings) async throws -> ShippingSettings {
+        try await APIClient.shared.request("/api/shipping/settings", method: "POST", body: settings)
+    }
+
+    // MARK: - Orders
+
+    /// Get all orders for the seller
+    static func getOrders() async throws -> [Order] {
+        try await APIClient.shared.request("/api/storefront/orders")
+    }
+
+    /// Mark an order as shipped
+    static func markOrderShipped(orderId: Int, trackingNumber: String?, trackingCarrier: String?) async throws -> Order {
+        struct ShipRequest: Encodable {
+            let tracking_number: String?
+            let tracking_carrier: String?
+        }
+        let body = ShipRequest(tracking_number: trackingNumber, tracking_carrier: trackingCarrier)
+        return try await APIClient.shared.request("/api/storefront/orders/\(orderId)/ship", method: "PUT", body: body)
+    }
 }
 
 // MARK: - Data Extensions for Multipart Form
