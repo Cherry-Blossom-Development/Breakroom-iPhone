@@ -9,12 +9,31 @@ struct CollectionDetailView: View {
     @State private var error: String?
 
     // Create/Edit sheet
-    @State private var showItemSheet = false
-    @State private var itemToEdit: CollectionItem?
+    @State private var sheetMode: ItemSheetMode?
 
     // Delete confirmation
     @State private var itemToDelete: CollectionItem?
     @State private var showDeleteConfirmation = false
+
+    // Enum for sheet presentation
+    private enum ItemSheetMode: Identifiable {
+        case create
+        case edit(CollectionItem)
+
+        var id: String {
+            switch self {
+            case .create: return "create"
+            case .edit(let item): return "edit-\(item.id)"
+            }
+        }
+
+        var item: CollectionItem? {
+            switch self {
+            case .create: return nil
+            case .edit(let item): return item
+            }
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -40,8 +59,7 @@ struct CollectionDetailView: View {
                     Text("Add items to your collection to start selling.")
                 } actions: {
                     Button("Add Item") {
-                        itemToEdit = nil
-                        showItemSheet = true
+                        sheetMode = .create
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("collectionAddFirstItemButton")
@@ -56,8 +74,7 @@ struct CollectionDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    itemToEdit = nil
-                    showItemSheet = true
+                    sheetMode = .create
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -67,23 +84,21 @@ struct CollectionDetailView: View {
         .task {
             await loadItems()
         }
-        .sheet(isPresented: $showItemSheet) {
+        .sheet(item: $sheetMode) { mode in
             ItemFormSheet(
                 collectionId: collection.id,
-                item: itemToEdit,
+                item: mode.item,
                 onSave: { savedItem in
-                    if let existing = itemToEdit,
-                       let index = items.firstIndex(where: { $0.id == existing.id }) {
+                    if let existingItem = mode.item,
+                       let index = items.firstIndex(where: { $0.id == existingItem.id }) {
                         items[index] = savedItem
                     } else {
                         items.append(savedItem)
                     }
-                    showItemSheet = false
-                    itemToEdit = nil
+                    sheetMode = nil
                 },
                 onCancel: {
-                    showItemSheet = false
-                    itemToEdit = nil
+                    sheetMode = nil
                 }
             )
         }
@@ -112,8 +127,7 @@ struct CollectionDetailView: View {
                     ItemCard(
                         item: item,
                         onEdit: {
-                            itemToEdit = item
-                            showItemSheet = true
+                            sheetMode = .edit(item)
                         },
                         onDelete: {
                             itemToDelete = item
@@ -177,97 +191,102 @@ private struct ItemCard: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Image
-            if let imagePath = item.imagePath, !imagePath.isEmpty {
-                CollectionItemImage(path: imagePath)
-                    .frame(height: 120)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 120)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
+        Button {
+            onEdit()
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                // Image
+                if let imagePath = item.imagePath, !imagePath.isEmpty {
+                    CollectionItemImage(path: imagePath)
+                        .frame(height: 120)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 120)
+                        .overlay {
+                            Image(systemName: "photo")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        }
+                }
+
+                // Info
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(item.name)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        // Availability badge
+                        Text(item.isListed ? "Listed" : "Unlisted")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(item.isListed ? Color.green.opacity(0.2) : Color.gray.opacity(0.2))
+                            .foregroundStyle(item.isListed ? .green : .secondary)
+                            .clipShape(Capsule())
                     }
+
+                    if let description = item.description, !description.isEmpty {
+                        Text(description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    HStack {
+                        if let price = item.priceFormatted {
+                            Text(price)
+                                .font(.subheadline.weight(.bold))
+                        } else {
+                            Text("No price")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        if let shipping = item.shippingCostFormatted {
+                            Text(shipping)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // Action buttons
+                    HStack(spacing: 8) {
+                        Button {
+                            onEdit()
+                        } label: {
+                            Text("Edit")
+                                .font(.caption)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        Button(role: .destructive) {
+                            onDelete()
+                        } label: {
+                            Text("Delete")
+                                .font(.caption)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(10)
             }
-
-            // Info
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(item.name)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    // Availability badge
-                    Text(item.isListed ? "Listed" : "Unlisted")
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(item.isListed ? Color.green.opacity(0.2) : Color.gray.opacity(0.2))
-                        .foregroundStyle(item.isListed ? .green : .secondary)
-                        .clipShape(Capsule())
-                }
-
-                if let description = item.description, !description.isEmpty {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-
-                HStack {
-                    if let price = item.priceFormatted {
-                        Text(price)
-                            .font(.subheadline.weight(.bold))
-                    } else {
-                        Text("No price")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    if let shipping = item.shippingCostFormatted {
-                        Text(shipping)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                // Action buttons
-                HStack(spacing: 8) {
-                    Button {
-                        onEdit()
-                    } label: {
-                        Text("Edit")
-                            .font(.caption)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    Button(role: .destructive) {
-                        onDelete()
-                    } label: {
-                        Text("Delete")
-                            .font(.caption)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-            }
-            .padding(10)
+            .background(.background)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .shadow(color: .black.opacity(0.1), radius: 3, y: 1)
         }
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .shadow(color: .black.opacity(0.1), radius: 3, y: 1)
+        .buttonStyle(.plain)
     }
 }
 
