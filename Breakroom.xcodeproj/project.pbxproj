@@ -58,6 +58,7 @@
 		5024134194D17D5AAF64B2BC /* BlogEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3620C9CA4480F805E75A34A /* BlogEditorView.swift */; };
 		52B4EA17D8D733F30C75D4B9 /* TicketModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319BB438E5D2DE8B9A00BB30 /* TicketModels.swift */; };
 		5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77C18853F8F4E57876C8998 /* BlogAPIService.swift */; };
+		5E4B9098C07171FC89C16694 /* StorefrontSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C1DE6237A8C3C7828B56D9B /* StorefrontSetupView.swift */; };
 		5EE4BC4A00E07A9C907EB8CB /* EmploymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2C80D347C141FABF0FEC7F /* EmploymentView.swift */; };
 		623BFF942B9FC1DDF4DEEDBC /* LyricAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E95654769587A5CE156387 /* LyricAPIService.swift */; };
 		62668FF4CE7AB705BA98C472 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93641ABA680BAA7434EC3C66 /* Assets.xcassets */; };
@@ -148,6 +149,7 @@
 		26DEBC966A34157A3A985E03 /* LyricLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricLabView.swift; sourceTree = "<group>"; };
 		283F4AD6ADFBC48040009216 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketManager.swift; sourceTree = "<group>"; };
+		2C1DE6237A8C3C7828B56D9B /* StorefrontSetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StorefrontSetupView.swift; sourceTree = "<group>"; };
 		2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryAPIService.swift; sourceTree = "<group>"; };
 		319BB438E5D2DE8B9A00BB30 /* TicketModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketModels.swift; sourceTree = "<group>"; };
@@ -228,6 +230,7 @@
 				78B0D4189F7ECD7F56BE9149 /* ShippingSetupView.swift */,
 				A5AB30FC027F98973DFDCDBC /* OrdersView.swift */,
 				3B849C4DE378039943694CA9 /* PaymentSetupView.swift */,
+				2C1DE6237A8C3C7828B56D9B /* StorefrontSetupView.swift */,
 			);
 			path = Collections;
 			sourceTree = "<group>";
@@ -645,6 +648,7 @@
 				6275326607F8CA77D41902C4 /* ShippingSetupView.swift in Sources */,
 				AAA21CFCFF61913FE042E5A4 /* OrdersView.swift in Sources */,
 				18E8BCA4B6AC4678B9E4B06F /* PaymentSetupView.swift in Sources */,
+				5E4B9098C07171FC89C16694 /* StorefrontSetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

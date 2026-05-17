@@ -281,6 +281,40 @@ enum CollectionsAPIService {
     static func startConnect() async throws -> ConnectStartResponse {
         try await APIClient.shared.request("/api/billing/connect/start", method: "POST")
     }
+
+    // MARK: - Storefront
+
+    /// Get the user's storefront settings
+    static func getStorefront() async throws -> Storefront? {
+        try await APIClient.shared.request("/api/storefront")
+    }
+
+    /// Save storefront settings
+    static func saveStorefront(
+        storeUrl: String?,
+        pageTitle: String?,
+        content: String?,
+        settings: StorefrontSettings?
+    ) async throws {
+        struct SaveRequest: Encodable {
+            let store_url: String?
+            let page_title: String?
+            let content: String?
+            let settings: StorefrontSettings?
+        }
+        let body = SaveRequest(
+            store_url: storeUrl,
+            page_title: pageTitle,
+            content: content,
+            settings: settings
+        )
+        try await APIClient.shared.requestVoid("/api/storefront", method: "PUT", body: body)
+    }
+
+    /// Check if a store URL is available
+    static func checkStoreUrl(_ url: String) async throws -> StorefrontUrlCheck {
+        try await APIClient.shared.request("/api/storefront/check-url/\(url)")
+    }
 }
 
 // MARK: - Data Extensions for Multipart Form

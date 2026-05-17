@@ -355,3 +355,39 @@ struct ConnectStartResponse: Codable {
     let url: String?
     let status: String?
 }
+
+// MARK: - Storefront
+
+struct Storefront: Codable {
+    let id: Int?
+    let storeUrl: String?
+    let pageTitle: String?
+    let content: String?
+    let settings: StorefrontSettings?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case storeUrl = "store_url"
+        case pageTitle = "page_title"
+        case content
+        case settings
+        case updatedAt = "updated_at"
+    }
+}
+
+struct StorefrontSettings: Codable {
+    var sections: [StorefrontSection]?
+}
+
+struct StorefrontSection: Codable, Identifiable {
+    let id: String
+    let type: String
+    var visible: Bool
+    var title: String?
+}
+
+struct StorefrontUrlCheck: Codable {
+    let available: Bool
+    let reason: String?
+}

@@ -145,6 +145,16 @@ struct CollectionsView: View {
 
             VStack(spacing: 10) {
                 NavigationLink {
+                    StorefrontSetupView()
+                } label: {
+                    SetupLinkRow(
+                        icon: "storefront",
+                        title: "Storefront",
+                        description: "Set up your public store page"
+                    )
+                }
+
+                NavigationLink {
                     PaymentSetupView()
                 } label: {
                     SetupLinkRow(
