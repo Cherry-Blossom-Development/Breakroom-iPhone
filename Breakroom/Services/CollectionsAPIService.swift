@@ -264,6 +264,23 @@ enum CollectionsAPIService {
         let body = ShipRequest(tracking_number: trackingNumber, tracking_carrier: trackingCarrier)
         return try await APIClient.shared.request("/api/storefront/orders/\(orderId)/ship", method: "PUT", body: body)
     }
+
+    // MARK: - Billing / Stripe Connect
+
+    /// Get the user's billing plan (free vs pro)
+    static func getBillingPlan() async throws -> BillingPlan {
+        try await APIClient.shared.request("/api/billing/plan")
+    }
+
+    /// Get Stripe Connect status
+    static func getConnectStatus() async throws -> ConnectStatus {
+        try await APIClient.shared.request("/api/billing/connect/status")
+    }
+
+    /// Start Stripe Connect onboarding - returns URL to open
+    static func startConnect() async throws -> ConnectStartResponse {
+        try await APIClient.shared.request("/api/billing/connect/start", method: "POST")
+    }
 }
 
 // MARK: - Data Extensions for Multipart Form

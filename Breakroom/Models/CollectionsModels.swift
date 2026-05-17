@@ -332,3 +332,26 @@ struct Order: Codable, Identifiable {
         status == "paid" || status == "processing"
     }
 }
+
+// MARK: - Billing / Stripe Connect
+
+struct BillingPlan: Codable {
+    let subscribed: Bool
+    let platform: String?
+    let feePercent: Int
+
+    enum CodingKeys: String, CodingKey {
+        case subscribed
+        case platform
+        case feePercent = "fee_percent"
+    }
+}
+
+struct ConnectStatus: Codable {
+    let status: String // "not_connected", "pending", "active"
+}
+
+struct ConnectStartResponse: Codable {
+    let url: String?
+    let status: String?
+}

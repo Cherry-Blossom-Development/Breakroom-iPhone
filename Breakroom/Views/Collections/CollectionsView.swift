@@ -145,6 +145,16 @@ struct CollectionsView: View {
 
             VStack(spacing: 10) {
                 NavigationLink {
+                    PaymentSetupView()
+                } label: {
+                    SetupLinkRow(
+                        icon: "creditcard",
+                        title: "Payment Setup",
+                        description: "Connect Stripe to receive payouts"
+                    )
+                }
+
+                NavigationLink {
                     ShippingSetupView()
                 } label: {
                     SetupLinkRow(
