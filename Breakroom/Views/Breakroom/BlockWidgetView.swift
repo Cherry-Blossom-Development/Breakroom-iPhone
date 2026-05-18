@@ -8,6 +8,8 @@ struct BlockWidgetView: View {
             switch type {
             case .chat:
                 ChatWidget(block: block)
+            case .chatSummary:
+                ChatSummaryWidget()
             case .updates:
                 UpdatesWidget(block: block)
             case .calendar:

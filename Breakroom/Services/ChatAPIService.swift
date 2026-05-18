@@ -155,6 +155,21 @@ enum ChatAPIService {
         return response.hasPermission
     }
 
+    // MARK: - Unread Summary
+
+    /// Get rooms with unread messages for the summary widget
+    static func getUnreadSummary() async throws -> [UnreadRoomSummary] {
+        try await APIClient.shared.request("/api/chat/rooms/unread-summary")
+    }
+
+    /// Mark a room as read (sets last_read_at = NOW)
+    static func markRoomRead(roomId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/chat/rooms/\(roomId)/mark-read",
+            method: "POST"
+        )
+    }
+
     // MARK: - Media Upload
 
     static func uploadImage(roomId: Int, imageData: Data, filename: String) async throws -> ChatMessage {

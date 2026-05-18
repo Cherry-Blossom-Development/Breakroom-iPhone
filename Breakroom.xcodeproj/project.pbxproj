@@ -105,6 +105,7 @@
 		FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */; };
 		FE1EF55A761C9A80859ABE56 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9AC9F72B4CED61F085EAD7 /* User.swift */; };
 		SC1A2B3C4D5E6F7G8H9I0J1K /* ScrollCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */; };
+		CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -204,6 +205,7 @@
 		EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWidget.swift; sourceTree = "<group>"; };
 		FD2A7DEA7811D2E6DDBDDAC2 /* HelpDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpDeskView.swift; sourceTree = "<group>"; };
 		SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollCoordinator.swift; sourceTree = "<group>"; };
+		CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSummaryWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -381,6 +383,7 @@
 			children = (
 				DED8FDFB3748D4E3B76B622F /* ChatListView.swift */,
 				130DAB511D587688461B04EE /* ChatRoomView.swift */,
+				CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */,
 				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
@@ -649,6 +652,7 @@
 				AAA21CFCFF61913FE042E5A4 /* OrdersView.swift in Sources */,
 				18E8BCA4B6AC4678B9E4B06F /* PaymentSetupView.swift in Sources */,
 				5E4B9098C07171FC89C16694 /* StorefrontSetupView.swift in Sources */,
+				CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

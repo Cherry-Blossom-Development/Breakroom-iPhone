@@ -181,3 +181,21 @@ struct AcceptInviteResponse: Decodable {
 struct AllUsersResponse: Decodable {
     let users: [User]
 }
+
+// MARK: - Unread Summary Types
+
+struct UnreadRoomSummary: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let lastReadAt: String?
+    let unreadCount: Int
+    let latestUnreadAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case lastReadAt = "last_read_at"
+        case unreadCount = "unread_count"
+        case latestUnreadAt = "latest_unread_at"
+    }
+}

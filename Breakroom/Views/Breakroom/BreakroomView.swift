@@ -198,6 +198,7 @@ struct BlockCard: View {
     private var accentColor: Color {
         switch block.type {
         case .chat: return .blue
+        case .chatSummary: return .indigo
         case .updates: return .orange
         case .calendar: return .purple
         case .weather: return .cyan

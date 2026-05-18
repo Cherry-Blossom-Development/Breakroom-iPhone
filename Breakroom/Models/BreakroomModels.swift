@@ -2,6 +2,7 @@ import Foundation
 
 enum BlockType: String, Codable, CaseIterable, Identifiable {
     case chat
+    case chatSummary
     case updates
     case calendar
     case weather
@@ -13,6 +14,7 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
     var defaultTitle: String {
         switch self {
         case .chat: return "Chat"
+        case .chatSummary: return "Chat Summary"
         case .updates: return "Breakroom Updates"
         case .calendar: return "Calendar"
         case .weather: return "Weather"
@@ -24,6 +26,7 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .chat: return "bubble.left.and.bubble.right"
+        case .chatSummary: return "tray.full"
         case .updates: return "bell"
         case .calendar: return "calendar"
         case .weather: return "cloud.sun"
