@@ -2,6 +2,7 @@ import SwiftUI
 
 /// A widget that shows rooms with unread messages one at a time, allowing the user
 /// to quickly catch up on messages by reading/replying and pressing "Next" to move on.
+/// When all caught up, shows recent messages from all rooms.
 struct ChatSummaryWidget: View {
     @Environment(ChatSocketManager.self) private var socketManager
 
@@ -10,12 +11,20 @@ struct ChatSummaryWidget: View {
     @State private var queueIndex = 0
     @State private var messages: [ChatMessage] = []
 
+    // Recent rooms (for all-done state)
+    @State private var recentRooms: [RecentRoomMessage] = []
+    @State private var joinedRecentRoomIds: Set<Int> = []
+
     // UI state
     @State private var newMessage = ""
     @State private var isLoading = true
     @State private var isLoadingMessages = false
+    @State private var isLoadingRecent = false
     @State private var isSending = false
     @State private var error: String?
+
+    // Navigation callback
+    var onOpenRoom: ((Int) -> Void)?
 
     // Computed
     private var currentRoom: UnreadRoomSummary? {
@@ -63,6 +72,9 @@ struct ChatSummaryWidget: View {
         .task {
             await fetchQueue()
         }
+        .onDisappear {
+            leaveAllRecentRooms()
+        }
     }
 
     // MARK: - Loading View
@@ -99,24 +111,125 @@ struct ChatSummaryWidget: View {
         .padding()
     }
 
-    // MARK: - All Done View
+    // MARK: - All Done View (Recent Rooms)
 
     private var allDoneView: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.green)
-            Text("No New Messages")
-                .font(.subheadline)
-                .fontWeight(.medium)
-            Button("Refresh") {
-                Task { await fetchQueue() }
+        VStack(spacing: 0) {
+            if isLoadingRecent {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                .frame(maxWidth: .infinity, minHeight: 100)
+            } else if recentRooms.isEmpty {
+                VStack(spacing: 10) {
+                    Text("No messages in any room yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 100)
+            } else {
+                recentRoomsList
             }
-            .font(.caption)
+
+            Divider()
+
+            // Refresh button
+            Button {
+                Task { await fetchQueue() }
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                    Text("Check for New Messages")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
             .buttonStyle(.bordered)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
         }
-        .frame(maxWidth: .infinity, minHeight: 100)
-        .padding()
+    }
+
+    private var recentRoomsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 6) {
+                ForEach(recentRooms) { item in
+                    recentRoomRow(item: item)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
+    }
+
+    private func recentRoomRow(item: RecentRoomMessage) -> some View {
+        let isUnread = item.unreadCount > 0
+
+        return VStack(alignment: .leading, spacing: 4) {
+            // Room name row with unread badge
+            HStack {
+                Text("# \(item.roomName)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+
+                if isUnread {
+                    Text("\(item.unreadCount) new")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor)
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+
+                Text(formatRecentTime(item.createdAt))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Message preview with Open button
+            HStack(alignment: .top, spacing: 6) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.handle)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.accentColor)
+
+                    if let message = item.message {
+                        Text(message)
+                            .font(.caption)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button("Open") {
+                    onOpenRoom?(item.roomId)
+                }
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(8)
+        .background(isUnread ? Color.accentColor.opacity(0.08) : Color(.secondarySystemBackground))
+        .overlay(
+            Rectangle()
+                .fill(isUnread ? Color.accentColor : Color.clear)
+                .frame(width: 3),
+            alignment: .leading
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
     // MARK: - Chat View
@@ -308,14 +421,22 @@ struct ChatSummaryWidget: View {
     // MARK: - Data Loading
 
     private func fetchQueue() async {
+        // Leave all recent rooms before refreshing
+        leaveAllRecentRooms()
+
         isLoading = true
         error = nil
+        recentRooms = []
+
         do {
             let data = try await ChatAPIService.getUnreadSummary()
             queue = data
             queueIndex = 0
             if let first = data.first {
                 await loadMessages(room: first)
+            } else {
+                // No unread messages - load recent rooms
+                await loadRecentRooms()
             }
         } catch {
             self.error = error.localizedDescription
@@ -333,6 +454,30 @@ struct ChatSummaryWidget: View {
             // Silently fail
         }
         isLoadingMessages = false
+    }
+
+    private func loadRecentRooms() async {
+        isLoadingRecent = true
+        do {
+            recentRooms = try await ChatAPIService.getRecentRooms()
+            // Join all rooms so we get socket updates
+            for room in recentRooms {
+                socketManager.joinRoom(room.roomId)
+                joinedRecentRoomIds.insert(room.roomId)
+            }
+            setupRecentRoomsSocketListeners()
+        } catch {
+            // Silently fail - list stays empty
+        }
+        isLoadingRecent = false
+    }
+
+    private func leaveAllRecentRooms() {
+        for roomId in joinedRecentRoomIds {
+            socketManager.leaveRoom(roomId)
+            socketManager.removeListeners(roomId: roomId)
+        }
+        joinedRecentRoomIds.removeAll()
     }
 
     // MARK: - Actions
@@ -358,9 +503,10 @@ struct ChatSummaryWidget: View {
                 await loadMessages(room: next)
             }
         } else {
-            // Exhausted the queue
+            // Exhausted the queue - show recent rooms
             queue = []
             messages = []
+            await loadRecentRooms()
         }
     }
 
@@ -404,6 +550,24 @@ struct ChatSummaryWidget: View {
         }
     }
 
+    private func setupRecentRoomsSocketListeners() {
+        for room in recentRooms {
+            socketManager.addMessageListener(roomId: room.roomId) { message in
+                // Update the matching room in the list and move to end
+                if let idx = recentRooms.firstIndex(where: { $0.roomId == room.roomId }) {
+                    var updated = recentRooms[idx]
+                    updated.message = message.message
+                    updated.handle = message.handle ?? updated.handle
+                    updated.createdAt = message.createdAt ?? updated.createdAt
+                    updated.unreadCount += 1
+
+                    recentRooms.remove(at: idx)
+                    recentRooms.append(updated)
+                }
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func parseDate(_ string: String) -> Date? {
@@ -421,6 +585,13 @@ struct ChatSummaryWidget: View {
         guard let date = parseDate(iso) else { return "" }
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+
+    private func formatRecentTime(_ iso: String) -> String {
+        guard let date = parseDate(iso) else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, h:mm a"
         return formatter.string(from: date)
     }
 }

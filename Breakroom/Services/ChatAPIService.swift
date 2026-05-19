@@ -162,6 +162,11 @@ enum ChatAPIService {
         try await APIClient.shared.request("/api/chat/rooms/unread-summary")
     }
 
+    /// Get recent messages from all joined rooms (for "all done" state)
+    static func getRecentRooms() async throws -> [RecentRoomMessage] {
+        try await APIClient.shared.request("/api/chat/rooms/recent")
+    }
+
     /// Mark a room as read (sets last_read_at = NOW)
     static func markRoomRead(roomId: Int) async throws {
         try await APIClient.shared.requestVoid(

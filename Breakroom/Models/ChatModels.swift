@@ -199,3 +199,25 @@ struct UnreadRoomSummary: Codable, Identifiable {
         case latestUnreadAt = "latest_unread_at"
     }
 }
+
+struct RecentRoomMessage: Codable, Identifiable {
+    let roomId: Int
+    let roomName: String
+    let messageId: Int
+    var message: String?
+    var handle: String
+    var createdAt: String
+    var unreadCount: Int
+
+    var id: Int { roomId }
+
+    enum CodingKeys: String, CodingKey {
+        case roomId = "room_id"
+        case roomName = "room_name"
+        case messageId = "message_id"
+        case message
+        case handle
+        case createdAt = "created_at"
+        case unreadCount = "unread_count"
+    }
+}
