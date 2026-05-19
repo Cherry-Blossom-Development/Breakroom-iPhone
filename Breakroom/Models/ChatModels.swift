@@ -198,12 +198,30 @@ struct UnreadRoomSummary: Codable, Identifiable {
         case unreadCount = "unread_count"
         case latestUnreadAt = "latest_unread_at"
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        lastReadAt = try container.decodeIfPresent(String.self, forKey: .lastReadAt)
+        latestUnreadAt = try container.decodeIfPresent(String.self, forKey: .latestUnreadAt)
+
+        // MariaDB COUNT returns BIGINT which may serialize as string
+        if let intValue = try? container.decode(Int.self, forKey: .unreadCount) {
+            unreadCount = intValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .unreadCount),
+                  let parsed = Int(stringValue) {
+            unreadCount = parsed
+        } else {
+            unreadCount = 0
+        }
+    }
 }
 
 struct RecentRoomMessage: Codable, Identifiable {
     let roomId: Int
     let roomName: String
-    let messageId: Int
+    let messageId: Int?  // Optional - not used in UI, just for completeness
     var message: String?
     var handle: String
     var createdAt: String
@@ -219,5 +237,36 @@ struct RecentRoomMessage: Codable, Identifiable {
         case handle
         case createdAt = "created_at"
         case unreadCount = "unread_count"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        roomId = try container.decode(Int.self, forKey: .roomId)
+        roomName = try container.decode(String.self, forKey: .roomName)
+        messageId = try container.decodeIfPresent(Int.self, forKey: .messageId)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        handle = try container.decode(String.self, forKey: .handle)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+
+        // MariaDB COUNT returns BIGINT which may serialize as string
+        if let intValue = try? container.decode(Int.self, forKey: .unreadCount) {
+            unreadCount = intValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .unreadCount),
+                  let parsed = Int(stringValue) {
+            unreadCount = parsed
+        } else {
+            unreadCount = 0
+        }
+    }
+
+    // Memberwise init for manual creation/updates
+    init(roomId: Int, roomName: String, messageId: Int? = nil, message: String?, handle: String, createdAt: String, unreadCount: Int) {
+        self.roomId = roomId
+        self.roomName = roomName
+        self.messageId = messageId
+        self.message = message
+        self.handle = handle
+        self.createdAt = createdAt
+        self.unreadCount = unreadCount
     }
 }

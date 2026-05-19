@@ -89,12 +89,14 @@
 		B837145984059BDE1A0E77EB /* ProfileAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127FF3E028A74A43732B73F1 /* ProfileAPIService.swift */; };
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
+		BFE85AAB30F6685CB0D338F5 /* ChatRoomFromIdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F736E3752E75AD3DCF06AB17 /* ChatRoomFromIdView.swift */; };
 		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
 		C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF549F06647717B82C21D /* ProfileModels.swift */; };
 		CD18A639CBC86C5C3EA86874 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3379C3DA35E2D7A5A57F1B7C /* SessionsView.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		CS1A2B3C4D5E6F7G8H9I0J1K /* CoordinatedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */; };
+		CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
 		DFC9B224556F272EEC3718E1 /* TicketAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */; };
 		E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */; };
@@ -105,7 +107,6 @@
 		FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */; };
 		FE1EF55A761C9A80859ABE56 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9AC9F72B4CED61F085EAD7 /* User.swift */; };
 		SC1A2B3C4D5E6F7G8H9I0J1K /* ScrollCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */; };
-		CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -194,6 +195,7 @@
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockWidgetView.swift; sourceTree = "<group>"; };
 		CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatedScrollView.swift; sourceTree = "<group>"; };
+		CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSummaryWidget.swift; sourceTree = "<group>"; };
 		D3F61C941989489C1B54449D /* ArtGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGalleryView.swift; sourceTree = "<group>"; };
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesAPIService.swift; sourceTree = "<group>"; };
@@ -203,9 +205,9 @@
 		EAD5134BC7AD4538B8AB69DA /* KanbanBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanBoardView.swift; sourceTree = "<group>"; };
 		EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWidget.swift; sourceTree = "<group>"; };
+		F736E3752E75AD3DCF06AB17 /* ChatRoomFromIdView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatRoomFromIdView.swift; sourceTree = "<group>"; };
 		FD2A7DEA7811D2E6DDBDDAC2 /* HelpDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpDeskView.swift; sourceTree = "<group>"; };
 		SC1A2B3C4D5E6F7G8H9I0J1L /* ScrollCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollCoordinator.swift; sourceTree = "<group>"; };
-		CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSummaryWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -387,6 +389,7 @@
 				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
+				F736E3752E75AD3DCF06AB17 /* ChatRoomFromIdView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -653,6 +656,7 @@
 				18E8BCA4B6AC4678B9E4B06F /* PaymentSetupView.swift in Sources */,
 				5E4B9098C07171FC89C16694 /* StorefrontSetupView.swift in Sources */,
 				CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */,
+				BFE85AAB30F6685CB0D338F5 /* ChatRoomFromIdView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

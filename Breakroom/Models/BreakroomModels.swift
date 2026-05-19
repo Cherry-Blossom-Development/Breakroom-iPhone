@@ -2,7 +2,7 @@ import Foundation
 
 enum BlockType: String, Codable, CaseIterable, Identifiable {
     case chat
-    case chatSummary
+    case chatSummary = "chat_summary"
     case updates
     case calendar
     case weather

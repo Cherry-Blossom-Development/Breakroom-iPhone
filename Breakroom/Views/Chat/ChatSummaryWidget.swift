@@ -64,6 +64,21 @@ struct ChatSummaryWidget: View {
                 allDoneView
             } else if let room = currentRoom {
                 chatView(room: room)
+            } else {
+                // Debug fallback - shouldn't normally appear
+                VStack(spacing: 8) {
+                    Text("Unexpected state")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("queue: \(queue.count), index: \(queueIndex)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Button("Refresh") {
+                        Task { await fetchQueue() }
+                    }
+                    .font(.caption)
+                }
+                .frame(maxWidth: .infinity, minHeight: 100)
             }
         }
         .frame(maxWidth: .infinity)
@@ -292,7 +307,8 @@ struct ChatSummaryWidget: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, minHeight: 60)
                 } else {
-                    LazyVStack(alignment: .leading, spacing: 0) {
+                    // Use VStack (not LazyVStack) to ensure all items are rendered for scroll
+                    VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
                             VStack(spacing: 0) {
                                 // Unread divider
@@ -302,27 +318,40 @@ struct ChatSummaryWidget: View {
 
                                 messageRow(message: message, isNew: firstUnreadIndex != -1 && index >= firstUnreadIndex)
                             }
+                            .id(message.id)
                         }
-
-                        // Bottom anchor
-                        Color.clear
-                            .frame(height: 1)
-                            .id("bottomAnchor")
+                    }
+                    .onAppear {
+                        // Scroll to bottom when content appears
+                        scrollToBottom(proxy: proxy)
                     }
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
-            .onChange(of: messages.count) {
-                // Scroll to unread divider or bottom when messages load
-                if firstUnreadIndex != -1, let firstUnread = messages[safe: firstUnreadIndex] {
-                    withAnimation {
-                        proxy.scrollTo(firstUnread.id, anchor: .top)
-                    }
-                } else {
-                    withAnimation {
-                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
-                    }
+            .defaultScrollAnchor(.bottom)
+            .onChange(of: isLoadingMessages) { wasLoading, nowLoading in
+                // Scroll to bottom when loading completes
+                if wasLoading && !nowLoading {
+                    scrollToBottom(proxy: proxy)
                 }
+            }
+            .onChange(of: messages.count) {
+                // Scroll to bottom when new messages arrive
+                scrollToBottom(proxy: proxy, animated: true)
+            }
+        }
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = false) {
+        guard let lastId = messages.last?.id else { return }
+        // Use DispatchQueue to ensure layout is complete
+        DispatchQueue.main.async {
+            if animated {
+                withAnimation {
+                    proxy.scrollTo(lastId, anchor: .bottom)
+                }
+            } else {
+                proxy.scrollTo(lastId, anchor: .bottom)
             }
         }
     }
@@ -467,7 +496,8 @@ struct ChatSummaryWidget: View {
             }
             setupRecentRoomsSocketListeners()
         } catch {
-            // Silently fail - list stays empty
+            // Store error so user knows something went wrong
+            self.error = "Failed to load recent: \(error.localizedDescription)"
         }
         isLoadingRecent = false
     }

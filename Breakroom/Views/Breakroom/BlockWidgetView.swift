@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BlockWidgetView: View {
     let block: BreakroomBlock
+    var onOpenRoom: ((Int) -> Void)?
 
     var body: some View {
         if let type = block.type {
@@ -9,7 +10,7 @@ struct BlockWidgetView: View {
             case .chat:
                 ChatWidget(block: block)
             case .chatSummary:
-                ChatSummaryWidget()
+                ChatSummaryWidget(onOpenRoom: onOpenRoom)
             case .updates:
                 UpdatesWidget(block: block)
             case .calendar:

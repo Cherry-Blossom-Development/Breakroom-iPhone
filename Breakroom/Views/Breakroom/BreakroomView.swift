@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BreakroomView: View {
     @State private var viewModel = BreakroomViewModel()
+    @State private var openChatRoomId: Int?
 
     var body: some View {
         Group {
@@ -69,6 +70,9 @@ struct BreakroomView: View {
         .navigationDestination(for: String.self) { handle in
             PublicProfileView(handle: handle)
         }
+        .navigationDestination(item: $openChatRoomId) { roomId in
+            ChatRoomFromIdView(roomId: roomId)
+        }
     }
 
     private var blockList: some View {
@@ -84,13 +88,18 @@ struct BreakroomView: View {
                         withAnimation {
                             viewModel.isEditMode = true
                         }
+                    },
+                    onOpenRoom: { roomId in
+                        openChatRoomId = roomId
                     }
                 )
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
+            .onMove(perform: viewModel.moveBlock)
         }
         .listStyle(.plain)
+        .environment(\.editMode, viewModel.isEditMode ? .constant(.active) : .constant(.inactive))
     }
 
     private var emptyState: some View {
@@ -116,6 +125,7 @@ struct BlockCard: View {
     let onToggle: () -> Void
     let onRemove: () -> Void
     let onEnterEditMode: () -> Void
+    var onOpenRoom: ((Int) -> Void)?
     @State private var showDeleteConfirmation = false
 
     var body: some View {
@@ -177,7 +187,7 @@ struct BlockCard: View {
             // Content - visible when expanded and not in edit mode
             if isExpanded && !isEditMode {
                 Divider()
-                BlockWidgetView(block: block)
+                BlockWidgetView(block: block, onOpenRoom: onOpenRoom)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
