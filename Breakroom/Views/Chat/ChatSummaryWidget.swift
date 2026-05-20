@@ -172,7 +172,8 @@ struct ChatSummaryWidget: View {
     private var recentRoomsList: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
-                ForEach(recentRooms) { item in
+                // Show newest room first (reverse order so most recent is at top)
+                ForEach(recentRooms.reversed()) { item in
                     recentRoomRow(item: item)
                 }
             }
@@ -293,67 +294,33 @@ struct ChatSummaryWidget: View {
     }
 
     private func messagesView(roomId: Int) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                if isLoadingMessages {
-                    HStack {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
+        ScrollView {
+            if isLoadingMessages {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                .frame(maxWidth: .infinity, minHeight: 60)
+            } else if messages.isEmpty {
+                Text("No messages yet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
-                } else if messages.isEmpty {
-                    Text("No messages yet.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, minHeight: 60)
-                } else {
-                    // Use VStack (not LazyVStack) to ensure all items are rendered for scroll
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
-                            VStack(spacing: 0) {
-                                // Unread divider
-                                if index == firstUnreadIndex {
-                                    unreadDivider
-                                }
-
-                                messageRow(message: message, isNew: firstUnreadIndex != -1 && index >= firstUnreadIndex)
-                            }
-                            .id(message.id)
-                        }
-                    }
-                    .onAppear {
-                        // Scroll to bottom when content appears
-                        scrollToBottom(proxy: proxy)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
-            .defaultScrollAnchor(.bottom)
-            .onChange(of: isLoadingMessages) { wasLoading, nowLoading in
-                // Scroll to bottom when loading completes
-                if wasLoading && !nowLoading {
-                    scrollToBottom(proxy: proxy)
-                }
-            }
-            .onChange(of: messages.count) {
-                // Scroll to bottom when new messages arrive
-                scrollToBottom(proxy: proxy, animated: true)
-            }
-        }
-    }
-
-    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = false) {
-        guard let lastId = messages.last?.id else { return }
-        // Use DispatchQueue to ensure layout is complete
-        DispatchQueue.main.async {
-            if animated {
-                withAnimation {
-                    proxy.scrollTo(lastId, anchor: .bottom)
-                }
             } else {
-                proxy.scrollTo(lastId, anchor: .bottom)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                        VStack(spacing: 0) {
+                            if index == firstUnreadIndex {
+                                unreadDivider
+                            }
+                            messageRow(message: message, isNew: firstUnreadIndex != -1 && index >= firstUnreadIndex)
+                        }
+                        .id(message.id)
+                    }
+                }
             }
         }
+        .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
     }
 
     private var unreadDivider: some View {
