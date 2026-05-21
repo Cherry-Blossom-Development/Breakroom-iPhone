@@ -2,7 +2,7 @@ import Foundation
 
 enum BlockType: String, Codable, CaseIterable, Identifiable {
     case chat
-    case chatSummary = "chat_summary"
+    case chatCarousel = "chat_carousel"
     case updates
     case calendar
     case weather
@@ -14,7 +14,7 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
     var defaultTitle: String {
         switch self {
         case .chat: return "Chat"
-        case .chatSummary: return "Chat Summary"
+        case .chatCarousel: return "Chat Carousel"
         case .updates: return "Breakroom Updates"
         case .calendar: return "Calendar"
         case .weather: return "Weather"
@@ -26,7 +26,7 @@ enum BlockType: String, Codable, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .chat: return "bubble.left.and.bubble.right"
-        case .chatSummary: return "tray.full"
+        case .chatCarousel: return "tray.full"
         case .updates: return "bell"
         case .calendar: return "calendar"
         case .weather: return "cloud.sun"
@@ -57,7 +57,11 @@ struct BreakroomBlock: Codable, Identifiable {
     }
 
     var type: BlockType? {
-        BlockType(rawValue: blockType)
+        // Handle legacy "chat_summary" value from server
+        if blockType == "chat_summary" {
+            return .chatCarousel
+        }
+        return BlockType(rawValue: blockType)
     }
 
     var displayTitle: String {

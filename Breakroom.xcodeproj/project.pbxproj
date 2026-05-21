@@ -96,7 +96,7 @@
 		CD18A639CBC86C5C3EA86874 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3379C3DA35E2D7A5A57F1B7C /* SessionsView.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		CS1A2B3C4D5E6F7G8H9I0J1K /* CoordinatedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */; };
-		CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */; };
+		CSUMWDGT1A2B3C4D5E6F7G8I /* ChatCarouselWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSUMWDGT1A2B3C4D5E6F7G8H /* ChatCarouselWidget.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
 		DFC9B224556F272EEC3718E1 /* TicketAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */; };
 		E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */; };
@@ -195,7 +195,7 @@
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockWidgetView.swift; sourceTree = "<group>"; };
 		CS1A2B3C4D5E6F7G8H9I0J1L /* CoordinatedScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatedScrollView.swift; sourceTree = "<group>"; };
-		CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSummaryWidget.swift; sourceTree = "<group>"; };
+		CSUMWDGT1A2B3C4D5E6F7G8H /* ChatCarouselWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCarouselWidget.swift; sourceTree = "<group>"; };
 		D3F61C941989489C1B54449D /* ArtGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGalleryView.swift; sourceTree = "<group>"; };
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesAPIService.swift; sourceTree = "<group>"; };
@@ -385,7 +385,7 @@
 			children = (
 				DED8FDFB3748D4E3B76B622F /* ChatListView.swift */,
 				130DAB511D587688461B04EE /* ChatRoomView.swift */,
-				CSUMWDGT1A2B3C4D5E6F7G8H /* ChatSummaryWidget.swift */,
+				CSUMWDGT1A2B3C4D5E6F7G8H /* ChatCarouselWidget.swift */,
 				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
@@ -655,7 +655,7 @@
 				AAA21CFCFF61913FE042E5A4 /* OrdersView.swift in Sources */,
 				18E8BCA4B6AC4678B9E4B06F /* PaymentSetupView.swift in Sources */,
 				5E4B9098C07171FC89C16694 /* StorefrontSetupView.swift in Sources */,
-				CSUMWDGT1A2B3C4D5E6F7G8I /* ChatSummaryWidget.swift in Sources */,
+				CSUMWDGT1A2B3C4D5E6F7G8I /* ChatCarouselWidget.swift in Sources */,
 				BFE85AAB30F6685CB0D338F5 /* ChatRoomFromIdView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

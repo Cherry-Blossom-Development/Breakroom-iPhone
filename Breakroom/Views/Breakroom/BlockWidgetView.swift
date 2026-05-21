@@ -9,8 +9,8 @@ struct BlockWidgetView: View {
             switch type {
             case .chat:
                 ChatWidget(block: block)
-            case .chatSummary:
-                ChatSummaryWidget(onOpenRoom: onOpenRoom)
+            case .chatCarousel:
+                ChatCarouselWidget(onOpenRoom: onOpenRoom)
             case .updates:
                 UpdatesWidget(block: block)
             case .calendar:
