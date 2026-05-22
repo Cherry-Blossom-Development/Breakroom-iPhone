@@ -205,17 +205,44 @@ struct ChatCarouselWidget: View {
                             messageRow(message: message)
                                 .id(message.id)
                         }
+
+                        // Bottom anchor for reliable scrolling
+                        Color.clear
+                            .frame(height: 1)
+                            .id("bottomAnchor")
+                            .onAppear {
+                                // Scroll to bottom when anchor first appears
+                                if !isLoadingMessages && !messages.isEmpty {
+                                    proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                                }
+                            }
                     }
                 }
             }
+            .defaultScrollAnchor(.bottom)
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
+            .onChange(of: isLoadingMessages) { oldValue, newValue in
+                // Scroll to bottom when messages finish loading
+                if oldValue == true && newValue == false && !messages.isEmpty {
+                    // Multiple scroll attempts with increasing delays to handle lazy loading
+                    scrollToBottom(proxy: proxy, delays: [0, 100, 300, 500])
+                }
+            }
             .onChange(of: messages.count) {
                 // Scroll to bottom when new messages arrive
-                if let lastId = messages.last?.id {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(lastId, anchor: .bottom)
+                if !messages.isEmpty {
+                    withAnimation {
+                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
                     }
                 }
+            }
+        }
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy, delays: [Int]) {
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay)) {
+                proxy.scrollTo("bottomAnchor", anchor: .bottom)
             }
         }
     }
