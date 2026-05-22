@@ -1,4 +1,7 @@
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.cherryblossomdev.Breakroom", category: "ChatCarousel")
 
 /// A carousel widget that displays chat rooms one at a time with left/right navigation.
 /// Rooms are sorted by last message time (oldest left, newest right).
@@ -6,35 +9,28 @@ import SwiftUI
 struct ChatCarouselWidget: View {
     @Environment(ChatSocketManager.self) private var socketManager
 
-    // Room state - sorted ASC by created_at (oldest first, so newest is at end)
+    // State
     @State private var rooms: [RecentRoomMessage] = []
     @State private var currentIndex: Int = 0
     @State private var messages: [ChatMessage] = []
-
-    // UI state
     @State private var isLoading = true
     @State private var isLoadingMessages = false
     @State private var isSending = false
     @State private var messageText = ""
     @State private var error: String?
     @State private var rightGlowing = false
+    @State private var hasLoadedRooms = false
 
     // Navigation callback
     var onOpenRoom: ((Int) -> Void)?
 
-    // Computed properties
     private var currentRoom: RecentRoomMessage? {
         guard currentIndex >= 0 && currentIndex < rooms.count else { return nil }
         return rooms[currentIndex]
     }
 
-    private var canLeft: Bool {
-        currentIndex > 0
-    }
-
-    private var canRight: Bool {
-        currentIndex < rooms.count - 1
-    }
+    private var canGoLeft: Bool { currentIndex > 0 }
+    private var canGoRight: Bool { currentIndex < rooms.count - 1 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,155 +41,125 @@ struct ChatCarouselWidget: View {
             } else if rooms.isEmpty {
                 emptyView
             } else {
-                carouselContent
+                carouselView
             }
         }
         .frame(maxWidth: .infinity)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .task {
-            await loadRooms()
+            if !hasLoadedRooms {
+                await loadRooms()
+            }
         }
         .onDisappear {
             cleanup()
         }
     }
 
-    // MARK: - Loading View
+    // MARK: - Main Carousel View
 
-    private var loadingView: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-            Text("Loading rooms...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 100)
-    }
-
-    // MARK: - Error View
-
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
-                .foregroundStyle(.red)
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Retry") {
-                Task { await loadRooms() }
-            }
-            .font(.caption)
-            .buttonStyle(.bordered)
-        }
-        .frame(maxWidth: .infinity, minHeight: 100)
-        .padding()
-    }
-
-    // MARK: - Empty View
-
-    private var emptyView: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.title)
-                .foregroundStyle(.secondary)
-            Text("No chat rooms yet")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 100)
-    }
-
-    // MARK: - Carousel Content
-
-    private var carouselContent: some View {
+    private var carouselView: some View {
         VStack(spacing: 0) {
-            // Navigation header
-            carouselHeader
-
+            headerView
             Divider()
-
-            // Messages area
-            messagesArea
-
+            messagesView
             Divider()
-
-            // Reply input
-            replyInput
+            inputView
         }
     }
 
-    // MARK: - Carousel Header
+    // MARK: - Header
 
-    private var carouselHeader: some View {
-        HStack(spacing: 8) {
-            // Left arrow
-            Button {
-                navigateLeft()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(canLeft ? Color.primary : Color.secondary.opacity(0.3))
-            }
-            .disabled(!canLeft)
-
-            Spacer()
-
-            // Room name (tappable to open full chat)
-            if let room = currentRoom {
-                Button {
-                    onOpenRoom?(room.roomId)
-                } label: {
-                    Text("# \(room.roomName)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
+    private var headerView: some View {
+        HStack(spacing: 12) {
+            // Left navigation - using onTapGesture instead of Button
+            Image(systemName: "chevron.left")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(canGoLeft ? Color.primary : Color.secondary.opacity(0.3))
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if canGoLeft {
+                        navigateLeft()
+                    }
                 }
-                .buttonStyle(.plain)
+
+            Spacer()
+
+            if let room = currentRoom {
+                Text("# \(room.roomName)")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                    .onTapGesture {
+                        onOpenRoom?(room.roomId)
+                    }
             }
 
             Spacer()
 
-            // Position indicator
             Text("\(currentIndex + 1) / \(rooms.count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // Right arrow with glow
-            Button {
-                navigateRight()
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(canRight ? Color.primary : Color.secondary.opacity(0.3))
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(rightGlowing ? Color.yellow.opacity(0.4) : Color.clear)
-                    )
-            }
-            .disabled(!canRight)
+            // Right navigation - using onTapGesture instead of Button
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(canGoRight ? Color.primary : Color.secondary.opacity(0.3))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(rightGlowing ? Color.yellow.opacity(0.4) : Color.clear)
+                )
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if canGoRight {
+                        navigateRight()
+                    }
+                }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Color(.secondarySystemBackground))
     }
 
-    // MARK: - Messages Area
+    // MARK: - Navigation
 
-    private var messagesArea: some View {
+    private func navigateLeft() {
+        let newIndex = currentIndex - 1
+        guard newIndex >= 0 else { return }
+        logger.debug("navigateLeft: \(currentIndex) -> \(newIndex)")
+        currentIndex = newIndex
+        let roomId = rooms[newIndex].roomId
+        Task {
+            await loadMessages(for: roomId)
+        }
+    }
+
+    private func navigateRight() {
+        let newIndex = currentIndex + 1
+        guard newIndex < rooms.count else { return }
+        logger.debug("navigateRight: \(currentIndex) -> \(newIndex)")
+        currentIndex = newIndex
+        rightGlowing = false
+        let roomId = rooms[newIndex].roomId
+        Task {
+            await loadMessages(for: roomId)
+        }
+    }
+
+    // MARK: - Messages View
+
+    private var messagesView: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 if isLoadingMessages {
-                    HStack {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 60)
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(maxWidth: .infinity, minHeight: 60)
                 } else if messages.isEmpty {
                     Text("No messages yet.")
                         .font(.caption)
@@ -201,19 +167,14 @@ struct ChatCarouselWidget: View {
                         .frame(maxWidth: .infinity, minHeight: 60)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(messages) { message in
-                            messageRow(message: message)
-                                .id(message.id)
+                        ForEach(messages) { msg in
+                            messageRow(msg)
+                                .id(msg.id)
                         }
-
-                        // Bottom anchor for reliable scrolling
-                        Color.clear
-                            .frame(height: 1)
-                            .id("bottomAnchor")
+                        Color.clear.frame(height: 1).id("bottom")
                             .onAppear {
-                                // Scroll to bottom when anchor first appears
                                 if !isLoadingMessages && !messages.isEmpty {
-                                    proxy.scrollTo("bottomAnchor", anchor: .bottom)
+                                    proxy.scrollTo("bottom", anchor: .bottom)
                                 }
                             }
                     }
@@ -221,64 +182,49 @@ struct ChatCarouselWidget: View {
             }
             .defaultScrollAnchor(.bottom)
             .frame(maxWidth: .infinity, minHeight: 120, maxHeight: 250)
-            .onChange(of: isLoadingMessages) { oldValue, newValue in
-                // Scroll to bottom when messages finish loading
-                if oldValue == true && newValue == false && !messages.isEmpty {
-                    // Multiple scroll attempts with increasing delays to handle lazy loading
-                    scrollToBottom(proxy: proxy, delays: [0, 100, 300, 500])
-                }
-            }
-            .onChange(of: messages.count) {
-                // Scroll to bottom when new messages arrive
-                if !messages.isEmpty {
-                    withAnimation {
-                        proxy.scrollTo("bottomAnchor", anchor: .bottom)
+            .onChange(of: isLoadingMessages) { old, new in
+                if old && !new && !messages.isEmpty {
+                    for delay in [0, 100, 300] {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay)) {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
                     }
                 }
             }
-        }
-    }
-
-    private func scrollToBottom(proxy: ScrollViewProxy, delays: [Int]) {
-        for delay in delays {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay)) {
-                proxy.scrollTo("bottomAnchor", anchor: .bottom)
+            .onChange(of: messages.count) {
+                if !messages.isEmpty {
+                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                }
             }
         }
     }
 
-    private func messageRow(message: ChatMessage) -> some View {
+    private func messageRow(_ message: ChatMessage) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(message.handle ?? "Unknown")
                     .font(.caption2)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.accentColor)
-
                 Spacer()
-
-                if let createdAt = message.createdAt {
-                    Text(formatTime(createdAt))
+                if let t = message.createdAt {
+                    Text(formatTime(t))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
-
             if let text = message.message, !text.isEmpty {
-                Text(text)
-                    .font(.caption)
+                Text(text).font(.caption)
             }
-
-            Divider()
-                .padding(.top, 4)
+            Divider().padding(.top, 4)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
     }
 
-    // MARK: - Reply Input
+    // MARK: - Input View
 
-    private var replyInput: some View {
+    private var inputView: some View {
         HStack(spacing: 8) {
             TextField("Message...", text: $messageText)
                 .textFieldStyle(.plain)
@@ -293,12 +239,9 @@ struct ChatCarouselWidget: View {
                 Task { await sendMessage() }
             } label: {
                 if isSending {
-                    ProgressView()
-                        .controlSize(.small)
+                    ProgressView().controlSize(.small)
                 } else {
-                    Text("Send")
-                        .font(.caption)
-                        .fontWeight(.semibold)
+                    Text("Send").font(.caption).fontWeight(.semibold)
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -309,66 +252,65 @@ struct ChatCarouselWidget: View {
         .padding(.vertical, 8)
     }
 
-    // MARK: - Navigation
+    // MARK: - Loading Views
 
-    private func navigateLeft() {
-        guard canLeft else { return }
-        currentIndex -= 1
-        loadCurrentRoomMessages()
-    }
-
-    private func navigateRight() {
-        guard canRight else { return }
-        currentIndex += 1
-        // Clear glow when user navigates right
-        rightGlowing = false
-        loadCurrentRoomMessages()
-    }
-
-    private func loadCurrentRoomMessages() {
-        guard let room = currentRoom else { return }
-        Task {
-            await loadMessages(for: room.roomId)
+    private var loadingView: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Loading rooms...").font(.caption).foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, minHeight: 100)
+    }
+
+    private func errorView(_ msg: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle").font(.title2).foregroundStyle(.red)
+            Text(msg).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Button("Retry") {
+                hasLoadedRooms = false
+                Task { await loadRooms() }
+            }.font(.caption).buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100)
+        .padding()
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "bubble.left.and.bubble.right").font(.title).foregroundStyle(.secondary)
+            Text("No chat rooms yet").font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100)
     }
 
     // MARK: - Data Loading
 
     private func loadRooms() async {
+        logger.debug("loadRooms: starting")
         isLoading = true
         error = nil
-
         do {
-            let fetchedRooms = try await ChatAPIService.getRecentRooms()
-            // Rooms come sorted ASC by created_at (oldest first, newest last)
-            rooms = fetchedRooms
-
-            // Start on rightmost room (most recent)
+            rooms = try await ChatAPIService.getRecentRooms()
             if !rooms.isEmpty {
                 currentIndex = rooms.count - 1
+                logger.debug("loadRooms: loaded \(rooms.count) rooms, currentIndex=\(currentIndex)")
                 await loadMessages(for: rooms[currentIndex].roomId)
             }
-
-            // Join ALL rooms to receive messages for any room
+            hasLoadedRooms = true
             joinAllRooms()
         } catch {
             self.error = "Failed to load rooms"
         }
-
         isLoading = false
     }
 
     private func loadMessages(for roomId: Int) async {
         isLoadingMessages = true
         messages = []
-
         do {
             let (msgs, _) = try await ChatAPIService.getMessages(roomId: roomId, limit: 30)
             messages = msgs
-        } catch {
-            // Silently fail - just show empty state
-        }
-
+        } catch {}
         isLoadingMessages = false
     }
 
@@ -376,106 +318,65 @@ struct ChatCarouselWidget: View {
         guard let room = currentRoom else { return }
         let text = messageText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
-
         isSending = true
         messageText = ""
-
         do {
             let sent = try await ChatAPIService.sendMessage(roomId: room.roomId, message: text)
             if !messages.contains(where: { $0.id == sent.id }) {
                 messages.append(sent)
             }
         } catch {
-            messageText = text // Restore on failure
+            messageText = text
         }
-
         isSending = false
     }
 
-    // MARK: - Socket Management
+    // MARK: - Socket
 
     private func joinAllRooms() {
         for room in rooms {
             socketManager.joinRoom(room.roomId)
-            setupSocketListener(for: room.roomId)
-        }
-    }
-
-    private func setupSocketListener(for roomId: Int) {
-        socketManager.addMessageListener(roomId: roomId) { message in
-            handleNewMessage(message, fromRoom: roomId)
-        }
-
-        socketManager.addEditListener(roomId: roomId) { message in
-            if let room = currentRoom, message.roomId == room.roomId {
-                if let idx = messages.firstIndex(where: { $0.id == message.id }) {
-                    messages[idx] = message
+            socketManager.addMessageListener(roomId: room.roomId) { msg in
+                handleNewMessage(msg, roomId: room.roomId)
+            }
+            socketManager.addEditListener(roomId: room.roomId) { msg in
+                if currentRoom?.roomId == room.roomId,
+                   let idx = messages.firstIndex(where: { $0.id == msg.id }) {
+                    messages[idx] = msg
+                }
+            }
+            socketManager.addDeleteListener(roomId: room.roomId) { msgId in
+                if currentRoom?.roomId == room.roomId {
+                    messages.removeAll { $0.id == msgId }
                 }
             }
         }
-
-        socketManager.addDeleteListener(roomId: roomId) { messageId in
-            if let room = currentRoom, roomId == room.roomId {
-                messages.removeAll { $0.id == messageId }
-            }
-        }
     }
 
-    private func handleNewMessage(_ message: ChatMessage, fromRoom roomId: Int) {
-        // Find the room index before we modify anything
-        guard let roomIndex = rooms.firstIndex(where: { $0.roomId == roomId }) else { return }
+    private func handleNewMessage(_ message: ChatMessage, roomId: Int) {
+        guard let idx = rooms.firstIndex(where: { $0.roomId == roomId }) else { return }
+        rooms[idx].message = message.message
+        rooms[idx].handle = message.handle ?? rooms[idx].handle
+        rooms[idx].createdAt = message.createdAt ?? rooms[idx].createdAt
 
-        let wasAtEnd = roomIndex == rooms.count - 1
-        let isCurrentRoom = currentRoom?.roomId == roomId
-        let currentRoomId = currentRoom?.roomId
-
-        // Update the room with new message info and move to end
-        var updatedRoom = rooms[roomIndex]
-        updatedRoom.message = message.message
-        updatedRoom.handle = message.handle ?? updatedRoom.handle
-        updatedRoom.createdAt = message.createdAt ?? updatedRoom.createdAt
-
-        rooms.remove(at: roomIndex)
-        rooms.append(updatedRoom)
-
-        // Adjust currentIndex to follow the current room after reordering
-        if let currentRoomId = currentRoomId {
-            if let newIndex = rooms.firstIndex(where: { $0.roomId == currentRoomId }) {
-                currentIndex = newIndex
-            }
-        }
-
-        // If this is the current room, add message to the list
-        if isCurrentRoom {
+        if currentRoom?.roomId == roomId {
             if !messages.contains(where: { $0.id == message.id }) {
                 messages.append(message)
             }
-        }
-
-        // Trigger right glow if:
-        // 1. Not the current room
-        // 2. Room was NOT already at the end (meaning it moved right)
-        if !isCurrentRoom && !wasAtEnd {
-            triggerRightGlow()
+        } else {
+            triggerGlow()
         }
     }
 
-    private func triggerRightGlow() {
-        withAnimation(.easeIn(duration: 0.2)) {
-            rightGlowing = true
-        }
-
-        // Fade out after 2 seconds
+    private func triggerGlow() {
+        withAnimation(.easeIn(duration: 0.2)) { rightGlowing = true }
         Task {
             try? await Task.sleep(for: .seconds(2))
-            withAnimation(.easeOut(duration: 0.5)) {
-                rightGlowing = false
-            }
+            withAnimation(.easeOut(duration: 0.5)) { rightGlowing = false }
         }
     }
 
     private func cleanup() {
-        // Leave all rooms and remove listeners
         for room in rooms {
             socketManager.leaveRoom(room.roomId)
             socketManager.removeListeners(roomId: room.roomId)
@@ -486,24 +387,17 @@ struct ChatCarouselWidget: View {
 
     private func formatTime(_ iso: String) -> String {
         guard let date = parseDate(iso) else { return "" }
-        let formatter = DateFormatter()
-
-        // If today, show just time; otherwise show date and time
-        if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "h:mm a"
-        } else {
-            formatter.dateFormat = "MMM d, h:mm a"
-        }
-        return formatter.string(from: date)
+        let f = DateFormatter()
+        f.dateFormat = Calendar.current.isDateInToday(date) ? "h:mm a" : "MMM d, h:mm a"
+        return f.string(from: date)
     }
 
-    private func parseDate(_ string: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: string) {
-            return date
-        }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: string)
+    private func parseDate(_ s: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: s) ?? {
+            f.formatOptions = [.withInternetDateTime]
+            return f.date(from: s)
+        }()
     }
 }
