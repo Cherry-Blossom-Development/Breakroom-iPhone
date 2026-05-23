@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChatListView: View {
     @Environment(ChatSocketManager.self) private var socketManager
+    @Environment(BadgeStore.self) private var badgeStore
     @State private var chatViewModel = ChatViewModel()
     @State private var selectedRoom: ChatRoom?
 
@@ -118,6 +119,16 @@ struct ChatListView: View {
                                                 }
                                             }
                                             Spacer()
+                                            // Unread badge
+                                            if let unread = badgeStore.chatUnread[room.id], unread > 0 {
+                                                Text("\(unread)")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(.white)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(.red)
+                                                    .clipShape(Capsule())
+                                            }
                                         }
                                         .padding(.vertical, 4)
                                     }
