@@ -398,17 +398,38 @@ struct ChatCarouselWidget: View {
     }
 
     private func handleNewMessage(_ message: ChatMessage, roomId: Int) {
-        guard let idx = rooms.firstIndex(where: { $0.roomId == roomId }) else { return }
-        rooms[idx].message = message.message
-        rooms[idx].handle = message.handle ?? rooms[idx].handle
-        rooms[idx].createdAt = message.createdAt ?? rooms[idx].createdAt
+        guard let roomIdx = rooms.firstIndex(where: { $0.roomId == roomId }) else { return }
 
-        if currentRoom?.roomId == roomId {
+        let wasAtEnd = roomIdx == rooms.count - 1
+        let isCurrent = currentRoom?.roomId == roomId
+
+        // Update room metadata
+        rooms[roomIdx].message = message.message
+        rooms[roomIdx].handle = message.handle ?? rooms[roomIdx].handle
+        rooms[roomIdx].createdAt = message.createdAt ?? rooms[roomIdx].createdAt
+
+        // Re-sort: move updated room to rightmost position (most recent)
+        let updatedRoom = rooms[roomIdx]
+        rooms.remove(at: roomIdx)
+        rooms.append(updatedRoom)
+
+        // Adjust currentIndex if needed
+        if isCurrent {
+            // Current room moved to end
+            currentIndex = rooms.count - 1
+            // Append message to current view
             if !messages.contains(where: { $0.id == message.id }) {
                 messages.append(message)
             }
         } else {
-            triggerGlow()
+            // If the moved room was before current room, shift index left
+            if roomIdx < currentIndex {
+                currentIndex -= 1
+            }
+            // Glow if the room wasn't already at the end
+            if !wasAtEnd {
+                triggerGlow()
+            }
         }
     }
 
