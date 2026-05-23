@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import os.log
 
 private let logger = Logger(subsystem: "com.cherryblossomdev.Breakroom", category: "ChatCarousel")
@@ -20,6 +21,8 @@ struct ChatCarouselWidget: View {
     @State private var error: String?
     @State private var rightGlowing = false
     @State private var hasLoadedRooms = false
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isUploadingMedia = false
 
     // Navigation callback
     var onOpenRoom: ((Int) -> Void)?
@@ -225,31 +228,51 @@ struct ChatCarouselWidget: View {
     // MARK: - Input View
 
     private var inputView: some View {
-        HStack(spacing: 8) {
-            TextField("Message...", text: $messageText)
+        HStack(spacing: 12) {
+            // Media picker button
+            PhotosPicker(selection: $selectedPhoto, matching: .any(of: [.images, .videos])) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .disabled(isUploadingMedia)
+
+            TextField("Message", text: $messageText)
                 .textFieldStyle(.plain)
                 .font(.caption)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(.fill.tertiary)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
-                .disabled(isSending)
 
+            // Send button
             Button {
                 Task { await sendMessage() }
             } label: {
-                if isSending {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Text("Send").font(.caption).fontWeight(.semibold)
+                Group {
+                    if isSending || isUploadingMedia {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 24))
+                    }
                 }
+                .frame(width: 28, height: 28)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
+            .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .onChange(of: selectedPhoto) {
+            guard let item = selectedPhoto else { return }
+            selectedPhoto = nil
+            guard let roomId = currentRoom?.roomId else { return }
+            Task { await handlePickedMedia(item, roomId: roomId) }
+        }
     }
 
     // MARK: - Loading Views
@@ -329,6 +352,27 @@ struct ChatCarouselWidget: View {
             messageText = text
         }
         isSending = false
+    }
+
+    private func handlePickedMedia(_ item: PhotosPickerItem, roomId: Int) async {
+        isUploadingMedia = true
+        defer { isUploadingMedia = false }
+
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+
+        do {
+            let message: ChatMessage
+            if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                message = try await ChatAPIService.uploadVideo(roomId: roomId, videoData: data, filename: "video.mp4")
+            } else {
+                message = try await ChatAPIService.uploadImage(roomId: roomId, imageData: data, filename: "image.jpg")
+            }
+            if !messages.contains(where: { $0.id == message.id }) {
+                messages.append(message)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     // MARK: - Socket
