@@ -20,6 +20,7 @@
 		176BD8B512E79E2AD17DFE45 /* BlogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40740E66D14A56BE618FCEB7 /* BlogModels.swift */; };
 		1CE3124CCC3A535005AA74A2 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CE9484D8A4723250F2973D /* FlagDialogView.swift */; };
 		1FAA945C8597D9327F3790E1 /* AdminModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62688D07C58868B21C15A0A5 /* AdminModels.swift */; };
+		20EE2A73CEEF60D0A43A40A8 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 71162FC332DD4B75BC433C47 /* FirebaseCore */; };
 		2251956C5D3E89F123EB87E9 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F0D1DE0A47F7B054B61B05 /* LegalView.swift */; };
 		29529B7D97396CA1581959D6 /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0125CB4C4CB971BC36C8BED4 /* CollectionsView.swift */; };
 		2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */; };
@@ -62,6 +63,7 @@
 		7E3C5091A1D3E2EAD7A89536 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540F3088B58164BD096499C8 /* PaywallView.swift */; };
 		7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45139 /* ProfileView.swift */; };
 		8104417291596650AADA807B /* GalleryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33066537C65EE3DB5A792F8 /* GalleryModels.swift */; };
+		8362F3A3945936BBF8220E88 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = EB829EA526D54769F045EE17 /* FirebaseMessaging */; };
 		873406ECF2D074479DC4D9E7 /* ModerationAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13342EA45C37A2624469015 /* ModerationAPIService.swift */; };
 		8D5643D19210114312A8B745 /* ModerationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DF02304D718C0B38800258 /* ModerationStore.swift */; };
 		8ED1BE434925E642E556EB9C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028A3743D482F0346A079BAD /* SongDetailView.swift */; };
@@ -218,6 +220,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */,
+				20EE2A73CEEF60D0A43A40A8 /* FirebaseCore in Frameworks */,
+				8362F3A3945936BBF8220E88 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -509,6 +513,8 @@
 			name = Breakroom;
 			packageProductDependencies = (
 				05BB53121E6C9220E5091E05 /* SocketIO */,
+				71162FC332DD4B75BC433C47 /* FirebaseCore */,
+				EB829EA526D54769F045EE17 /* FirebaseMessaging */,
 			);
 			productName = Breakroom;
 			productReference = 0A8D398682165173267FE358 /* Breakroom.app */;
@@ -540,6 +546,7 @@
 			mainGroup = 727682F0A609E51FDA008095;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				A0A12218601425202CDF913A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -877,6 +884,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A0A12218601425202CDF913A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 		DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
@@ -892,6 +907,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DEBE64F5038E786E79222860 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
 			productName = SocketIO;
+		};
+		71162FC332DD4B75BC433C47 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A0A12218601425202CDF913A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		EB829EA526D54769F045EE17 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A0A12218601425202CDF913A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
