@@ -1,4 +1,19 @@
 import SwiftUI
+import PhotosUI
+
+// MARK: - Color Presets
+
+let collectionColorPresets: [(hex: String, name: String)] = [
+    ("#FFFFFF", "White"),
+    ("#FEE2E2", "Red"),
+    ("#FEF3C7", "Yellow"),
+    ("#DCFCE7", "Green"),
+    ("#DBEAFE", "Blue"),
+    ("#EDE9FE", "Purple"),
+    ("#FCE7F3", "Pink"),
+    ("#F3F4F6", "Gray"),
+    ("#1F2937", "Dark")
+]
 
 struct CollectionsView: View {
     @State private var collections: [Collection] = []
@@ -9,13 +24,31 @@ struct CollectionsView: View {
     @State private var showCreateSheet = false
     @State private var collectionToEdit: Collection?
     @State private var editName = ""
-    @State private var editBackgroundColor = "#6366f1"
+    @State private var editBackgroundColor = "#FFFFFF"
+    @State private var editBackgroundType = "color"  // "color" or "image"
+    @State private var editBackgroundImageData: Data?
+    @State private var editBackgroundImagePath: String?  // Existing S3 path
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var collectionItems: [CollectionItem] = []  // For picking bg from items
+    @State private var isLoadingItems = false
 
     // Delete confirmation
     @State private var collectionToDelete: Collection?
     @State private var showDeleteConfirmation = false
 
+    // Reorder mode
+    @State private var isReordering = false
+
     @State private var isSaving = false
+
+    // Computed: should show background option (only when >1 collection will exist)
+    private var shouldShowBackgroundOption: Bool {
+        if collectionToEdit != nil {
+            return collections.count > 1
+        } else {
+            return collections.count >= 1  // Creating new, so result will be >1
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -41,7 +74,7 @@ struct CollectionsView: View {
                     Text("Create your first showcase to start displaying your work.")
                 } actions: {
                     Button("Create Showcase") {
-                        showCreateSheet = true
+                        prepareCreateSheet()
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("collectionsCreateFirstButton")
@@ -55,15 +88,31 @@ struct CollectionsView: View {
         .navigationTitle("Artist Showcase")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    editName = ""
-                    editBackgroundColor = "#6366f1"
-                    collectionToEdit = nil
-                    showCreateSheet = true
-                } label: {
-                    Image(systemName: "plus")
+                HStack(spacing: 12) {
+                    // Reorder button (only when >1 collections)
+                    if collections.count > 1 {
+                        Button {
+                            if isReordering {
+                                Task { await saveReorder() }
+                            } else {
+                                isReordering = true
+                            }
+                        } label: {
+                            Text(isReordering ? "Done" : "Reorder")
+                        }
+                        .accessibilityIdentifier("collectionsReorderButton")
+                    }
+
+                    // Add button (hidden during reorder)
+                    if !isReordering {
+                        Button {
+                            prepareCreateSheet()
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityIdentifier("collectionsAddButton")
+                    }
                 }
-                .accessibilityIdentifier("collectionsAddButton")
             }
         }
         .task {
@@ -72,7 +121,7 @@ struct CollectionsView: View {
         .sheet(isPresented: $showCreateSheet) {
             collectionFormSheet
         }
-        .sheet(item: $collectionToEdit) { collection in
+        .sheet(item: $collectionToEdit) { _ in
             collectionFormSheet
         }
         .confirmationDialog(
@@ -86,6 +135,14 @@ struct CollectionsView: View {
         } message: { collection in
             Text("This will permanently delete \"\(collection.name)\" and all its items. This cannot be undone.")
         }
+        .onChange(of: selectedPhoto) {
+            Task {
+                if let data = try? await selectedPhoto?.loadTransferable(type: Data.self) {
+                    editBackgroundImageData = data
+                    editBackgroundImagePath = nil
+                }
+            }
+        }
     }
 
     // MARK: - Collections List
@@ -93,8 +150,10 @@ struct CollectionsView: View {
     private var collectionsList: some View {
         ScrollView {
             LazyVStack(spacing: 24) {
-                // Store Setup section
-                storeSetupSection
+                // Store Setup section (hidden during reorder)
+                if !isReordering {
+                    storeSetupSection
+                }
 
                 // Collections section
                 VStack(alignment: .leading, spacing: 12) {
@@ -105,31 +164,87 @@ struct CollectionsView: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
 
-                    ForEach(collections) { collection in
-                        NavigationLink {
-                            CollectionDetailView(collection: collection)
-                        } label: {
-                            CollectionCard(
-                                collection: collection,
-                                onEdit: {
-                                    editName = collection.name
-                                    editBackgroundColor = collection.settings?.backgroundColor ?? "#6366f1"
-                                    collectionToEdit = collection
-                                },
-                                onDelete: {
-                                    collectionToDelete = collection
-                                    showDeleteConfirmation = true
-                                }
-                            )
+                    if isReordering {
+                        reorderList
+                    } else {
+                        ForEach(collections) { collection in
+                            NavigationLink {
+                                CollectionDetailView(collection: collection, allCollections: collections)
+                            } label: {
+                                CollectionCard(
+                                    collection: collection,
+                                    onEdit: {
+                                        prepareEditSheet(collection)
+                                    },
+                                    onDelete: {
+                                        collectionToDelete = collection
+                                        showDeleteConfirmation = true
+                                    }
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("collectionCard_\(collection.id)")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("collectionCard_\(collection.id)")
                     }
                 }
             }
             .padding()
         }
         .accessibilityIdentifier("collectionsList")
+    }
+
+    // MARK: - Reorder List
+
+    private var reorderList: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(collections.enumerated()), id: \.element.id) { index, collection in
+                HStack {
+                    Text(collection.name)
+                        .font(.headline)
+
+                    Spacer()
+
+                    // Up button
+                    Button {
+                        moveCollection(from: index, direction: -1)
+                    } label: {
+                        Image(systemName: "chevron.up")
+                            .font(.title3)
+                    }
+                    .disabled(index == 0)
+                    .buttonStyle(.bordered)
+
+                    // Down button
+                    Button {
+                        moveCollection(from: index, direction: 1)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.title3)
+                    }
+                    .disabled(index == collections.count - 1)
+                    .buttonStyle(.bordered)
+                }
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+
+    private func moveCollection(from index: Int, direction: Int) {
+        let newIndex = index + direction
+        guard newIndex >= 0 && newIndex < collections.count else { return }
+        collections.swapAt(index, newIndex)
+    }
+
+    private func saveReorder() async {
+        let order = collections.map { $0.id }
+        do {
+            try await CollectionsAPIService.reorderCollections(order: order)
+            isReordering = false
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     // MARK: - Store Setup Section
@@ -187,6 +302,42 @@ struct CollectionsView: View {
         }
     }
 
+    // MARK: - Form Sheet Helpers
+
+    private func prepareCreateSheet() {
+        editName = ""
+        editBackgroundColor = "#FFFFFF"
+        editBackgroundType = "color"
+        editBackgroundImageData = nil
+        editBackgroundImagePath = nil
+        selectedPhoto = nil
+        collectionItems = []
+        collectionToEdit = nil
+        showCreateSheet = true
+    }
+
+    private func prepareEditSheet(_ collection: Collection) {
+        editName = collection.name
+        editBackgroundColor = collection.settings?.backgroundColor ?? "#FFFFFF"
+        editBackgroundType = collection.settings?.backgroundType ?? "color"
+        editBackgroundImageData = nil
+        editBackgroundImagePath = collection.settings?.backgroundImage
+        selectedPhoto = nil
+        collectionItems = []
+        collectionToEdit = collection
+
+        // Load items for background image picker
+        Task {
+            isLoadingItems = true
+            do {
+                collectionItems = try await CollectionsAPIService.getItems(collectionId: collection.id)
+            } catch {
+                // Ignore errors for item loading
+            }
+            isLoadingItems = false
+        }
+    }
+
     // MARK: - Form Sheet
 
     private var collectionFormSheet: some View {
@@ -198,12 +349,22 @@ struct CollectionsView: View {
                         .accessibilityIdentifier("collectionNameField")
                 }
 
-                Section("Background Color") {
-                    ColorPicker("Color", selection: Binding(
-                        get: { Color(hex: editBackgroundColor) ?? .indigo },
-                        set: { editBackgroundColor = $0.hexString }
-                    ))
-                    .accessibilityIdentifier("collectionColorPicker")
+                // Background section (only show when >1 collection will exist)
+                if shouldShowBackgroundOption {
+                    Section("Background") {
+                        // Type picker
+                        Picker("Type", selection: $editBackgroundType) {
+                            Text("Color").tag("color")
+                            Text("Image").tag("image")
+                        }
+                        .pickerStyle(.segmented)
+
+                        if editBackgroundType == "color" {
+                            colorPresetPicker
+                        } else {
+                            imageBackgroundPicker
+                        }
+                    }
                 }
             }
             .accessibilityIdentifier("collectionForm")
@@ -226,7 +387,107 @@ struct CollectionsView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Color Preset Picker
+
+    private var colorPresetPicker: some View {
+        LazyVGrid(columns: [
+            GridItem(.adaptive(minimum: 44), spacing: 8)
+        ], spacing: 8) {
+            ForEach(collectionColorPresets, id: \.hex) { preset in
+                Button {
+                    editBackgroundColor = preset.hex
+                } label: {
+                    Circle()
+                        .fill(Color(hex: preset.hex) ?? .white)
+                        .frame(width: 44, height: 44)
+                        .overlay {
+                            if editBackgroundColor == preset.hex {
+                                Image(systemName: "checkmark")
+                                    .font(.headline.bold())
+                                    .foregroundStyle(preset.hex == "#1F2937" ? .white : .black)
+                            }
+                        }
+                        .overlay {
+                            Circle()
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(preset.name)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Image Background Picker
+
+    private var imageBackgroundPicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Current image preview
+            if let imageData = editBackgroundImageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 100)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button("Remove Image", role: .destructive) {
+                    editBackgroundImageData = nil
+                    selectedPhoto = nil
+                }
+            } else if let imagePath = editBackgroundImagePath, !imagePath.isEmpty {
+                CollectionItemImage(path: imagePath)
+                    .frame(height: 100)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button("Remove Image", role: .destructive) {
+                    editBackgroundImagePath = nil
+                }
+            }
+
+            // Upload from photos
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Label("Upload from Photos", systemImage: "photo.badge.plus")
+            }
+
+            // Pick from existing items
+            if !collectionItems.isEmpty {
+                Text("Or pick from items:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                LazyVGrid(columns: [
+                    GridItem(.adaptive(minimum: 60), spacing: 8)
+                ], spacing: 8) {
+                    ForEach(collectionItems.filter { $0.imagePath != nil }) { item in
+                        Button {
+                            editBackgroundImagePath = item.imagePath
+                            editBackgroundImageData = nil
+                            selectedPhoto = nil
+                        } label: {
+                            CollectionItemImage(path: item.imagePath!)
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .overlay {
+                                    if editBackgroundImagePath == item.imagePath {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color.accentColor, lineWidth: 3)
+                                    }
+                                }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } else if isLoadingItems {
+                ProgressView("Loading items...")
+                    .font(.caption)
+            }
+        }
     }
 
     // MARK: - Actions
@@ -236,6 +497,8 @@ struct CollectionsView: View {
         error = nil
         do {
             collections = try await CollectionsAPIService.getCollections()
+            // Sort by display_order
+            collections.sort { ($0.displayOrder ?? 0) < ($1.displayOrder ?? 0) }
         } catch {
             self.error = error.localizedDescription
         }
@@ -252,7 +515,10 @@ struct CollectionsView: View {
                 let updated = try await CollectionsAPIService.updateCollection(
                     id: existing.id,
                     name: name,
-                    backgroundColor: editBackgroundColor
+                    backgroundColor: editBackgroundType == "color" ? editBackgroundColor : nil,
+                    backgroundType: shouldShowBackgroundOption ? editBackgroundType : nil,
+                    backgroundImageData: editBackgroundType == "image" ? editBackgroundImageData : nil,
+                    backgroundImagePath: editBackgroundType == "image" ? editBackgroundImagePath : nil
                 )
                 if let index = collections.firstIndex(where: { $0.id == existing.id }) {
                     collections[index] = updated
@@ -332,11 +598,26 @@ private struct CollectionCard: View {
         return .indigo
     }
 
+    private var hasBackgroundImage: Bool {
+        collection.settings?.backgroundType == "image" &&
+        collection.settings?.backgroundImage != nil &&
+        !(collection.settings?.backgroundImage?.isEmpty ?? true)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Color preview
-            backgroundColor
-                .frame(height: 100)
+            // Background preview (color or image)
+            ZStack {
+                if hasBackgroundImage {
+                    CollectionItemImage(path: collection.settings!.backgroundImage!)
+                        .frame(height: 100)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                } else {
+                    backgroundColor
+                        .frame(height: 100)
+                }
+            }
 
             // Info section
             HStack {

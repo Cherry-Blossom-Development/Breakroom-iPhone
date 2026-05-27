@@ -7,6 +7,7 @@ struct Collection: Codable, Identifiable, Hashable {
     let userId: Int?
     let name: String
     let settings: CollectionSettings?
+    let displayOrder: Int?
     let createdAt: String?
     let updatedAt: String?
 
@@ -15,6 +16,7 @@ struct Collection: Codable, Identifiable, Hashable {
         case userId = "user_id"
         case name
         case settings
+        case displayOrder = "display_order"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -22,9 +24,19 @@ struct Collection: Codable, Identifiable, Hashable {
 
 struct CollectionSettings: Codable, Hashable {
     let backgroundColor: String?
+    let backgroundType: String?  // "color" or "image"
+    let backgroundImage: String? // S3 path for background image
 
     enum CodingKeys: String, CodingKey {
         case backgroundColor = "background_color"
+        case backgroundType = "background_type"
+        case backgroundImage = "background_image"
+    }
+
+    init(backgroundColor: String? = nil, backgroundType: String? = nil, backgroundImage: String? = nil) {
+        self.backgroundColor = backgroundColor
+        self.backgroundType = backgroundType
+        self.backgroundImage = backgroundImage
     }
 }
 
@@ -151,6 +163,10 @@ struct CreateCollectionRequest: Encodable {
 struct UpdateCollectionRequest: Encodable {
     let name: String
     let settings: CollectionSettings?
+}
+
+struct ReorderCollectionsRequest: Encodable {
+    let order: [Int]
 }
 
 // MARK: - Shipping Settings

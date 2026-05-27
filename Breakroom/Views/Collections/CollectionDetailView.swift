@@ -3,6 +3,7 @@ import PhotosUI
 
 struct CollectionDetailView: View {
     let collection: Collection
+    let allCollections: [Collection]
 
     @State private var items: [CollectionItem] = []
     @State private var isLoading = true
@@ -87,9 +88,15 @@ struct CollectionDetailView: View {
         .sheet(item: $sheetMode) { mode in
             ItemFormSheet(
                 collectionId: collection.id,
+                allCollections: allCollections,
                 item: mode.item,
-                onSave: { savedItem in
-                    if let existingItem = mode.item,
+                onSave: { savedItem, movedToOther in
+                    if movedToOther {
+                        // Item was moved to a different collection, remove from this list
+                        if let existingItem = mode.item {
+                            items.removeAll { $0.id == existingItem.id }
+                        }
+                    } else if let existingItem = mode.item,
                        let index = items.firstIndex(where: { $0.id == existingItem.id }) {
                         items[index] = savedItem
                     } else {
@@ -294,8 +301,9 @@ private struct ItemCard: View {
 
 private struct ItemFormSheet: View {
     let collectionId: Int
+    let allCollections: [Collection]
     let item: CollectionItem?
-    let onSave: (CollectionItem) -> Void
+    let onSave: (CollectionItem, Bool) -> Void  // (savedItem, movedToOtherCollection)
     let onCancel: () -> Void
 
     @State private var name = ""
@@ -307,6 +315,7 @@ private struct ItemFormSheet: View {
     @State private var lengthString = ""
     @State private var widthString = ""
     @State private var heightString = ""
+    @State private var selectedCollectionId: Int
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImageData: Data?
@@ -316,6 +325,20 @@ private struct ItemFormSheet: View {
     @State private var error: String?
 
     private var isEditing: Bool { item != nil }
+
+    // Only show collection picker when editing and user has >1 collections
+    private var showCollectionPicker: Bool {
+        isEditing && allCollections.count > 1
+    }
+
+    init(collectionId: Int, allCollections: [Collection], item: CollectionItem?, onSave: @escaping (CollectionItem, Bool) -> Void, onCancel: @escaping () -> Void) {
+        self.collectionId = collectionId
+        self.allCollections = allCollections
+        self.item = item
+        self.onSave = onSave
+        self.onCancel = onCancel
+        self._selectedCollectionId = State(initialValue: collectionId)
+    }
 
     var body: some View {
         NavigationStack {
@@ -327,6 +350,17 @@ private struct ItemFormSheet: View {
 
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .lineLimit(3...6)
+                }
+
+                // Collection picker (only for editing with multiple collections)
+                if showCollectionPicker {
+                    Section("Collection") {
+                        Picker("Move to", selection: $selectedCollectionId) {
+                            ForEach(allCollections) { collection in
+                                Text(collection.name).tag(collection.id)
+                            }
+                        }
+                    }
                 }
 
                 // Image
@@ -471,6 +505,7 @@ private struct ItemFormSheet: View {
                         heightString = String(height)
                     }
                     existingImagePath = item.imagePath
+                    selectedCollectionId = item.collectionId ?? collectionId
                 }
             }
         }
@@ -490,6 +525,9 @@ private struct ItemFormSheet: View {
         let width = widthString.isEmpty ? nil : Double(widthString)
         let height = heightString.isEmpty ? nil : Double(heightString)
 
+        // Check if moving to different collection
+        let isMoving = isEditing && selectedCollectionId != collectionId
+
         do {
             let savedItem: CollectionItem
             if let existingItem = item {
@@ -505,7 +543,8 @@ private struct ItemFormSheet: View {
                     weightOz: weight,
                     lengthIn: length,
                     widthIn: width,
-                    heightIn: height
+                    heightIn: height,
+                    newCollectionId: isMoving ? selectedCollectionId : nil
                 )
             } else {
                 savedItem = try await CollectionsAPIService.createItem(
@@ -522,7 +561,7 @@ private struct ItemFormSheet: View {
                     heightIn: height
                 )
             }
-            onSave(savedItem)
+            onSave(savedItem, isMoving)
         } catch {
             self.error = error.localizedDescription
         }
@@ -591,13 +630,17 @@ struct CollectionItemImage: View {
 
 #Preview {
     NavigationStack {
-        CollectionDetailView(collection: Collection(
-            id: 1,
-            userId: 1,
-            name: "Test Collection",
-            settings: nil,
-            createdAt: nil,
-            updatedAt: nil
-        ))
+        CollectionDetailView(
+            collection: Collection(
+                id: 1,
+                userId: 1,
+                name: "Test Collection",
+                settings: nil,
+                displayOrder: nil,
+                createdAt: nil,
+                updatedAt: nil
+            ),
+            allCollections: []
+        )
     }
 }

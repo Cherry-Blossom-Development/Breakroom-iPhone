@@ -21,11 +21,72 @@ enum CollectionsAPIService {
         return try await APIClient.shared.request("/api/collections", method: "POST", body: body)
     }
 
-    /// Update a collection
-    static func updateCollection(id: Int, name: String, backgroundColor: String? = nil) async throws -> Collection {
-        let settings = CollectionSettings(backgroundColor: backgroundColor)
-        let body = UpdateCollectionRequest(name: name, settings: settings)
-        return try await APIClient.shared.request("/api/collections/\(id)", method: "PUT", body: body)
+    /// Update a collection (multipart form to support image upload)
+    static func updateCollection(
+        id: Int,
+        name: String,
+        backgroundColor: String? = nil,
+        backgroundType: String? = nil,
+        backgroundImageData: Data? = nil,
+        backgroundImagePath: String? = nil  // Existing S3 path (when picking from items)
+    ) async throws -> Collection {
+        let url = URL(string: "\(APIClient.shared.baseURL)/api/collections/\(id)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        if let token = KeychainManager.bearerToken {
+            request.setValue(token, forHTTPHeaderField: "Authorization")
+        }
+
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Name (required)
+        body.appendFormField(name: "name", value: name, boundary: boundary)
+
+        // Background color
+        if let backgroundColor {
+            body.appendFormField(name: "background_color", value: backgroundColor, boundary: boundary)
+        }
+
+        // Background type
+        if let backgroundType {
+            body.appendFormField(name: "background_type", value: backgroundType, boundary: boundary)
+        }
+
+        // Background image (new upload)
+        if let imageData = backgroundImageData {
+            body.appendFormFile(name: "background_image", filename: "background.jpg", mimeType: "image/jpeg", data: imageData, boundary: boundary)
+        }
+
+        // Background image path (existing S3 key from items)
+        if let imagePath = backgroundImagePath {
+            body.appendFormField(name: "background_image_path", value: imagePath, boundary: boundary)
+        }
+
+        // Close boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.serverError("Failed to update collection: \(httpResponse.statusCode)")
+        }
+
+        return try JSONDecoder().decode(Collection.self, from: data)
+    }
+
+    /// Reorder collections
+    static func reorderCollections(order: [Int]) async throws {
+        let body = ReorderCollectionsRequest(order: order)
+        try await APIClient.shared.requestVoid("/api/collections/reorder", method: "PUT", body: body)
     }
 
     /// Delete a collection
@@ -152,7 +213,8 @@ enum CollectionsAPIService {
         weightOz: Double?,
         lengthIn: Double?,
         widthIn: Double?,
-        heightIn: Double?
+        heightIn: Double?,
+        newCollectionId: Int? = nil  // For moving item to different collection
     ) async throws -> CollectionItem {
         let url = URL(string: "\(APIClient.shared.baseURL)/api/collections/\(collectionId)/items/\(itemId)")!
         var request = URLRequest(url: url)
@@ -183,6 +245,11 @@ enum CollectionsAPIService {
 
         // Availability
         body.appendFormField(name: "is_available", value: isAvailable ? "true" : "false", boundary: boundary)
+
+        // New collection ID (for moving item between collections)
+        if let newCollectionId {
+            body.appendFormField(name: "collection_id", value: String(newCollectionId), boundary: boundary)
+        }
 
         // Shipping cost
         if let shippingCostCents {
