@@ -11,7 +11,7 @@ enum AdminAPIService {
     }
 
     /// Get all users (for impersonation list)
-    static func getAllUsers() async throws -> [SearchUser] {
+    static func getAllUsers() async throws -> [User] {
         let response: AllUsersResponse = try await APIClient.shared.request("/api/user/all")
         return response.users
     }

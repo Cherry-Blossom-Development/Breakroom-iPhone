@@ -10,6 +10,9 @@ packages:
   SocketIO:
     url: https://github.com/socketio/socket.io-client-swift
     exactVersion: 16.1.1
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
 
 settings:
   base:
@@ -24,6 +27,10 @@ targets:
     dependencies:
       - package: SocketIO
         product: SocketIO
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseMessaging
     settings:
       base:
         INFOPLIST_FILE: Breakroom/Info.plist

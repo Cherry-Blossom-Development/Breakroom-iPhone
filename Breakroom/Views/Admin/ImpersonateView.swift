@@ -5,14 +5,14 @@ struct ImpersonateView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var users: [SearchUser] = []
+    @State private var users: [User] = []
     @State private var isLoading = true
     @State private var error: String?
     @State private var searchQuery = ""
     @State private var impersonatingId: Int?
     @State private var impersonationError: String?
 
-    private var filteredUsers: [SearchUser] {
+    private var filteredUsers: [User] {
         if searchQuery.trimmingCharacters(in: .whitespaces).isEmpty {
             return users
         }
@@ -97,7 +97,7 @@ struct ImpersonateView: View {
     }
 
     @ViewBuilder
-    private func userRow(_ user: SearchUser) -> some View {
+    private func userRow(_ user: User) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.displayName)
@@ -135,7 +135,7 @@ struct ImpersonateView: View {
         isLoading = false
     }
 
-    private func startImpersonation(_ user: SearchUser) async {
+    private func startImpersonation(_ user: User) async {
         impersonatingId = user.id
         impersonationError = nil
 
