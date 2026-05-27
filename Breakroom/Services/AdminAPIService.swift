@@ -5,7 +5,7 @@ enum AdminAPIService {
     /// Check if the current user has admin_access permission
     static func checkAdminAccess() async throws -> Bool {
         let response: PermissionCheckResponse = try await APIClient.shared.request(
-            "/api/permissions/check/admin_access"
+            "/api/auth/can/admin_access"
         )
         return response.hasPermission
     }
