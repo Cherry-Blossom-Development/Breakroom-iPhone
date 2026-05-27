@@ -8,6 +8,8 @@ enum KeychainManager {
         case jwtToken = "jwt_token"
         case username = "username"
         case userId = "user_id"
+        case adminToken = "admin_token"
+        case impersonatedHandle = "impersonated_handle"
     }
 
     static func save(_ value: String, for key: Key) {
@@ -53,7 +55,7 @@ enum KeychainManager {
     }
 
     static func clearAll() {
-        for key in [Key.jwtToken, .username, .userId] {
+        for key in [Key.jwtToken, .username, .userId, .adminToken, .impersonatedHandle] {
             delete(key)
         }
     }
@@ -72,5 +74,38 @@ enum KeychainManager {
     static var bearerToken: String? {
         guard let token else { return nil }
         return "Bearer \(token)"
+    }
+
+    // MARK: - Impersonation
+
+    static var adminToken: String? {
+        get { get(.adminToken) }
+        set {
+            if let newValue {
+                save(newValue, for: .adminToken)
+            } else {
+                delete(.adminToken)
+            }
+        }
+    }
+
+    static var impersonatedHandle: String? {
+        get { get(.impersonatedHandle) }
+        set {
+            if let newValue {
+                save(newValue, for: .impersonatedHandle)
+            } else {
+                delete(.impersonatedHandle)
+            }
+        }
+    }
+
+    static var isImpersonating: Bool {
+        adminToken != nil
+    }
+
+    static func clearImpersonation() {
+        delete(.adminToken)
+        delete(.impersonatedHandle)
     }
 }

@@ -69,11 +69,24 @@ struct MainTabView: View {
     @State private var selectedShortcut: Shortcut?
     @State private var showManageShortcuts = false
 
+    // Admin / Impersonation
+    @State private var hasAdminAccess = false
+    @State private var showImpersonateSheet = false
+    @State private var isImpersonating = false
+    @State private var impersonatedHandle: String? = nil
+    @State private var isStoppingImpersonation = false
+
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
-                BreakroomView()
+        VStack(spacing: 0) {
+            // Impersonation banner
+            if isImpersonating, let handle = impersonatedHandle {
+                impersonationBanner(handle: handle)
+            }
+
+            TabView(selection: $selectedTab) {
+                NavigationStack {
+                    BreakroomView()
                     .navigationDestination(isPresented: $showBlogManagement) {
                         BlogManagementView()
                     }
@@ -166,6 +179,19 @@ struct MainTabView: View {
                                     }
                                 }
 
+                                // Admin section (only shown for admins)
+                                if hasAdminAccess {
+                                    Divider()
+                                    Section("Admin") {
+                                        Button {
+                                            showImpersonateSheet = true
+                                        } label: {
+                                            Label("Impersonate User", systemImage: "person.fill.viewfinder")
+                                        }
+                                        .accessibilityIdentifier("menuImpersonate")
+                                    }
+                                }
+
                                 Divider()
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right") {
                                     Task { await authViewModel.logout() }
@@ -254,6 +280,68 @@ struct MainTabView: View {
         .sheet(isPresented: $showManageShortcuts) {
             ManageShortcutsSheet(shortcuts: $shortcuts)
         }
+        .sheet(isPresented: $showImpersonateSheet) {
+            ImpersonateView(onImpersonated: {
+                // Refresh impersonation state
+                isImpersonating = KeychainManager.isImpersonating
+                impersonatedHandle = KeychainManager.impersonatedHandle
+            })
+        }
+        .task {
+            await checkAdminAccess()
+        }
+        .onAppear {
+            isImpersonating = KeychainManager.isImpersonating
+            impersonatedHandle = KeychainManager.impersonatedHandle
+        }
+        } // Close VStack
+    }
+
+    // MARK: - Impersonation Banner
+
+    private func impersonationBanner(handle: String) -> some View {
+        HStack {
+            Image(systemName: "person.fill.viewfinder")
+            Text("Impersonating @\(handle)")
+                .font(.subheadline.weight(.medium))
+            Spacer()
+            if isStoppingImpersonation {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.white)
+            } else {
+                Button("Stop") {
+                    Task { await stopImpersonation() }
+                }
+                .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(Color.orange)
+        .foregroundStyle(.white)
+    }
+
+    private func checkAdminAccess() async {
+        do {
+            hasAdminAccess = try await AdminAPIService.checkAdminAccess()
+        } catch {
+            hasAdminAccess = false
+        }
+    }
+
+    private func stopImpersonation() async {
+        isStoppingImpersonation = true
+        do {
+            try await AdminAPIService.stopImpersonation()
+            isImpersonating = false
+            impersonatedHandle = nil
+            // Re-check admin access after returning to admin account
+            await checkAdminAccess()
+        } catch {
+            // Show error?
+        }
+        isStoppingImpersonation = false
     }
 
     private func performDeleteAccount() async {

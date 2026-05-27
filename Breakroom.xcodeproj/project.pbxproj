@@ -19,6 +19,7 @@
 		1562F93BEBF3921C1C495B77 /* ToolShedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18446587DDCAB3E01271A326 /* ToolShedView.swift */; };
 		176BD8B512E79E2AD17DFE45 /* BlogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40740E66D14A56BE618FCEB7 /* BlogModels.swift */; };
 		1CE3124CCC3A535005AA74A2 /* FlagDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66CE9484D8A4723250F2973D /* FlagDialogView.swift */; };
+		1FAA945C8597D9327F3790E1 /* AdminModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62688D07C58868B21C15A0A5 /* AdminModels.swift */; };
 		2251956C5D3E89F123EB87E9 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F0D1DE0A47F7B054B61B05 /* LegalView.swift */; };
 		29529B7D97396CA1581959D6 /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0125CB4C4CB971BC36C8BED4 /* CollectionsView.swift */; };
 		2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */; };
@@ -80,6 +81,7 @@
 		B8A959EE051525147FC1DEFC /* PaymentSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA899B8776A6A11C8B655E1 /* PaymentSetupView.swift */; };
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
+		BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */; };
 		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
 		C47D174FD349F77D7ED52630 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0DB690EA5FDB4F231A66DEB8 /* GoogleService-Info.plist */; };
@@ -101,6 +103,7 @@
 		EA51FF556853F473D7080AC5 /* StorefrontSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFABB6360DC6CA565659940B /* StorefrontSetupView.swift */; };
 		EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */; };
 		EEC190D582906DC62F3A85A9 /* StringExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E88739A60E372810A63A28 /* StringExtensions.swift */; };
+		F674FB09D212F7433E993C2D /* ImpersonateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50720E2BF26FD053F25A2BB7 /* ImpersonateView.swift */; };
 		FB2A34E96D094CD237F9DCD7 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */; };
 		FE1EF55A761C9A80859ABE56 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9AC9F72B4CED61F085EAD7 /* User.swift */; };
 /* End PBXBuildFile section */
@@ -153,12 +156,14 @@
 		4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAPIService.swift; sourceTree = "<group>"; };
 		4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomModels.swift; sourceTree = "<group>"; };
 		4F057A597628AE58CE8D5DBE /* CollectionsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsModels.swift; sourceTree = "<group>"; };
+		50720E2BF26FD053F25A2BB7 /* ImpersonateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpersonateView.swift; sourceTree = "<group>"; };
 		540F3088B58164BD096499C8 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyAPIService.swift; sourceTree = "<group>"; };
 		5E6A7AB807A923430F64364A /* FriendsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsModels.swift; sourceTree = "<group>"; };
 		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5F23465B955ECBC090E8C06E /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
+		62688D07C58868B21C15A0A5 /* AdminModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminModels.swift; sourceTree = "<group>"; };
 		63EA48B5699C1A4037B78EFF /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
 		664D6C1E857ACE07479BED4B /* BreakroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomView.swift; sourceTree = "<group>"; };
 		66CE9484D8A4723250F2973D /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
@@ -193,6 +198,7 @@
 		CC254392AF3069CE5CAD4410 /* SessionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsAPIService.swift; sourceTree = "<group>"; };
 		D13342EA45C37A2624469015 /* ModerationAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationAPIService.swift; sourceTree = "<group>"; };
 		D3F61C941989489C1B54449D /* ArtGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGalleryView.swift; sourceTree = "<group>"; };
+		D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAPIService.swift; sourceTree = "<group>"; };
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		D9123C333A8004FE2A57720C /* FeaturesAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesAPIService.swift; sourceTree = "<group>"; };
 		DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyPortalView.swift; sourceTree = "<group>"; };
@@ -259,6 +265,7 @@
 		0DAD9671B089DECE30BCFA00 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				23C8A07D7D6D0938AD4FAB56 /* Admin */,
 				6624944EE960DAF195368039 /* Auth */,
 				E2DF196B5E353D644DD9FDE9 /* Blog */,
 				8CD871E9860C7645C09AE129 /* Breakroom */,
@@ -274,6 +281,14 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		23C8A07D7D6D0938AD4FAB56 /* Admin */ = {
+			isa = PBXGroup;
+			children = (
+				50720E2BF26FD053F25A2BB7 /* ImpersonateView.swift */,
+			);
+			path = Admin;
+			sourceTree = "<group>";
+		};
 		4C46CE9F16F513C97E7B2C86 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -286,6 +301,7 @@
 		615FD30E066A07B3076F9236 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */,
 				711606DB3235C27FE38591F0 /* APIClient.swift */,
 				3AA0A819B1816531F0433D4C /* AuthService.swift */,
 				FDD12F5074FF49E759466C6A /* BadgeAPIService.swift */,
@@ -402,6 +418,7 @@
 		A6841191FCF3B49A453510AD /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				62688D07C58868B21C15A0A5 /* AdminModels.swift */,
 				AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */,
 				40740E66D14A56BE618FCEB7 /* BlogModels.swift */,
 				4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */,
@@ -553,6 +570,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */,
+				BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */,
+				1FAA945C8597D9327F3790E1 /* AdminModels.swift in Sources */,
 				BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */,
 				2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */,
 				4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */,
@@ -602,6 +621,7 @@
 				332F9F634ADC7F2FE98E9CB6 /* GalleryAPIService.swift in Sources */,
 				8104417291596650AADA807B /* GalleryModels.swift in Sources */,
 				12F13E62B692E4422560095A /* HelpDeskView.swift in Sources */,
+				F674FB09D212F7433E993C2D /* ImpersonateView.swift in Sources */,
 				3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */,
 				E77A101F98BC7C547561807D /* KanbanBoardView.swift in Sources */,
 				7CE96892285A2CD9C863A5CB /* KanbanRedirectView.swift in Sources */,
