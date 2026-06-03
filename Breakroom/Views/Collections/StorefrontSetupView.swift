@@ -15,6 +15,10 @@ struct StorefrontSetupView: View {
         StorefrontSection(id: "collections", type: "collections", visible: true, title: "My Collections")
     ]
 
+    // Display settings
+    @State private var collectionsDisplaySize = "small"  // "small", "medium", "large"
+    @State private var collectionsAspectRatio = "landscape"  // "portrait", "square", "landscape"
+
     // URL checking
     @State private var urlCheckTask: Task<Void, Never>?
     @State private var isCheckingUrl = false
@@ -130,44 +134,62 @@ struct StorefrontSetupView: View {
 
             // Page Sections
             Section {
-                ForEach($sections) { $section in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(section.type == "content" ? "Content" : "Collections")
-                                .font(.subheadline)
-                            Text(section.type == "content"
-                                ? "Custom text and formatting"
-                                : "Your product collections")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(section.type == "content" ? "Content" : "Collections")
+                                    .font(.subheadline.weight(.semibold))
+                                Text(section.type == "content"
+                                    ? "A free-form text block shown above your collections"
+                                    : "Displays all your collections on the public store")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            // Reorder buttons
+                            Button {
+                                moveSectionUp(at: index)
+                            } label: {
+                                Image(systemName: "chevron.up")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(index == 0)
+
+                            Button {
+                                moveSectionDown(at: index)
+                            } label: {
+                                Image(systemName: "chevron.down")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(index == sections.count - 1)
+
+                            Toggle("", isOn: Binding(
+                                get: { sections[index].visible },
+                                set: { sections[index].visible = $0 }
+                            ))
+                            .labelsHidden()
                         }
 
-                        Spacer()
-
-                        Toggle("", isOn: $section.visible)
-                            .labelsHidden()
+                        // Section-specific settings when visible
+                        if section.visible {
+                            if section.type == "collections" {
+                                collectionsSettings
+                            }
+                        }
                     }
+                    .padding(.vertical, 4)
                 }
             } header: {
                 Text("Page Sections")
             } footer: {
-                Text("Toggle to show or hide sections on your public store.")
-            }
-
-            // Collections section title
-            if let collectionsSection = sections.first(where: { $0.type == "collections" && $0.visible }) {
-                Section {
-                    TextField("My Collections", text: Binding(
-                        get: { collectionsSection.title ?? "" },
-                        set: { newValue in
-                            if let index = sections.firstIndex(where: { $0.id == "collections" }) {
-                                sections[index].title = newValue.isEmpty ? nil : newValue
-                            }
-                        }
-                    ))
-                } header: {
-                    Text("Collections Section Title")
-                }
+                Text("Use arrows to reorder sections. Toggle to show or hide.")
             }
 
             // Save button
@@ -191,6 +213,72 @@ struct StorefrontSetupView: View {
         }
     }
 
+    // MARK: - Collections Settings
+
+    private var collectionsSettings: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Section heading
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Section heading")
+                    .font(.caption.weight(.medium))
+                TextField("My Collections", text: Binding(
+                    get: {
+                        sections.first(where: { $0.id == "collections" })?.title ?? ""
+                    },
+                    set: { newValue in
+                        if let index = sections.firstIndex(where: { $0.id == "collections" }) {
+                            sections[index].title = newValue.isEmpty ? nil : newValue
+                        }
+                    }
+                ))
+                .textFieldStyle(.roundedBorder)
+            }
+
+            // Display size
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Display size")
+                    .font(.caption.weight(.medium))
+                Text("Controls how many collections appear per row.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Picker("", selection: $collectionsDisplaySize) {
+                    Text("Small").tag("small")
+                    Text("Medium").tag("medium")
+                    Text("Large").tag("large")
+                }
+                .pickerStyle(.segmented)
+            }
+
+            // Aspect ratio
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Aspect ratio")
+                    .font(.caption.weight(.medium))
+                Text("Shape of each collection card. Portrait and Landscape use the golden ratio.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Picker("", selection: $collectionsAspectRatio) {
+                    Text("Portrait").tag("portrait")
+                    Text("Square").tag("square")
+                    Text("Landscape").tag("landscape")
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    // MARK: - Reordering
+
+    private func moveSectionUp(at index: Int) {
+        guard index > 0 else { return }
+        sections.swapAt(index, index - 1)
+    }
+
+    private func moveSectionDown(at index: Int) {
+        guard index < sections.count - 1 else { return }
+        sections.swapAt(index, index + 1)
+    }
+
     // MARK: - Actions
 
     private func loadStorefront() async {
@@ -202,6 +290,12 @@ struct StorefrontSetupView: View {
                 contentBody = storefront.content ?? ""
                 if let savedSections = storefront.settings?.sections {
                     sections = savedSections
+                }
+                if let displaySize = storefront.settings?.collectionsDisplaySize {
+                    collectionsDisplaySize = displaySize
+                }
+                if let aspectRatio = storefront.settings?.collectionsAspectRatio {
+                    collectionsAspectRatio = aspectRatio
                 }
                 if !storeUrl.isEmpty {
                     urlAvailable = true
@@ -243,7 +337,11 @@ struct StorefrontSetupView: View {
         error = nil
         showSuccess = false
 
-        let settings = StorefrontSettings(sections: sections)
+        let settings = StorefrontSettings(
+            sections: sections,
+            collectionsDisplaySize: collectionsDisplaySize,
+            collectionsAspectRatio: collectionsAspectRatio
+        )
 
         do {
             try await CollectionsAPIService.saveStorefront(

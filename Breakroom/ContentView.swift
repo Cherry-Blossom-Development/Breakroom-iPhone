@@ -57,6 +57,8 @@ struct MainTabView: View {
     @State private var showProfile = false
     @State private var showFriends = false
     @State private var showLegal = false
+    @State private var showSettings = false
+    @State private var showBilling = false
 
     // Account deletion
     @State private var showDeleteAccountConfirmation = false
@@ -98,6 +100,12 @@ struct MainTabView: View {
                     }
                     .navigationDestination(isPresented: $showLegal) {
                         LegalView()
+                    }
+                    .navigationDestination(isPresented: $showSettings) {
+                        SettingsView()
+                    }
+                    .navigationDestination(isPresented: $showBilling) {
+                        BillingView()
                     }
                     .navigationDestination(item: $selectedShortcut) { shortcut in
                         shortcutDestination(shortcut)
@@ -191,6 +199,16 @@ struct MainTabView: View {
                                         .accessibilityIdentifier("menuImpersonate")
                                     }
                                 }
+
+                                Divider()
+                                Button("Billing & Plans", systemImage: "creditcard") {
+                                    showBilling = true
+                                }
+                                .accessibilityIdentifier("menuBilling")
+                                Button("Settings", systemImage: "gear") {
+                                    showSettings = true
+                                }
+                                .accessibilityIdentifier("menuSettings")
 
                                 Divider()
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right") {

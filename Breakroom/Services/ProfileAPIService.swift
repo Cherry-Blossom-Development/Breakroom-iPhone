@@ -98,4 +98,27 @@ enum ProfileAPIService {
             method: "DELETE"
         )
     }
+
+    // MARK: - Notification Settings
+
+    static func getNotificationSettings() async throws -> NotificationSettings {
+        try await APIClient.shared.request("/api/profile/notification-settings")
+    }
+
+    static func saveNotificationSettings(_ settings: NotificationSettings) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/profile/notification-settings",
+            method: "POST",
+            body: settings
+        )
+    }
+
+    // MARK: - Account Deletion Request
+
+    static func requestAccountDeletion() async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/profile/request-deletion",
+            method: "POST"
+        )
+    }
 }

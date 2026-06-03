@@ -310,6 +310,7 @@ private struct ItemFormSheet: View {
     @State private var description = ""
     @State private var priceString = ""
     @State private var isAvailable = false
+    @State private var inGallery = true
     @State private var shippingCostString = ""
     @State private var weightString = ""
     @State private var lengthString = ""
@@ -326,9 +327,9 @@ private struct ItemFormSheet: View {
 
     private var isEditing: Bool { item != nil }
 
-    // Only show collection picker when editing and user has >1 collections
+    // Show collection picker when editing (always visible, even with one collection)
     private var showCollectionPicker: Bool {
-        isEditing && allCollections.count > 1
+        isEditing && !allCollections.isEmpty
     }
 
     init(collectionId: Int, allCollections: [Collection], item: CollectionItem?, onSave: @escaping (CollectionItem, Bool) -> Void, onCancel: @escaping () -> Void) {
@@ -366,25 +367,49 @@ private struct ItemFormSheet: View {
                 // Image
                 Section("Image") {
                     if let imageData = selectedImageData, let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxHeight: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            ZStack(alignment: .bottom) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(maxHeight: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                Text("Replace image")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.black.opacity(0.6))
+                                    .clipShape(Capsule())
+                                    .padding(.bottom, 8)
+                            }
+                        }
+                        .buttonStyle(.plain)
 
                         Button("Remove Image", role: .destructive) {
                             selectedImageData = nil
                             selectedPhoto = nil
                         }
                     } else if let existingPath = existingImagePath, !existingPath.isEmpty {
-                        CollectionItemImage(path: existingPath)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxHeight: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                            Text("Replace Image")
+                            ZStack(alignment: .bottom) {
+                                CollectionItemImage(path: existingPath)
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(maxHeight: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                Text("Replace image")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(.black.opacity(0.6))
+                                    .clipShape(Capsule())
+                                    .padding(.bottom, 8)
+                            }
                         }
+                        .buttonStyle(.plain)
                     } else {
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
                             HStack {
@@ -395,8 +420,8 @@ private struct ItemFormSheet: View {
                     }
                 }
 
-                // Pricing
-                Section("Pricing") {
+                // Pricing & Visibility
+                Section("Pricing & Visibility") {
                     HStack {
                         Text("$")
                         TextField("Price", text: $priceString)
@@ -404,6 +429,13 @@ private struct ItemFormSheet: View {
                     }
 
                     Toggle("Listed for sale", isOn: $isAvailable)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Show in gallery", isOn: $inGallery)
+                        Text("Display this item on your public storefront")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 // Shipping
@@ -489,6 +521,7 @@ private struct ItemFormSheet: View {
                         priceString = String(format: "%.2f", Double(cents) / 100.0)
                     }
                     isAvailable = item.isAvailable
+                    inGallery = item.inGallery
                     if let cents = item.shippingCostCents {
                         shippingCostString = String(format: "%.2f", Double(cents) / 100.0)
                     }
@@ -539,6 +572,7 @@ private struct ItemFormSheet: View {
                     imageData: selectedImageData,
                     priceCents: priceCents,
                     isAvailable: isAvailable,
+                    inGallery: inGallery,
                     shippingCostCents: shippingCents,
                     weightOz: weight,
                     lengthIn: length,
@@ -554,6 +588,7 @@ private struct ItemFormSheet: View {
                     imageData: selectedImageData,
                     priceCents: priceCents,
                     isAvailable: isAvailable,
+                    inGallery: inGallery,
                     shippingCostCents: shippingCents,
                     weightOz: weight,
                     lengthIn: length,

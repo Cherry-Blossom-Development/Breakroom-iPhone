@@ -52,6 +52,7 @@ struct CollectionItem: Codable, Identifiable {
     let displayOrder: Int?
     let priceCents: Int?
     let isAvailable: Bool
+    let inGallery: Bool
     let shippingCostCents: Int?
     let weightOz: Double?
     let lengthIn: Double?
@@ -70,6 +71,7 @@ struct CollectionItem: Codable, Identifiable {
         case displayOrder = "display_order"
         case priceCents = "price_cents"
         case isAvailable = "is_available"
+        case inGallery = "in_gallery"
         case shippingCostCents = "shipping_cost_cents"
         case weightOz = "weight_oz"
         case lengthIn = "length_in"
@@ -100,6 +102,15 @@ struct CollectionItem: Codable, Identifiable {
             isAvailable = boolValue
         } else {
             isAvailable = false
+        }
+
+        // Handle in_gallery as Int (0/1) or Bool, default to true
+        if let intValue = try? container.decode(Int.self, forKey: .inGallery) {
+            inGallery = intValue != 0
+        } else if let boolValue = try? container.decode(Bool.self, forKey: .inGallery) {
+            inGallery = boolValue
+        } else {
+            inGallery = true  // Default to showing in gallery
         }
 
         // Handle numeric fields that may come as strings from the API
@@ -372,6 +383,10 @@ struct ConnectStartResponse: Codable {
     let status: String?
 }
 
+struct BillingPortalResponse: Codable {
+    let url: String
+}
+
 // MARK: - Storefront
 
 struct Storefront: Codable {
@@ -394,6 +409,20 @@ struct Storefront: Codable {
 
 struct StorefrontSettings: Codable {
     var sections: [StorefrontSection]?
+    var collectionsDisplaySize: String?   // "small", "medium", "large"
+    var collectionsAspectRatio: String?   // "portrait", "square", "landscape"
+
+    enum CodingKeys: String, CodingKey {
+        case sections
+        case collectionsDisplaySize = "collections_display_size"
+        case collectionsAspectRatio = "collections_aspect_ratio"
+    }
+
+    init(sections: [StorefrontSection]? = nil, collectionsDisplaySize: String? = nil, collectionsAspectRatio: String? = nil) {
+        self.sections = sections
+        self.collectionsDisplaySize = collectionsDisplaySize
+        self.collectionsAspectRatio = collectionsAspectRatio
+    }
 }
 
 struct StorefrontSection: Codable, Identifiable {

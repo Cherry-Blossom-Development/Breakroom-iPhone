@@ -120,6 +120,7 @@ enum CollectionsAPIService {
         imageData: Data?,
         priceCents: Int?,
         isAvailable: Bool,
+        inGallery: Bool = true,
         shippingCostCents: Int?,
         weightOz: Double?,
         lengthIn: Double?,
@@ -155,6 +156,9 @@ enum CollectionsAPIService {
 
         // Availability
         body.appendFormField(name: "is_available", value: isAvailable ? "true" : "false", boundary: boundary)
+
+        // Show in gallery
+        body.appendFormField(name: "in_gallery", value: inGallery ? "true" : "false", boundary: boundary)
 
         // Shipping cost
         if let shippingCostCents {
@@ -209,6 +213,7 @@ enum CollectionsAPIService {
         imageData: Data?,
         priceCents: Int?,
         isAvailable: Bool,
+        inGallery: Bool = true,
         shippingCostCents: Int?,
         weightOz: Double?,
         lengthIn: Double?,
@@ -245,6 +250,9 @@ enum CollectionsAPIService {
 
         // Availability
         body.appendFormField(name: "is_available", value: isAvailable ? "true" : "false", boundary: boundary)
+
+        // Show in gallery
+        body.appendFormField(name: "in_gallery", value: inGallery ? "true" : "false", boundary: boundary)
 
         // New collection ID (for moving item between collections)
         if let newCollectionId {
@@ -347,6 +355,12 @@ enum CollectionsAPIService {
     /// Start Stripe Connect onboarding - returns URL to open
     static func startConnect() async throws -> ConnectStartResponse {
         try await APIClient.shared.request("/api/billing/connect/start", method: "POST")
+    }
+
+    /// Get Stripe billing portal URL for managing subscription
+    static func getBillingPortalUrl() async throws -> String {
+        let response: BillingPortalResponse = try await APIClient.shared.request("/api/billing/portal-url")
+        return response.url
     }
 
     // MARK: - Storefront
