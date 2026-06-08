@@ -11,6 +11,7 @@ struct BlogEditorView: View {
     @State private var title = ""
     @State private var isPublished = false
     @State private var isSaving = false
+    @State private var showSavedFeedback = false
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var editorCoordinator = RichTextEditorCoordinator()
@@ -189,10 +190,11 @@ struct BlogEditorView: View {
                     ProgressView()
                         .controlSize(.small)
                 } else {
-                    Text("Save")
+                    Text(showSavedFeedback ? "Saved!" : "Save")
                 }
             }
             .buttonStyle(.borderedProminent)
+            .tint(showSavedFeedback ? .green : nil)
             .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
         }
         .padding()
@@ -250,7 +252,15 @@ struct BlogEditorView: View {
                 )
             }
             onSave(savedPost)
-            dismiss()
+            if isPublished {
+                dismiss()
+            } else {
+                showSavedFeedback = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    showSavedFeedback = false
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
             showError = true
