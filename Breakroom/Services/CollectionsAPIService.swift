@@ -311,6 +311,14 @@ enum CollectionsAPIService {
         )
     }
 
+    /// Export a collection item to the Art Gallery
+    static func exportItemToGallery(collectionId: Int, itemId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/collections/\(collectionId)/items/\(itemId)/export-to-gallery",
+            method: "POST"
+        )
+    }
+
     // MARK: - Shipping Settings
 
     /// Get shipping settings
@@ -375,18 +383,21 @@ enum CollectionsAPIService {
         storeUrl: String?,
         pageTitle: String?,
         content: String?,
+        externalUrl: String?,
         settings: StorefrontSettings?
     ) async throws {
         struct SaveRequest: Encodable {
             let store_url: String?
             let page_title: String?
             let content: String?
+            let external_url: String?
             let settings: StorefrontSettings?
         }
         let body = SaveRequest(
             store_url: storeUrl,
             page_title: pageTitle,
             content: content,
+            external_url: externalUrl,
             settings: settings
         )
         try await APIClient.shared.requestVoid("/api/storefront", method: "PUT", body: body)

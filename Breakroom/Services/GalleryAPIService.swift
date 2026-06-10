@@ -151,6 +151,24 @@ enum GalleryAPIService {
         )
     }
 
+    /// Export an artwork to a Showcase collection
+    static func exportToShowcase(artworkId: Int, collectionId: Int) async throws {
+        struct ExportRequest: Encodable {
+            let collection_id: Int
+        }
+        let body = ExportRequest(collection_id: collectionId)
+        try await APIClient.shared.requestVoid(
+            "/api/gallery/artworks/\(artworkId)/export-to-showcase",
+            method: "POST",
+            body: body
+        )
+    }
+
+    /// Get user's collections (for export picker)
+    static func getCollections() async throws -> [Collection] {
+        try await APIClient.shared.request("/api/collections")
+    }
+
     // MARK: - Public Gallery
 
     /// Get a public gallery by URL

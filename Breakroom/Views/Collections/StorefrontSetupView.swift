@@ -19,6 +19,9 @@ struct StorefrontSetupView: View {
     @State private var collectionsDisplaySize = "small"  // "small", "medium", "large"
     @State private var collectionsAspectRatio = "landscape"  // "portrait", "square", "landscape"
 
+    // Custom domain
+    @State private var externalUrl = ""
+
     // URL checking
     @State private var urlCheckTask: Task<Void, Never>?
     @State private var isCheckingUrl = false
@@ -130,6 +133,27 @@ struct StorefrontSetupView: View {
                 Text("Page Title")
             } footer: {
                 Text("Shown as the main heading on your store page.")
+            }
+
+            // Custom Domain section
+            Section {
+                TextField("https://www.myshop.com", text: $externalUrl)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                if externalUrl.isEmpty {
+                    NavigationLink {
+                        CustomDomainSetupView()
+                    } label: {
+                        Text("Learn how to use your own domain")
+                            .font(.caption)
+                    }
+                }
+            } header: {
+                Text("Custom Domain")
+            } footer: {
+                Text("If you've pointed your own domain at this store, enter it here so visitors know where to find you.")
             }
 
             // Page Sections
@@ -288,6 +312,7 @@ struct StorefrontSetupView: View {
                 storeUrl = storefront.storeUrl ?? ""
                 pageTitle = storefront.pageTitle ?? ""
                 contentBody = storefront.content ?? ""
+                externalUrl = storefront.externalUrl ?? ""
                 if let savedSections = storefront.settings?.sections {
                     sections = savedSections
                 }
@@ -348,6 +373,7 @@ struct StorefrontSetupView: View {
                 storeUrl: storeUrl.isEmpty ? nil : storeUrl,
                 pageTitle: pageTitle.isEmpty ? nil : pageTitle,
                 content: contentBody.isEmpty ? nil : contentBody,
+                externalUrl: externalUrl.isEmpty ? nil : externalUrl,
                 settings: settings
             )
             showSuccess = true

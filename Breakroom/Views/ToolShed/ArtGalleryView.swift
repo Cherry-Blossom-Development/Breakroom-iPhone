@@ -695,6 +695,14 @@ struct EditArtworkSheet: View {
     @State private var errorMessage: String?
     @State private var showError = false
 
+    // Export to Showcase
+    @State private var showExportSheet = false
+    @State private var collections: [Collection] = []
+    @State private var selectedCollectionId: Int?
+    @State private var isLoadingCollections = false
+    @State private var isExporting = false
+    @State private var exportSuccess = false
+
     init(artwork: Artwork, onSave: @escaping (Artwork) -> Void) {
         self.artwork = artwork
         self.onSave = onSave
@@ -735,8 +743,51 @@ struct EditArtworkSheet: View {
                 } footer: {
                     Text("Published artworks are visible on your public gallery.")
                 }
+
+                Section {
+                    Button {
+                        Task { await loadCollectionsAndShowSheet() }
+                    } label: {
+                        HStack {
+                            if isLoadingCollections {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text(exportSuccess ? "Copied!" : "Copy to Showcase")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(exportSuccess ? .green : nil)
+                    .disabled(isLoadingCollections || isExporting)
+                } footer: {
+                    Text("Copy this artwork to an Artist Showcase collection.")
+                }
             }
             .navigationTitle("Edit Artwork")
+            .sheet(isPresented: $showExportSheet) {
+                NavigationStack {
+                    List(collections) { collection in
+                        Button {
+                            selectedCollectionId = collection.id
+                            showExportSheet = false
+                            Task { await exportToShowcase() }
+                        } label: {
+                            Text(collection.name)
+                        }
+                    }
+                    .navigationTitle("Select Collection")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                showExportSheet = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -779,6 +830,40 @@ struct EditArtworkSheet: View {
             showError = true
         }
         isSaving = false
+    }
+
+    private func loadCollectionsAndShowSheet() async {
+        isLoadingCollections = true
+        do {
+            collections = try await GalleryAPIService.getCollections()
+            if collections.isEmpty {
+                errorMessage = "Create a collection in Artist Showcase first"
+                showError = true
+            } else {
+                showExportSheet = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isLoadingCollections = false
+    }
+
+    private func exportToShowcase() async {
+        guard let collectionId = selectedCollectionId else { return }
+        isExporting = true
+        do {
+            try await GalleryAPIService.exportToShowcase(artworkId: artwork.id, collectionId: collectionId)
+            exportSuccess = true
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                exportSuccess = false
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isExporting = false
     }
 }
 

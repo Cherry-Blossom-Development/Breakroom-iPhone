@@ -97,6 +97,7 @@
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		D44A3890ADB4DAAD8C66AED0 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1481D76535F7907396445ACC /* Config.swift */; };
 		D595E1346C1E972EC2C8F5A7 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EA48B5699C1A4037B78EFF /* CollectionDetailView.swift */; };
+		DC990B8F149DCA3F0E9BDB61 /* CustomDomainSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21FB1051297D23B48BCBD2B9 /* CustomDomainSetupView.swift */; };
 		DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711606DB3235C27FE38591F0 /* APIClient.swift */; };
 		DFC9B224556F272EEC3718E1 /* TicketAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */; };
 		E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */; };
@@ -135,6 +136,7 @@
 		1D573EAEA720CD16A33553D5 /* CollectionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsAPIService.swift; sourceTree = "<group>"; };
 		1D9AC9F72B4CED61F085EAD7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomAPIService.swift; sourceTree = "<group>"; };
+		21FB1051297D23B48BCBD2B9 /* CustomDomainSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDomainSetupView.swift; sourceTree = "<group>"; };
 		22966EA63DE25C92D69E99DD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		23E95654769587A5CE156387 /* LyricAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricAPIService.swift; sourceTree = "<group>"; };
 		2428E68F16AB686DA57EB9AE /* SubscriptionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionModels.swift; sourceTree = "<group>"; };
@@ -239,6 +241,7 @@
 			children = (
 				63EA48B5699C1A4037B78EFF /* CollectionDetailView.swift */,
 				0125CB4C4CB971BC36C8BED4 /* CollectionsView.swift */,
+				21FB1051297D23B48BCBD2B9 /* CustomDomainSetupView.swift */,
 				5F23465B955ECBC090E8C06E /* OrdersView.swift */,
 				8BA899B8776A6A11C8B655E1 /* PaymentSetupView.swift */,
 				985FDA43EDA113CC6FFDA1DA /* ShippingSetupView.swift */,
@@ -642,6 +645,7 @@
 				0D046B4F86428050CF3B7C82 /* ContentView.swift in Sources */,
 				5F636D136CC2BA21A8785CB2 /* CoordinatedScrollView.swift in Sources */,
 				315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */,
+				DC990B8F149DCA3F0E9BDB61 /* CustomDomainSetupView.swift in Sources */,
 				B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */,
 				5EE4BC4A00E07A9C907EB8CB /* EmploymentView.swift in Sources */,
 				10634D3DEA1B1B84E07F415A /* EulaView.swift in Sources */,

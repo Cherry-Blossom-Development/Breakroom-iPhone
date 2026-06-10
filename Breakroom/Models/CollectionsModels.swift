@@ -394,6 +394,7 @@ struct Storefront: Codable {
     let storeUrl: String?
     let pageTitle: String?
     let content: String?
+    let externalUrl: String?
     let settings: StorefrontSettings?
     let updatedAt: String?
 
@@ -402,6 +403,7 @@ struct Storefront: Codable {
         case storeUrl = "store_url"
         case pageTitle = "page_title"
         case content
+        case externalUrl = "external_url"
         case settings
         case updatedAt = "updated_at"
     }

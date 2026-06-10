@@ -325,6 +325,10 @@ private struct ItemFormSheet: View {
     @State private var isSaving = false
     @State private var error: String?
 
+    // Export to Gallery
+    @State private var isExporting = false
+    @State private var exportSuccess = false
+
     private var isEditing: Bool { item != nil }
 
     // Show collection picker when editing (always visible, even with one collection)
@@ -431,10 +435,28 @@ private struct ItemFormSheet: View {
                     Toggle("Listed for sale", isOn: $isAvailable)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Toggle("Show in gallery", isOn: $inGallery)
+                        Toggle("Show in Artist Showcase store", isOn: $inGallery)
                         Text("Display this item on your public storefront")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    if isEditing {
+                        Button {
+                            Task { await exportToGallery() }
+                        } label: {
+                            HStack {
+                                if isExporting {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                                Text(exportSuccess ? "Copied!" : "Copy item to Gallery")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(exportSuccess ? .green : nil)
+                        .disabled(isExporting)
                     }
                 }
 
@@ -602,6 +624,25 @@ private struct ItemFormSheet: View {
         }
 
         isSaving = false
+    }
+
+    private func exportToGallery() async {
+        guard let item = item else { return }
+        isExporting = true
+        do {
+            try await CollectionsAPIService.exportItemToGallery(
+                collectionId: collectionId,
+                itemId: item.id
+            )
+            exportSuccess = true
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                exportSuccess = false
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isExporting = false
     }
 }
 
