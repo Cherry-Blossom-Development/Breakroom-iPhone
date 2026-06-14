@@ -33,12 +33,12 @@
 
 | Step | Expected | Actual | Status |
 |------|----------|--------|--------|
-| Tap Record button | Timer starts, mic active | | |
-| Speak into phone mic | Recording captures audio | | |
-| Tap Stop button | Save sheet appears | | |
-| Select instrument (optional) | Instrument picker works | | |
-| Save recording | Session appears in My Recordings | | |
-| Playback | Audio plays back clearly | | |
+| Tap Record button | Timer starts, mic active | Works | PASS |
+| Speak into phone mic | Recording captures audio | Works | PASS |
+| Tap Stop button | Save sheet appears | Works | PASS |
+| Select instrument (optional) | Instrument picker works | Works | PASS |
+| Save recording | Session appears in My Recordings | Works | PASS |
+| Playback | Audio plays back clearly | Works | PASS |
 
 **Notes:**
 
@@ -51,10 +51,10 @@
 
 | Step | Expected | Actual | Status |
 |------|----------|--------|--------|
-| Tap "Create Mashup" | Backing track list appears | | |
-| Sessions listed | Own individual + band member sessions shown | | |
-| Tap a session | "Downloading backing track..." appears | | |
-| Download completes | Record screen appears with session name | | |
+| Tap "Create Mashup" | Backing track list appears | Works | PASS |
+| Sessions listed | Own individual + band member sessions shown | Works | PASS |
+| Tap a session | "Downloading backing track..." appears | Works | PASS |
+| Download completes | Record screen appears with session name | Works | PASS |
 
 **Notes:**
 
@@ -64,15 +64,20 @@
 
 **Feature:** Mashup recording screen
 **Input:** Voice over backing track
+**Setup:** USB headphones connected via 3.5mm to USB-C adapter
 
 | Step | Expected | Actual | Status |
 |------|----------|--------|--------|
-| Tap record button | Backing track plays through speaker, timer starts | | |
-| Speak/sing while backing plays | Both audible during recording | | |
-| Tap stop button | "Processing recording..." appears | | |
-| Processing completes | Volume adjustment screen appears | | |
+| Tap record button | Backing track plays through headphones, timer starts | Backing NOT audible in headphones | FAIL |
+| Speak/sing while backing plays | Both audible during recording | Recording worked, backing silent | FAIL |
+| Tap stop button | "Processing recording..." appears | Works | PASS |
+| Processing completes | Volume adjustment screen appears | Works | PASS |
+| Playback of mixed result | Both tracks audible | Works | PASS |
 
 **Notes:**
+- Issue: Backing track not audible through headphones during recording
+- Root cause: `.defaultToSpeaker` audio session option interfering with headphone output
+- See Issue #2
 
 ---
 
@@ -158,6 +163,7 @@
 | # | Description | Severity | Status |
 |---|-------------|----------|--------|
 | 1 | Stop button too narrow for "Stop" text when recording | Low | Fixed |
+| 2 | Backing track not audible through headphones during mashup recording | High | Fixed |
 
 ---
 
