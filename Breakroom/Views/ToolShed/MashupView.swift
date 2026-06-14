@@ -36,8 +36,8 @@ struct MashupView: View {
     @State private var recordingSeconds: Int = 0
     @State private var recordingTimer: Timer?
     @State private var audioRecorder: AVAudioRecorder?
-    @State private var backingPlayer: AVPlayer?
-    @State private var previewPlayer: AVPlayer?
+    @State private var backingPlayer: AVAudioPlayer?
+    @State private var previewPlayer: AVAudioPlayer?
 
     @State private var errorMessage: String?
     @State private var showSaveSheet = false
@@ -467,8 +467,10 @@ struct MashupView: View {
 
         do {
             // Configure audio session for playback + recording
+            // Use .allowBluetoothA2DP to support Bluetooth headphones
+            // Don't override output port - let iOS route to connected headphones
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothA2DP, .allowBluetooth])
             try audioSession.setActive(true)
 
             // Prepare recorder
@@ -487,10 +489,11 @@ struct MashupView: View {
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             recordedURL = fileURL
 
-            // Prepare backing track player
+            // Prepare backing track player (using AVAudioPlayer for local files)
             if let backingURL = backingAudioURL {
-                backingPlayer = AVPlayer(url: backingURL)
+                backingPlayer = try AVAudioPlayer(contentsOf: backingURL)
                 backingPlayer?.volume = 1.0
+                backingPlayer?.prepareToPlay()
             }
 
             // Start both
@@ -517,7 +520,7 @@ struct MashupView: View {
         audioRecorder?.stop()
         audioRecorder = nil
 
-        backingPlayer?.pause()
+        backingPlayer?.stop()
         backingPlayer = nil
 
         mashupState = .processingRecording
@@ -586,7 +589,8 @@ struct MashupView: View {
             try audioSession.setCategory(.playback, mode: .default)
             try audioSession.setActive(true)
 
-            previewPlayer = AVPlayer(url: url)
+            previewPlayer = try AVAudioPlayer(contentsOf: url)
+            previewPlayer?.prepareToPlay()
             previewPlayer?.play()
         } catch {
             errorMessage = "Failed to play preview: \(error.localizedDescription)"
@@ -594,7 +598,7 @@ struct MashupView: View {
     }
 
     private func stopPreview() {
-        previewPlayer?.pause()
+        previewPlayer?.stop()
         previewPlayer = nil
     }
 
@@ -658,10 +662,10 @@ struct MashupView: View {
         audioRecorder?.stop()
         audioRecorder = nil
 
-        backingPlayer?.pause()
+        backingPlayer?.stop()
         backingPlayer = nil
 
-        previewPlayer?.pause()
+        previewPlayer?.stop()
         previewPlayer = nil
 
         // Clean up temp files
