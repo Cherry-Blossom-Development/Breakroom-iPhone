@@ -45,6 +45,7 @@
 		4532C71033400AAA3E7FC806 /* PositionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D469E4060E944F33F37B557 /* PositionModels.swift */; };
 		455C3D404A3E42B04CA5F7DA /* CompanyPortalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */; };
 		4C3319A6EFFF0F20953FC9CD /* BadgeAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD12F5074FF49E759466C6A /* BadgeAPIService.swift */; };
+		4CB79D9F8309215F9EF25A95 /* MashupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A84C3A79FA4644E4066A9D /* MashupView.swift */; };
 		4E65E0C67E3008EE53B49C45 /* BlogPostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE02A450FDF8385DEF3420E /* BlogPostView.swift */; };
 		4F1E91F7297C48358547E6E1 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 05BB53121E6C9220E5091E05 /* SocketIO */; };
 		4F8BB3044F72DC496ADFD17C /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E1BDE8A538D0DC1A01FC09 /* StoreKitManager.swift */; };
@@ -66,6 +67,7 @@
 		7E3C5091A1D3E2EAD7A89536 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540F3088B58164BD096499C8 /* PaywallView.swift */; };
 		7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45139 /* ProfileView.swift */; };
 		8104417291596650AADA807B /* GalleryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33066537C65EE3DB5A792F8 /* GalleryModels.swift */; };
+		81A275AB2AB85F97A2B8A48A /* AudioMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */; };
 		8362F3A3945936BBF8220E88 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = EB829EA526D54769F045EE17 /* FirebaseMessaging */; };
 		873406ECF2D074479DC4D9E7 /* ModerationAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13342EA45C37A2624469015 /* ModerationAPIService.swift */; };
 		8D5643D19210114312A8B745 /* ModerationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DF02304D718C0B38800258 /* ModerationStore.swift */; };
@@ -136,6 +138,7 @@
 		1D573EAEA720CD16A33553D5 /* CollectionsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsAPIService.swift; sourceTree = "<group>"; };
 		1D9AC9F72B4CED61F085EAD7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomAPIService.swift; sourceTree = "<group>"; };
+		1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixer.swift; sourceTree = "<group>"; };
 		21FB1051297D23B48BCBD2B9 /* CustomDomainSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDomainSetupView.swift; sourceTree = "<group>"; };
 		22966EA63DE25C92D69E99DD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		23E95654769587A5CE156387 /* LyricAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricAPIService.swift; sourceTree = "<group>"; };
@@ -214,6 +217,7 @@
 		DE3DF549F06647717B82C21D /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		DED8FDFB3748D4E3B76B622F /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
 		E17A74DA33AB8C1AF7D79D52 /* BillingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingView.swift; sourceTree = "<group>"; };
+		E2A84C3A79FA4644E4066A9D /* MashupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MashupView.swift; sourceTree = "<group>"; };
 		EAD5134BC7AD4538B8AB69DA /* KanbanBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanBoardView.swift; sourceTree = "<group>"; };
 		EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		EFABB6360DC6CA565659940B /* StorefrontSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorefrontSetupView.swift; sourceTree = "<group>"; };
@@ -256,6 +260,7 @@
 				D3F61C941989489C1B54449D /* ArtGalleryView.swift */,
 				0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */,
 				26DEBC966A34157A3A985E03 /* LyricLabView.swift */,
+				E2A84C3A79FA4644E4066A9D /* MashupView.swift */,
 				540F3088B58164BD096499C8 /* PaywallView.swift */,
 				3379C3DA35E2D7A5A57F1B7C /* SessionsView.swift */,
 				028A3743D482F0346A079BAD /* SongDetailView.swift */,
@@ -318,6 +323,7 @@
 			children = (
 				D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */,
 				711606DB3235C27FE38591F0 /* APIClient.swift */,
+				1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */,
 				3AA0A819B1816531F0433D4C /* AuthService.swift */,
 				FDD12F5074FF49E759466C6A /* BadgeAPIService.swift */,
 				A77C18853F8F4E57876C8998 /* BlogAPIService.swift */,
@@ -608,6 +614,7 @@
 				BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */,
 				1FAA945C8597D9327F3790E1 /* AdminModels.swift in Sources */,
 				BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */,
+				81A275AB2AB85F97A2B8A48A /* AudioMixer.swift in Sources */,
 				2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */,
 				4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */,
 				EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */,
@@ -668,6 +675,7 @@
 				623BFF942B9FC1DDF4DEEDBC /* LyricAPIService.swift in Sources */,
 				0F1E62F684481C2F899AF2C3 /* LyricLabView.swift in Sources */,
 				ABE24D913BA4284A8A0AEBC8 /* LyricModels.swift in Sources */,
+				4CB79D9F8309215F9EF25A95 /* MashupView.swift in Sources */,
 				873406ECF2D074479DC4D9E7 /* ModerationAPIService.swift in Sources */,
 				5A813D5A68661C8A4F09226A /* ModerationModels.swift in Sources */,
 				8D5643D19210114312A8B745 /* ModerationStore.swift in Sources */,

@@ -52,6 +52,41 @@ enum SessionsAPIService {
         return URL(string: "\(APIClient.shared.baseURL)/api/sessions/\(sessionId)/stream")
     }
 
+    /// Download a session's audio file to a local temporary file
+    /// - Parameter sessionId: The session ID to download
+    /// - Returns: URL to the downloaded file in the temp directory
+    static func downloadSession(sessionId: Int) async throws -> URL {
+        guard let streamURL = buildStreamURL(sessionId: sessionId) else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: streamURL)
+        request.httpMethod = "GET"
+        if let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        let (tempURL, response) = try await URLSession.shared.download(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 401 {
+                throw APIError.unauthorized
+            }
+            throw APIError.serverError("Download failed with status \(httpResponse.statusCode)")
+        }
+
+        // Move to a more permanent temp location with proper extension
+        let destURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("session_\(sessionId)_\(UUID().uuidString).m4a")
+        try FileManager.default.moveItem(at: tempURL, to: destURL)
+
+        return destURL
+    }
+
     /// Rate a session (1-10) or clear rating (nil)
     static func rateSession(sessionId: Int, rating: Int?) async throws -> SessionRatingResponse {
         let body = RateSessionRequest(rating: rating)

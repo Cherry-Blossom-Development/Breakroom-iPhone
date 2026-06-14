@@ -295,17 +295,37 @@ struct SessionsView: View {
                         bandMemberSessionsList
                     }
 
-                    // Mashups placeholder
+                    // Mashups section
                     sectionHeader("Mashups")
-                    Text("Coming soon — combine individual parts into a mashup.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    NavigationLink {
+                        MashupView(
+                            ownSessions: sessions,
+                            bandMemberSessions: bandMemberSessions,
+                            bands: activeBands,
+                            instruments: instruments
+                        )
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Create Mashup")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                Text("Record over a backing track")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal)
-                        .padding(.bottom, 24)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
+                    .accessibilityIdentifier("sessionsMashupLink")
                 }
                 .padding(.bottom, nowPlayingId != nil ? 80 : 16)
             }
