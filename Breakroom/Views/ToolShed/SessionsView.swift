@@ -437,6 +437,7 @@ struct SessionsView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)
+            .fixedSize()
             .accessibilityIdentifier("sessionsRecordButton")
 
         case .recording where isThisContext:
@@ -456,6 +457,7 @@ struct SessionsView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
+                .fixedSize()
                 .accessibilityIdentifier("sessionsStopButton")
             }
 
@@ -473,6 +475,7 @@ struct SessionsView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)
+            .fixedSize()
             .disabled(true)
         }
     }
