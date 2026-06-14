@@ -11,6 +11,7 @@ enum MashupState: Equatable {
     case generatingPreview
     case previewing
     case saving
+    case saved
 }
 
 struct MashupView: View {
@@ -41,6 +42,8 @@ struct MashupView: View {
 
     @State private var errorMessage: String?
     @State private var showSaveSheet = false
+    @State private var savedSession: Session?
+    @State private var linkCopied = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -80,6 +83,9 @@ struct MashupView: View {
 
             case .saving:
                 preparingView(message: "Saving mashup...")
+
+            case .saved:
+                savedView
             }
         }
         .navigationTitle("Create Mashup")
@@ -366,6 +372,17 @@ struct MashupView: View {
                         .foregroundStyle(.primary)
                         .clipShape(Circle())
                 }
+
+                if let url = mixedURL {
+                    ShareLink(item: url) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.title)
+                            .frame(width: 60, height: 60)
+                            .background(Color(.secondarySystemBackground))
+                            .foregroundStyle(.primary)
+                            .clipShape(Circle())
+                    }
+                }
             }
 
             Spacer()
@@ -411,6 +428,80 @@ struct MashupView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
+        }
+    }
+
+    // MARK: - Saved View
+
+    private var savedView: some View {
+        VStack(spacing: 32) {
+            Spacer()
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.green)
+
+            Text("Mashup Saved!")
+                .font(.title2.weight(.semibold))
+
+            if let session = savedSession {
+                VStack(spacing: 16) {
+                    // Share link button
+                    Button {
+                        let link = "https://www.prosaurus.com/sessions/\(session.id)"
+                        UIPasteboard.general.string = link
+                        linkCopied = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            linkCopied = false
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: linkCopied ? "checkmark" : "link")
+                            Text(linkCopied ? "Link Copied!" : "Copy Link")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .foregroundStyle(linkCopied ? .green : .primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    // Share via system share sheet
+                    ShareLink(
+                        item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
+                        subject: Text(session.name),
+                        message: Text("Check out my mashup: \(session.name)")
+                    ) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share Link")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.purple)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .padding(.horizontal)
+            }
+
+            Spacer()
+
+            Button("Done") {
+                cleanup()
+                dismiss()
+            }
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .foregroundStyle(.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
+            .padding(.bottom)
         }
     }
 
@@ -615,7 +706,7 @@ struct MashupView: View {
             // Upload as .wav since that's what we generated
             let filename = "mashup_\(Date().timeIntervalSince1970).wav"
 
-            _ = try await SessionsAPIService.uploadSession(
+            let session = try await SessionsAPIService.uploadSession(
                 audioData: audioData,
                 filename: filename,
                 name: name,
@@ -626,8 +717,8 @@ struct MashupView: View {
             )
 
             await MainActor.run {
-                cleanup()
-                dismiss()
+                savedSession = session
+                mashupState = .saved
             }
         } catch {
             await MainActor.run {

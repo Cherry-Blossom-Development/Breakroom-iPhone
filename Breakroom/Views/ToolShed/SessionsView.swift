@@ -1735,6 +1735,18 @@ private struct SessionRow: View {
                 onTap: onRate
             )
 
+            ShareLink(
+                item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
+                subject: Text(session.name),
+                message: Text("Check out my recording: \(session.name)")
+            ) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+            }
+            .accessibilityIdentifier("sessionsShareButton_\(session.id)")
+
             Button(action: onDelete) {
                 Image(systemName: "xmark")
                     .font(.caption)
@@ -1805,6 +1817,17 @@ private struct BandMemberSessionRow: View {
                 myRating: session.myRating,
                 onTap: onRate
             )
+
+            ShareLink(
+                item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
+                subject: Text(session.name),
+                message: Text("Check out this recording: \(session.name)")
+            ) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
