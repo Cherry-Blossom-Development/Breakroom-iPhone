@@ -59,6 +59,11 @@ struct Session: Codable, Identifiable, Hashable {
         sessionType == "individual"
     }
 
+    /// Is this a mashup session?
+    var isMashup: Bool {
+        sessionType == "mashup"
+    }
+
     /// Extract year from recordedAt or uploadedAt
     var year: Int {
         let dateString = recordedAt ?? uploadedAt

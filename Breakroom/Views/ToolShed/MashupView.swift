@@ -50,9 +50,10 @@ struct MashupView: View {
     // MARK: - Computed Properties
 
     private var availableSessions: [Session] {
-        // Combine own individual sessions with band member sessions
+        // Combine own individual sessions with band member sessions (exclude mashups)
         let ownIndividual = ownSessions.filter { $0.isIndividual }
-        return ownIndividual + bandMemberSessions
+        let bandNonMashups = bandMemberSessions.filter { !$0.isMashup }
+        return ownIndividual + bandNonMashups
     }
 
     // MARK: - Body
@@ -712,7 +713,7 @@ struct MashupView: View {
                 name: name,
                 recordedAt: nil,
                 bandId: bandId,
-                sessionType: "individual",
+                sessionType: "mashup",
                 instrumentId: instrumentId
             )
 

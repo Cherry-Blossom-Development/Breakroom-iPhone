@@ -87,6 +87,10 @@ struct SessionsView: View {
         sessions.filter { $0.isIndividual }
     }
 
+    private var mashupSessions: [Session] {
+        sessions.filter { $0.isMashup }
+    }
+
     private var activeBands: [Band] {
         bands.filter { $0.isActive }
     }
@@ -297,6 +301,32 @@ struct SessionsView: View {
 
                     // Mashups section
                     sectionHeader("Mashups")
+
+                    // Saved mashups list
+                    if !mashupSessions.isEmpty {
+                        ForEach(mashupSessions) { session in
+                            SessionRow(
+                                session: session,
+                                isPlaying: nowPlayingId == session.id,
+                                bands: activeBands,
+                                instruments: instruments,
+                                showBandPicker: false,
+                                showInstrumentPicker: true,
+                                onPlay: { playSession(session) },
+                                onRate: { openRatingPopup(session, source: "own") },
+                                onEdit: { editingSession = session },
+                                onDelete: { sessionToDelete = session },
+                                onBandChange: { _ in },
+                                onInstrumentChange: { instrumentId in
+                                    Task { await updateSessionInstrument(session, instrumentId: instrumentId) }
+                                }
+                            )
+                        }
+                        Divider()
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                    }
+
                     NavigationLink {
                         MashupView(
                             ownSessions: sessions,
