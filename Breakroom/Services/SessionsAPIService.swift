@@ -122,6 +122,16 @@ enum SessionsAPIService {
         )
     }
 
+    /// Record the source sessions used to create a mashup
+    static func recordMashupSources(sessionId: Int, sources: [MashupSourceEntry]) async throws {
+        let body = RecordMashupSourcesRequest(sources: sources)
+        try await APIClient.shared.requestVoid(
+            "/api/sessions/\(sessionId)/sources",
+            method: "POST",
+            body: body
+        )
+    }
+
     // MARK: - Instruments
 
     /// Get list of instruments

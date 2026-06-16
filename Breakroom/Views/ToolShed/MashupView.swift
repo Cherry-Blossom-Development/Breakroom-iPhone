@@ -514,9 +514,9 @@ struct MashupView: View {
                 backingSession: backingSession,
                 bands: bands,
                 instruments: instruments,
-                onSave: { name, bandId, instrumentId in
+                onSave: { name, bandId, instrumentId, saveAsIndividual in
                     showSaveSheet = false
-                    Task { await saveMashup(name: name, bandId: bandId, instrumentId: instrumentId) }
+                    Task { await saveMashup(name: name, bandId: bandId, instrumentId: instrumentId, saveAsIndividual: saveAsIndividual) }
                 },
                 onCancel: {
                     showSaveSheet = false
@@ -694,20 +694,43 @@ struct MashupView: View {
         previewPlayer = nil
     }
 
-    private func saveMashup(name: String, bandId: Int?, instrumentId: Int?) async {
+    private func saveMashup(name: String, bandId: Int?, instrumentId: Int?, saveAsIndividual: Bool) async {
         mashupState = .saving
 
         do {
-            guard let mixedURL = mixedURL else {
+            guard let mixedURL = mixedURL,
+                  let backingSession = backingSession else {
                 throw AudioMixerError.fileNotFound
             }
 
-            let audioData = try Data(contentsOf: mixedURL)
+            // If saveAsIndividual is enabled, first upload the raw recording as an individual session
+            var individualSession: Session?
+            if saveAsIndividual, let recordingURL = normalizedRecordingURL {
+                let recordingData = try Data(contentsOf: recordingURL)
+                let indivFilename = "recording_\(Date().timeIntervalSince1970).wav"
 
-            // Upload as .wav since that's what we generated
+                // Generate individual session name
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                let today = formatter.string(from: Date())
+                let indivName = "\(backingSession.name) - Recording \(today)"
+
+                individualSession = try await SessionsAPIService.uploadSession(
+                    audioData: recordingData,
+                    filename: indivFilename,
+                    name: indivName,
+                    recordedAt: nil,
+                    bandId: bandId,
+                    sessionType: "individual",
+                    instrumentId: instrumentId
+                )
+            }
+
+            // Upload the mashup
+            let audioData = try Data(contentsOf: mixedURL)
             let filename = "mashup_\(Date().timeIntervalSince1970).wav"
 
-            let session = try await SessionsAPIService.uploadSession(
+            let mashupSession = try await SessionsAPIService.uploadSession(
                 audioData: audioData,
                 filename: filename,
                 name: name,
@@ -717,8 +740,15 @@ struct MashupView: View {
                 instrumentId: instrumentId
             )
 
+            // Record the source sessions used to create this mashup
+            var sources = [MashupSourceEntry(sessionId: backingSession.id, volume: backingVolume)]
+            if let indivSession = individualSession {
+                sources.append(MashupSourceEntry(sessionId: indivSession.id, volume: recordingVolume))
+            }
+            try await SessionsAPIService.recordMashupSources(sessionId: mashupSession.id, sources: sources)
+
             await MainActor.run {
-                savedSession = session
+                savedSession = mashupSession
                 mashupState = .saved
             }
         } catch {
@@ -784,18 +814,19 @@ private struct SaveMashupView: View {
     let backingSession: Session?
     let bands: [Band]
     let instruments: [Instrument]
-    let onSave: (String, Int?, Int?) -> Void
+    let onSave: (String, Int?, Int?, Bool) -> Void
     let onCancel: () -> Void
 
     @State private var name: String
     @State private var selectedBandId: Int?
     @State private var selectedInstrumentId: Int?
+    @State private var saveAsIndividual: Bool = false
 
     init(
         backingSession: Session?,
         bands: [Band],
         instruments: [Instrument],
-        onSave: @escaping (String, Int?, Int?) -> Void,
+        onSave: @escaping (String, Int?, Int?, Bool) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.backingSession = backingSession
@@ -834,6 +865,12 @@ private struct SaveMashupView: View {
                     }
                 }
             }
+
+            Section {
+                Toggle("Save recording as individual session", isOn: $saveAsIndividual)
+            } footer: {
+                Text("Also save your new recording separately as an individual session")
+            }
         }
         .navigationTitle("Save Mashup")
         .navigationBarTitleDisplayMode(.inline)
@@ -843,7 +880,7 @@ private struct SaveMashupView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
-                    onSave(name, selectedBandId, selectedInstrumentId)
+                    onSave(name, selectedBandId, selectedInstrumentId, saveAsIndividual)
                 }
                 .disabled(name.isEmpty)
             }

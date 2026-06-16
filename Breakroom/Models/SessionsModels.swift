@@ -256,6 +256,22 @@ struct RespondToInviteRequest: Encodable {
     let action: String
 }
 
+// MARK: - Mashup Sources
+
+struct MashupSourceEntry: Encodable {
+    let sessionId: Int
+    let volume: Float
+
+    enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+        case volume
+    }
+}
+
+struct RecordMashupSourcesRequest: Encodable {
+    let sources: [MashupSourceEntry]
+}
+
 // MARK: - Audio Defaults
 
 struct AudioDefaults: Codable {
