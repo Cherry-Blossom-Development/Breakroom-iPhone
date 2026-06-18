@@ -270,3 +270,120 @@ struct RecentRoomMessage: Codable, Identifiable {
         self.unreadCount = unreadCount
     }
 }
+
+// MARK: - Scheduled Messages
+
+struct ScheduledMessage: Codable, Identifiable {
+    let id: Int
+    let userId: Int
+    let roomId: Int
+    let messageText: String
+    let scheduledAt: String
+    let warningMinutes: Int
+    let indicatorText: String?
+    let status: String
+    let isEditing: Bool
+    let roomName: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case roomId = "room_id"
+        case messageText = "message_text"
+        case scheduledAt = "scheduled_at"
+        case warningMinutes = "warning_minutes"
+        case indicatorText = "indicator_text"
+        case status
+        case isEditing = "is_editing"
+        case roomName = "room_name"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        userId = try container.decode(Int.self, forKey: .userId)
+        roomId = try container.decode(Int.self, forKey: .roomId)
+        messageText = try container.decode(String.self, forKey: .messageText)
+        scheduledAt = try container.decode(String.self, forKey: .scheduledAt)
+        warningMinutes = try container.decode(Int.self, forKey: .warningMinutes)
+        indicatorText = try container.decodeIfPresent(String.self, forKey: .indicatorText)
+        status = try container.decode(String.self, forKey: .status)
+        roomName = try container.decodeIfPresent(String.self, forKey: .roomName)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+
+        // Handle boolean/int for is_editing
+        if let boolValue = try? container.decode(Bool.self, forKey: .isEditing) {
+            isEditing = boolValue
+        } else if let intValue = try? container.decode(Int.self, forKey: .isEditing) {
+            isEditing = intValue != 0
+        } else {
+            isEditing = false
+        }
+    }
+}
+
+struct ScheduledMessagesResponse: Decodable {
+    let scheduledMessages: [ScheduledMessage]
+
+    enum CodingKeys: String, CodingKey {
+        case scheduledMessages = "scheduled_messages"
+    }
+}
+
+struct ScheduledMessageResponse: Decodable {
+    let scheduledMessage: ScheduledMessage
+
+    enum CodingKeys: String, CodingKey {
+        case scheduledMessage = "scheduled_message"
+    }
+}
+
+struct CreateScheduledMessageRequest: Encodable {
+    let roomId: Int
+    let messageText: String
+    let scheduledAt: String
+    let warningMinutes: Int
+    let indicatorText: String
+
+    enum CodingKeys: String, CodingKey {
+        case roomId = "room_id"
+        case messageText = "message_text"
+        case scheduledAt = "scheduled_at"
+        case warningMinutes = "warning_minutes"
+        case indicatorText = "indicator_text"
+    }
+}
+
+struct UpdateScheduledMessageRequest: Encodable {
+    let roomId: Int?
+    let messageText: String?
+    let scheduledAt: String?
+    let warningMinutes: Int?
+    let indicatorText: String?
+
+    enum CodingKeys: String, CodingKey {
+        case roomId = "room_id"
+        case messageText = "message_text"
+        case scheduledAt = "scheduled_at"
+        case warningMinutes = "warning_minutes"
+        case indicatorText = "indicator_text"
+    }
+}
+
+// Socket event data for scheduled message warnings
+struct ScheduledMessageWarning {
+    let id: Int
+    let roomName: String
+    let messagePreview: String
+    let minutesRemaining: Int
+}
+
+struct ScheduledMessageMissed {
+    let id: Int
+    let messagePreview: String
+}

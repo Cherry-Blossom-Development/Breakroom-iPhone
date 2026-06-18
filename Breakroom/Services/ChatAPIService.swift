@@ -198,4 +198,93 @@ enum ChatAPIService {
         )
         return response.message
     }
+
+    // MARK: - Scheduled Messages
+
+    /// Get all pending/active scheduled messages for the current user
+    static func getScheduledMessages() async throws -> [ScheduledMessage] {
+        let response: ScheduledMessagesResponse = try await APIClient.shared.request("/api/scheduled-messages")
+        return response.scheduledMessages
+    }
+
+    /// Create a new scheduled message
+    static func createScheduledMessage(
+        roomId: Int,
+        messageText: String,
+        scheduledAt: Date,
+        warningMinutes: Int = 10,
+        indicatorText: String = "- sent via scheduled message"
+    ) async throws -> ScheduledMessage {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let body = CreateScheduledMessageRequest(
+            roomId: roomId,
+            messageText: messageText,
+            scheduledAt: formatter.string(from: scheduledAt),
+            warningMinutes: warningMinutes,
+            indicatorText: indicatorText
+        )
+        let response: ScheduledMessageResponse = try await APIClient.shared.request(
+            "/api/scheduled-messages",
+            method: "POST",
+            body: body
+        )
+        return response.scheduledMessage
+    }
+
+    /// Update a scheduled message
+    static func updateScheduledMessage(
+        id: Int,
+        roomId: Int? = nil,
+        messageText: String? = nil,
+        scheduledAt: Date? = nil,
+        warningMinutes: Int? = nil,
+        indicatorText: String? = nil
+    ) async throws -> ScheduledMessage {
+        var scheduledAtString: String?
+        if let scheduledAt {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            scheduledAtString = formatter.string(from: scheduledAt)
+        }
+
+        let body = UpdateScheduledMessageRequest(
+            roomId: roomId,
+            messageText: messageText,
+            scheduledAt: scheduledAtString,
+            warningMinutes: warningMinutes,
+            indicatorText: indicatorText
+        )
+        let response: ScheduledMessageResponse = try await APIClient.shared.request(
+            "/api/scheduled-messages/\(id)",
+            method: "PUT",
+            body: body
+        )
+        return response.scheduledMessage
+    }
+
+    /// Cancel (delete) a scheduled message
+    static func cancelScheduledMessage(id: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/scheduled-messages/\(id)",
+            method: "DELETE"
+        )
+    }
+
+    /// Confirm a scheduled message (proceed with sending)
+    static func confirmScheduledMessage(id: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/scheduled-messages/\(id)/confirm",
+            method: "POST"
+        )
+    }
+
+    /// Pause a scheduled message for editing
+    static func pauseScheduledMessage(id: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/scheduled-messages/\(id)/pause-edit",
+            method: "POST"
+        )
+    }
 }

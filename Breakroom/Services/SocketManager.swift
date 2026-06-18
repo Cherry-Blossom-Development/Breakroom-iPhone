@@ -23,6 +23,10 @@ final class ChatSocketManager {
     var onFriendBadgeUpdate: (() -> Void)?
     var onBlogBadgeUpdate: ((Int) -> Void)?
 
+    // Scheduled message handlers
+    var onScheduledMessageWarning: ((ScheduledMessageWarning) -> Void)?
+    var onScheduledMessageMissed: ((ScheduledMessageMissed) -> Void)?
+
     private var manager: SocketIO.SocketManager?
     private var socket: SocketIOClient?
 
@@ -284,6 +288,38 @@ final class ChatSocketManager {
             }
             Task { @MainActor in
                 self?.onBlogBadgeUpdate?(postId)
+            }
+        }
+
+        // Scheduled message events
+        socket?.on("scheduled_message_warning") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let id = dict["id"] as? Int,
+                  let roomName = dict["roomName"] as? String,
+                  let messagePreview = dict["messagePreview"] as? String,
+                  let minutesRemaining = dict["minutesRemaining"] as? Int else {
+                return
+            }
+            let warning = ScheduledMessageWarning(
+                id: id,
+                roomName: roomName,
+                messagePreview: messagePreview,
+                minutesRemaining: minutesRemaining
+            )
+            Task { @MainActor in
+                self?.onScheduledMessageWarning?(warning)
+            }
+        }
+
+        socket?.on("scheduled_message_missed") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let id = dict["id"] as? Int,
+                  let messagePreview = dict["messagePreview"] as? String else {
+                return
+            }
+            let missed = ScheduledMessageMissed(id: id, messagePreview: messagePreview)
+            Task { @MainActor in
+                self?.onScheduledMessageMissed?(missed)
             }
         }
     }

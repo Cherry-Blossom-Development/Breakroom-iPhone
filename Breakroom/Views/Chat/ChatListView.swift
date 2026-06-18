@@ -5,6 +5,7 @@ struct ChatListView: View {
     @Environment(BadgeStore.self) private var badgeStore
     @State private var chatViewModel = ChatViewModel()
     @State private var selectedRoom: ChatRoom?
+    @State private var showScheduledMessages = false
 
     var body: some View {
         ZStack {
@@ -150,6 +151,12 @@ struct ChatListView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
                         Button {
+                            showScheduledMessages = true
+                        } label: {
+                            Image(systemName: "clock.badge")
+                        }
+
+                        Button {
                             Task {
                                 await chatViewModel.loadDiscoverableRooms()
                                 chatViewModel.showAddRoom = true
@@ -170,6 +177,9 @@ struct ChatListView: View {
             }
             .navigationDestination(for: ChatRoom.self) { room in
                 ChatRoomView(room: room, chatViewModel: chatViewModel)
+            }
+            .navigationDestination(isPresented: $showScheduledMessages) {
+                ScheduledMessagesView()
             }
             .sheet(isPresented: $chatViewModel.showCreateRoom) {
                 CreateRoomView(chatViewModel: chatViewModel)

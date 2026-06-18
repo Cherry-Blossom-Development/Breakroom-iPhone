@@ -6,24 +6,41 @@ struct ContentView: View {
     @Environment(ModerationStore.self) private var moderationStore
     @Environment(BadgeStore.self) private var badgeStore
 
+    // Scheduled message warning state
+    @State private var scheduledWarning: ScheduledMessageWarning?
+    @State private var scheduledMissed: ScheduledMessageMissed?
+
     var body: some View {
-        Group {
-            if authViewModel.isAuthenticated {
-                if authViewModel.hasAcceptedEula {
-                    MainTabView()
-                } else {
-                    EulaView {
-                        authViewModel.markEulaAccepted()
+        ZStack {
+            Group {
+                if authViewModel.isAuthenticated {
+                    if authViewModel.hasAcceptedEula {
+                        MainTabView()
+                    } else {
+                        EulaView {
+                            authViewModel.markEulaAccepted()
+                        }
                     }
+                } else {
+                    LoginView()
                 }
-            } else {
-                LoginView()
+            }
+
+            // Scheduled message warning overlay
+            if let warning = scheduledWarning {
+                scheduledWarningOverlay(warning)
+            }
+
+            // Scheduled message missed overlay
+            if let missed = scheduledMissed {
+                scheduledMissedOverlay(missed)
             }
         }
         .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 socketManager.connect()
                 setupBadgeHandlers()
+                setupScheduledMessageHandlers()
                 Task {
                     await moderationStore.loadBlockList()
                     await badgeStore.fetchAll()
@@ -46,6 +63,161 @@ struct ContentView: View {
         socketManager.onBlogBadgeUpdate = { postId in
             badgeStore.onBlogBadgeUpdate(postId: postId)
         }
+    }
+
+    private func setupScheduledMessageHandlers() {
+        socketManager.onScheduledMessageWarning = { warning in
+            scheduledWarning = warning
+        }
+        socketManager.onScheduledMessageMissed = { missed in
+            scheduledMissed = missed
+        }
+    }
+
+    // MARK: - Scheduled Warning Overlay
+
+    private func scheduledWarningOverlay(_ warning: ScheduledMessageWarning) -> some View {
+        Color.black.opacity(0.5)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 16) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.fill")
+                            .font(.title2)
+                        Text("Scheduled Message Reminder")
+                            .font(.headline)
+                    }
+
+                    Text("Your message to **#\(warning.roomName)** sends in **\(warning.minutesRemaining) minute\(warning.minutesRemaining == 1 ? "" : "s")**.")
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+
+                    Text(warning.messagePreview)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemBackground))
+                        .overlay(
+                            Rectangle()
+                                .fill(Color.orange.opacity(0.6))
+                                .frame(width: 3),
+                            alignment: .leading
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .lineLimit(4)
+
+                    VStack(spacing: 8) {
+                        Button {
+                            Task { await confirmScheduledSend(warning.id) }
+                        } label: {
+                            Text("Send it")
+                                .font(.subheadline.weight(.medium))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        HStack(spacing: 8) {
+                            Button {
+                                Task { await cancelScheduledSend(warning.id) }
+                            } label: {
+                                Text("Don't send")
+                                    .font(.subheadline.weight(.medium))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+
+                            Button {
+                                Task { await editScheduledSend(warning.id) }
+                            } label: {
+                                Text("Edit first")
+                                    .font(.subheadline.weight(.medium))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+                .padding(24)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 20)
+                .padding(32)
+            }
+    }
+
+    private func scheduledMissedOverlay(_ missed: ScheduledMessageMissed) -> some View {
+        Color.black.opacity(0.5)
+            .ignoresSafeArea()
+            .overlay {
+                VStack(spacing: 16) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.orange)
+                        Text("Scheduled Message Not Sent")
+                            .font(.headline)
+                    }
+
+                    Text("Your scheduled message expired while you were editing it and was **not sent**.")
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+
+                    Text(missed.messagePreview)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .lineLimit(4)
+
+                    Button {
+                        scheduledMissed = nil
+                    } label: {
+                        Text("OK")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(24)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 20)
+                .padding(32)
+            }
+    }
+
+    // MARK: - Scheduled Message Actions
+
+    private func confirmScheduledSend(_ id: Int) async {
+        do {
+            try await ChatAPIService.confirmScheduledMessage(id: id)
+        } catch {
+            // Silently fail
+        }
+        scheduledWarning = nil
+    }
+
+    private func cancelScheduledSend(_ id: Int) async {
+        do {
+            try await ChatAPIService.cancelScheduledMessage(id: id)
+        } catch {
+            // Silently fail
+        }
+        scheduledWarning = nil
+    }
+
+    private func editScheduledSend(_ id: Int) async {
+        do {
+            try await ChatAPIService.pauseScheduledMessage(id: id)
+        } catch {
+            // Silently fail
+        }
+        scheduledWarning = nil
+        // User should navigate to scheduled messages view to edit
     }
 }
 

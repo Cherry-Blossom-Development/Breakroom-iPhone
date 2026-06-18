@@ -70,6 +70,7 @@
 		81A275AB2AB85F97A2B8A48A /* AudioMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */; };
 		8362F3A3945936BBF8220E88 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = EB829EA526D54769F045EE17 /* FirebaseMessaging */; };
 		873406ECF2D074479DC4D9E7 /* ModerationAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13342EA45C37A2624469015 /* ModerationAPIService.swift */; };
+		88C949E02DCF18EF6EA6DAFC /* ScheduledMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */; };
 		8D5643D19210114312A8B745 /* ModerationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DF02304D718C0B38800258 /* ModerationStore.swift */; };
 		8ED1BE434925E642E556EB9C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028A3743D482F0346A079BAD /* SongDetailView.swift */; };
 		9778091F078CEC4E19BF3903 /* CollectionsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F057A597628AE58CE8D5DBE /* CollectionsModels.swift */; };
@@ -187,6 +188,7 @@
 		74EF9B8744BF9117C1DB353F /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
 		7F449C3966DDAF253D9C7345 /* ModerationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationModels.swift; sourceTree = "<group>"; };
 		837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAPIService.swift; sourceTree = "<group>"; };
+		8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledMessagesView.swift; sourceTree = "<group>"; };
 		8BA899B8776A6A11C8B655E1 /* PaymentSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentSetupView.swift; sourceTree = "<group>"; };
 		8D469E4060E944F33F37B557 /* PositionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionModels.swift; sourceTree = "<group>"; };
 		8D4A11894FE85A5A19561CEC /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
@@ -427,6 +429,7 @@
 				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
+				8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -691,6 +694,7 @@
 				5F49987A81C1579AA6E3A5AE /* PublicProfileView.swift in Sources */,
 				3F10014E174AB41C4CD6BAA3 /* PushNotificationManager.swift in Sources */,
 				E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */,
+				88C949E02DCF18EF6EA6DAFC /* ScheduledMessagesView.swift in Sources */,
 				B362E7E1592AC2CA1410069A /* ScrollCoordinator.swift in Sources */,
 				02800D5F1D3500461CD384B2 /* SessionsAPIService.swift in Sources */,
 				CCD72AE023ADEAFF3E5CF250 /* SessionsModels.swift in Sources */,
