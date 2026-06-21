@@ -1,15 +1,177 @@
 import SwiftUI
 
+// MARK: - Form Sheet
+
+struct ScheduledMessageFormSheet: View {
+    @Binding var messageText: String
+    @Binding var selectedRoomId: Int?
+    @Binding var scheduledAt: Date
+    @Binding var warningMinutes: Int
+    @Binding var indicatorText: String
+
+    let rooms: [ChatRoom]
+    let isEditing: Bool
+    let isSaving: Bool
+    let formError: String?
+    let onSave: () async -> Void
+    let onCancel: () -> Void
+
+    private let defaultIndicator = "- sent via scheduled message"
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Message text area
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Message")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        ZStack(alignment: .topLeading) {
+                            if messageText.isEmpty {
+                                Text("Type your message...")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 12)
+                            }
+                            TextEditor(text: $messageText)
+                                .frame(minHeight: 100, maxHeight: 150)
+                                .scrollContentBackground(.hidden)
+                                .padding(4)
+                        }
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        HStack {
+                            Spacer()
+                            Text("\(messageText.count)/1000")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    // Room picker
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Room")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Picker("Room", selection: $selectedRoomId) {
+                            Text("Select room").tag(nil as Int?)
+                            ForEach(rooms) { room in
+                                Text("# \(room.name)").tag(room.id as Int?)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+                    }
+
+                    // Send time
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Send at")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        DatePicker(
+                            "",
+                            selection: $scheduledAt,
+                            in: Date().addingTimeInterval(120)...,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .labelsHidden()
+                    }
+
+                    // Warning time
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Warn me")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 4) {
+                            TextField("", value: $warningMinutes, format: .number)
+                                .keyboardType(.numberPad)
+                                .frame(width: 50)
+                                .textFieldStyle(.roundedBorder)
+
+                            Text("minutes before sending")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // Indicator text
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Indicator text")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("(appended to message)")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        HStack(spacing: 8) {
+                            TextField("e.g. - sent via scheduled message", text: $indicatorText)
+                                .textFieldStyle(.roundedBorder)
+
+                            Button("Default") {
+                                indicatorText = defaultIndicator
+                            }
+                            .font(.caption)
+                            .buttonStyle(.bordered)
+
+                            Button("None") {
+                                indicatorText = ""
+                            }
+                            .font(.caption)
+                            .buttonStyle(.bordered)
+                        }
+                    }
+
+                    if let formError {
+                        Text(formError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle(isEditing ? "Edit Scheduled Message" : "Schedule a Message")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isEditing ? "Update" : "Schedule") {
+                        Task { await onSave() }
+                    }
+                    .disabled(isSaving)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Main View
+
 struct ScheduledMessagesView: View {
     @State private var scheduledMessages: [ScheduledMessage] = []
     @State private var rooms: [ChatRoom] = []
     @State private var isLoading = true
     @State private var error: String?
 
+    // Sheet state
+    @State private var showingFormSheet = false
+
     // Form state
     @State private var messageText = ""
     @State private var selectedRoomId: Int?
-    @State private var scheduledAt = Date().addingTimeInterval(3600) // Default: 1 hour from now
+    @State private var scheduledAt = Date().addingTimeInterval(3600)
     @State private var warningMinutes = 10
     @State private var indicatorText = "- sent via scheduled message"
 
@@ -21,208 +183,87 @@ struct ScheduledMessagesView: View {
     private let defaultIndicator = "- sent via scheduled message"
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                formSection
-                Divider()
-                listSection
+        VStack(spacing: 0) {
+            listSection
+
+            Divider()
+
+            Button {
+                openCreate()
+            } label: {
+                Text("Create new Message")
+                    .font(.subheadline.weight(.medium))
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .padding()
         }
         .navigationTitle("Scheduled Messages")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadData()
         }
-        .refreshable {
-            await loadData()
-        }
-    }
-
-    // MARK: - Form Section
-
-    private var formSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(editingId != nil ? "Edit Scheduled Message" : "Schedule a Message")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            // Message text area
-            ZStack(alignment: .topLeading) {
-                if messageText.isEmpty {
-                    Text("Type your message...")
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 12)
-                }
-                TextEditor(text: $messageText)
-                    .frame(minHeight: 80, maxHeight: 120)
-                    .scrollContentBackground(.hidden)
-                    .padding(4)
-            }
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(editingId != nil ? Color.accentColor : Color.clear, lineWidth: 1)
+        .sheet(isPresented: $showingFormSheet) {
+            ScheduledMessageFormSheet(
+                messageText: $messageText,
+                selectedRoomId: $selectedRoomId,
+                scheduledAt: $scheduledAt,
+                warningMinutes: $warningMinutes,
+                indicatorText: $indicatorText,
+                rooms: rooms,
+                isEditing: editingId != nil,
+                isSaving: isSaving,
+                formError: formError,
+                onSave: saveMessage,
+                onCancel: closeSheet
             )
-
-            HStack {
-                Spacer()
-                Text("\(messageText.count)/1000")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-
-            // Room and warning time row
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Room")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Picker("Room", selection: $selectedRoomId) {
-                        Text("Select room").tag(nil as Int?)
-                        ForEach(rooms) { room in
-                            Text("# \(room.name)").tag(room.id as Int?)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Warn me")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    HStack(spacing: 4) {
-                        TextField("", value: $warningMinutes, format: .number)
-                            .keyboardType(.numberPad)
-                            .frame(width: 50)
-                            .textFieldStyle(.roundedBorder)
-
-                        Text("min before")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            // Send time
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Send at")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                DatePicker(
-                    "",
-                    selection: $scheduledAt,
-                    in: Date().addingTimeInterval(120)...,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
-            }
-
-            // Indicator text
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Indicator text")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("(appended to message)")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-
-                HStack(spacing: 8) {
-                    TextField("e.g. - sent via scheduled message", text: $indicatorText)
-                        .textFieldStyle(.roundedBorder)
-
-                    Button("Default") {
-                        indicatorText = defaultIndicator
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-
-                    Button("None") {
-                        indicatorText = ""
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                }
-            }
-
-            if let formError {
-                Text(formError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-
-            // Action buttons
-            HStack(spacing: 8) {
-                Button {
-                    Task { await saveMessage() }
-                } label: {
-                    Text(isSaving ? "Saving..." : (editingId != nil ? "Update Message" : "Schedule Message"))
-                        .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isSaving)
-
-                if editingId != nil {
-                    Button("Cancel Edit") {
-                        resetForm()
-                    }
-                    .font(.subheadline)
-                    .buttonStyle(.bordered)
-                }
-            }
         }
-        .padding()
     }
 
     // MARK: - List Section
 
     private var listSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Upcoming")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .padding(.horizontal)
-                .padding(.top)
-
-            if isLoading {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
-                }
-                .padding()
-            } else if let error {
-                Text(error)
-                    .font(.subheadline)
-                    .foregroundStyle(.red)
-                    .padding()
-            } else if scheduledMessages.isEmpty {
-                Text("No scheduled messages.")
-                    .font(.subheadline)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Upcoming")
+                    .font(.caption)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            } else {
-                LazyVStack(spacing: 8) {
-                    ForEach(scheduledMessages) { msg in
-                        scheduledMessageRow(msg)
+                    .textCase(.uppercase)
+                    .padding(.horizontal)
+                    .padding(.top)
+
+                if isLoading {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
                     }
+                    .padding()
+                } else if let error {
+                    Text(error)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                        .padding()
+                } else if scheduledMessages.isEmpty {
+                    Text("No scheduled messages.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                } else {
+                    LazyVStack(spacing: 8) {
+                        ForEach(scheduledMessages) { msg in
+                            scheduledMessageRow(msg)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom)
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
             }
+        }
+        .refreshable {
+            await loadData()
         }
     }
 
@@ -255,7 +296,7 @@ struct ScheduledMessagesView: View {
 
             HStack(spacing: 8) {
                 Button("Edit") {
-                    startEdit(msg)
+                    openEdit(msg)
                 }
                 .font(.caption)
                 .buttonStyle(.bordered)
@@ -341,7 +382,6 @@ struct ScheduledMessagesView: View {
             return dateString
         }
 
-        let now = Date()
         let calendar = Calendar.current
 
         let timeFormatter = DateFormatter()
@@ -357,6 +397,36 @@ struct ScheduledMessagesView: View {
             dateFormatter.dateFormat = "MMM d"
             return "\(dateFormatter.string(from: date)) at \(timeString)"
         }
+    }
+
+    // MARK: - Sheet Management
+
+    private func openCreate() {
+        resetForm()
+        showingFormSheet = true
+    }
+
+    private func openEdit(_ msg: ScheduledMessage) {
+        editingId = msg.id
+        messageText = msg.messageText
+        selectedRoomId = msg.roomId
+        warningMinutes = msg.warningMinutes
+        indicatorText = msg.indicatorText ?? defaultIndicator
+
+        // Parse the scheduled time
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: msg.scheduledAt) ?? ISO8601DateFormatter().date(from: msg.scheduledAt) {
+            scheduledAt = date
+        }
+
+        formError = nil
+        showingFormSheet = true
+    }
+
+    private func closeSheet() {
+        showingFormSheet = false
+        resetForm()
     }
 
     // MARK: - Actions
@@ -390,23 +460,6 @@ struct ScheduledMessagesView: View {
         scheduledAt = Date().addingTimeInterval(3600)
         warningMinutes = 10
         indicatorText = defaultIndicator
-        formError = nil
-    }
-
-    private func startEdit(_ msg: ScheduledMessage) {
-        editingId = msg.id
-        messageText = msg.messageText
-        selectedRoomId = msg.roomId
-        warningMinutes = msg.warningMinutes
-        indicatorText = msg.indicatorText ?? defaultIndicator
-
-        // Parse the scheduled time
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: msg.scheduledAt) ?? ISO8601DateFormatter().date(from: msg.scheduledAt) {
-            scheduledAt = date
-        }
-
         formError = nil
     }
 
@@ -455,6 +508,7 @@ struct ScheduledMessagesView: View {
                 )
             }
 
+            showingFormSheet = false
             resetForm()
             await loadData()
         } catch {
