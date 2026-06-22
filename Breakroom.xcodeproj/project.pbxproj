@@ -97,6 +97,7 @@
 		C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF549F06647717B82C21D /* ProfileModels.swift */; };
 		CCD72AE023ADEAFF3E5CF250 /* SessionsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929DEFFFB54C8582B3D54DAF /* SessionsModels.swift */; };
 		CD18A639CBC86C5C3EA86874 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3379C3DA35E2D7A5A57F1B7C /* SessionsView.swift */; };
+		CDD4CD585E3A2B54B755C07F /* ScheduledMessagesWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83573738C4A1584AC0CA510E /* ScheduledMessagesWidget.swift */; };
 		CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664D6C1E857ACE07479BED4B /* BreakroomView.swift */; };
 		D44A3890ADB4DAAD8C66AED0 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1481D76535F7907396445ACC /* Config.swift */; };
 		D595E1346C1E972EC2C8F5A7 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EA48B5699C1A4037B78EFF /* CollectionDetailView.swift */; };
@@ -187,6 +188,7 @@
 		741C0D64D533BB2A875C97D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		74EF9B8744BF9117C1DB353F /* SubscriptionAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAPIService.swift; sourceTree = "<group>"; };
 		7F449C3966DDAF253D9C7345 /* ModerationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationModels.swift; sourceTree = "<group>"; };
+		83573738C4A1584AC0CA510E /* ScheduledMessagesWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledMessagesWidget.swift; sourceTree = "<group>"; };
 		837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAPIService.swift; sourceTree = "<group>"; };
 		8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledMessagesView.swift; sourceTree = "<group>"; };
 		8BA899B8776A6A11C8B655E1 /* PaymentSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentSetupView.swift; sourceTree = "<group>"; };
@@ -430,6 +432,7 @@
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
 				8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */,
+				83573738C4A1584AC0CA510E /* ScheduledMessagesWidget.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -695,6 +698,7 @@
 				3F10014E174AB41C4CD6BAA3 /* PushNotificationManager.swift in Sources */,
 				E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */,
 				88C949E02DCF18EF6EA6DAFC /* ScheduledMessagesView.swift in Sources */,
+				CDD4CD585E3A2B54B755C07F /* ScheduledMessagesWidget.swift in Sources */,
 				B362E7E1592AC2CA1410069A /* ScrollCoordinator.swift in Sources */,
 				02800D5F1D3500461CD384B2 /* SessionsAPIService.swift in Sources */,
 				CCD72AE023ADEAFF3E5CF250 /* SessionsModels.swift in Sources */,
