@@ -26,7 +26,7 @@ enum AudioMixer {
 
     private static let targetSampleRate: Double = 44100
     private static let targetChannels: AVAudioChannelCount = 1
-    private static let normalizationTarget: Float = 0.7
+    private static let normalizationTarget: Float = 0.9
 
     // MARK: - Download
 
@@ -37,7 +37,7 @@ enum AudioMixer {
 
     // MARK: - Normalization
 
-    /// Normalize audio to peak level of 0.7 (matching Android implementation)
+    /// Normalize audio to peak level of 0.9 (matching Android implementation)
     /// - Parameter url: URL of the audio file to normalize
     /// - Returns: URL of the normalized audio file (WAV format)
     static func normalizeAudio(at url: URL) throws -> URL {
@@ -170,22 +170,40 @@ enum AudioMixer {
             throw AudioMixerError.processingFailed("Could not access audio data")
         }
 
-        // Mix samples
+        // Two-pass peak-limited mixing to prevent clipping
+        // Pass 1: Find peak of the weighted sum
+        var peakSum: Float = 0
         for frame in 0..<Int(outputFrameCount) {
             var sample: Float = 0
 
-            // Add backing track sample if within bounds
             if frame < Int(monoBackingBuffer.frameLength) {
                 sample += backingData[frame] * backingVolume
             }
-
-            // Add recording sample if within bounds
             if frame < Int(monoRecordingBuffer.frameLength) {
                 sample += recordingData[frame] * recordingVolume
             }
 
-            // Clamp to [-1, 1]
-            outputData[frame] = max(-1.0, min(1.0, sample))
+            let absSample = abs(sample)
+            if absSample > peakSum {
+                peakSum = absSample
+            }
+        }
+
+        // Scale down only if the sum would clip — preserves slider levels as-is otherwise
+        let scale: Float = peakSum > 1.0 ? 1.0 / peakSum : 1.0
+
+        // Pass 2: Write scaled mix
+        for frame in 0..<Int(outputFrameCount) {
+            var sample: Float = 0
+
+            if frame < Int(monoBackingBuffer.frameLength) {
+                sample += backingData[frame] * backingVolume
+            }
+            if frame < Int(monoRecordingBuffer.frameLength) {
+                sample += recordingData[frame] * recordingVolume
+            }
+
+            outputData[frame] = sample * scale
         }
 
         // Write output

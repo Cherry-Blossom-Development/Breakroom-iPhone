@@ -60,6 +60,7 @@ struct SessionsView: View {
 
     // Dialogs
     @State private var showSaveSheet = false
+    @State private var isSavingSession = false
     @State private var showRatingPopup = false
     @State private var ratingSessionId: Int?
     @State private var ratingSessionSource: String = "own" // "own" or "bandMember"
@@ -1046,8 +1047,8 @@ struct SessionsView: View {
                 context: recordingContext,
                 bands: activeBands,
                 instruments: instruments,
+                isSaving: isSavingSession,
                 onSave: { name, date, bandId, instrumentId in
-                    showSaveSheet = false
                     Task { await saveRecording(name: name, recordedAt: date, bandId: bandId, instrumentId: instrumentId) }
                 },
                 onDiscard: {
@@ -1551,8 +1552,11 @@ struct SessionsView: View {
     private func saveRecording(name: String, recordedAt: String?, bandId: Int?, instrumentId: Int?) async {
         guard let fileURL = pendingRecordingURL else {
             recordingState = .idle
+            showSaveSheet = false
             return
         }
+
+        isSavingSession = true
 
         do {
             let audioData = try Data(contentsOf: fileURL)
@@ -1574,14 +1578,17 @@ struct SessionsView: View {
 
             try? FileManager.default.removeItem(at: fileURL)
             pendingRecordingURL = nil
+            showSaveSheet = false
         } catch APIError.subscriptionRequired {
             // Show paywall when free limit is reached
             // Keep the recording file so user can retry after subscribing
             showPaywall = true
+            showSaveSheet = false
         } catch {
             errorMessage = error.localizedDescription
         }
 
+        isSavingSession = false
         recordingState = .idle
     }
 
@@ -1899,6 +1906,7 @@ private struct SaveRecordingView: View {
     let context: String
     let bands: [Band]
     let instruments: [Instrument]
+    let isSaving: Bool
     let onSave: (String, String?, Int?, Int?) -> Void
     let onDiscard: () -> Void
 
@@ -1907,10 +1915,11 @@ private struct SaveRecordingView: View {
     @State private var selectedBandId: Int?
     @State private var selectedInstrumentId: Int?
 
-    init(context: String, bands: [Band], instruments: [Instrument], onSave: @escaping (String, String?, Int?, Int?) -> Void, onDiscard: @escaping () -> Void) {
+    init(context: String, bands: [Band], instruments: [Instrument], isSaving: Bool, onSave: @escaping (String, String?, Int?, Int?) -> Void, onDiscard: @escaping () -> Void) {
         self.context = context
         self.bands = bands
         self.instruments = instruments
+        self.isSaving = isSaving
         self.onSave = onSave
         self.onDiscard = onDiscard
 
@@ -1927,8 +1936,10 @@ private struct SaveRecordingView: View {
             Section {
                 TextField("Session name", text: $name)
                     .accessibilityIdentifier("sessionsSessionNameField")
+                    .disabled(isSaving)
                 TextField("Date (YYYY-MM-DD)", text: $date)
                     .accessibilityIdentifier("sessionsSessionDateField")
+                    .disabled(isSaving)
             }
 
             Section {
@@ -1939,6 +1950,7 @@ private struct SaveRecordingView: View {
                     }
                 }
                 .accessibilityIdentifier("sessionsSessionBandPicker")
+                .disabled(isSaving)
 
                 if context == "individual" {
                     Picker("Instrument", selection: $selectedInstrumentId) {
@@ -1948,6 +1960,7 @@ private struct SaveRecordingView: View {
                         }
                     }
                     .accessibilityIdentifier("sessionsSessionInstrumentPicker")
+                    .disabled(isSaving)
                 }
             }
         }
@@ -1958,12 +1971,23 @@ private struct SaveRecordingView: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Discard", role: .destructive, action: onDiscard)
                     .accessibilityIdentifier("sessionsDiscardButton")
+                    .disabled(isSaving)
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
+                Button {
                     onSave(name, date.isEmpty ? nil : date, selectedBandId, selectedInstrumentId)
+                } label: {
+                    if isSaving {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Saving...")
+                        }
+                    } else {
+                        Text("Save")
+                    }
                 }
-                .disabled(name.isEmpty)
+                .disabled(name.isEmpty || isSaving)
                 .accessibilityIdentifier("sessionsSaveRecordingButton")
             }
         }
@@ -2080,6 +2104,16 @@ private struct AudioDefaultsSheet: View {
     let onSaveDeviceName: () -> Void
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showingInfoPopup: String?
+
+    private let bitrateOptions = [
+        (64000, "64 kbps"),
+        (128000, "128 kbps"),
+        (192000, "192 kbps"),
+        (256000, "256 kbps"),
+        (320000, "320 kbps")
+    ]
+
     var body: some View {
         NavigationStack {
             Form {
@@ -2128,28 +2162,100 @@ private struct AudioDefaultsSheet: View {
                     }
                 }
 
-                Section {
-                    Toggle("Echo Cancellation", isOn: $defaults.echoCancellation)
-                    Toggle("Noise Suppression", isOn: $defaults.noiseSuppression)
-                    Toggle("Auto Gain Control", isOn: $defaults.autoGainControl)
-                } header: {
-                    Text("Recording Settings")
-                } footer: {
-                    Text("These settings are applied when recording audio.")
-                }
-
+                // Playback Settings
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("Playback Volume", info: "playbackVolume")
                         HStack {
-                            Text("Playback Volume")
-                            Spacer()
+                            Slider(value: $defaults.playbackVolume, in: 0...1, step: 0.05)
                             Text("\(Int(defaults.playbackVolume * 100))%")
                                 .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
                         }
-                        Slider(value: $defaults.playbackVolume, in: 0...1, step: 0.05)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("WAV Playback Boost", info: "wavPlaybackBoost")
+                        HStack {
+                            Slider(value: $defaults.wavPlaybackBoost, in: 1...5, step: 0.1)
+                            Text(String(format: "%.1fx", defaults.wavPlaybackBoost))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
+                        }
                     }
                 } header: {
-                    Text("Playback Settings")
+                    Text("Playback")
+                }
+
+                // Recording Settings
+                Section {
+                    Toggle(isOn: $defaults.echoCancellation) {
+                        settingHeader("Echo Cancellation", info: "echoCancellation")
+                    }
+
+                    Toggle(isOn: $defaults.noiseSuppression) {
+                        settingHeader("Noise Suppression", info: "noiseSuppression")
+                    }
+
+                    Toggle(isOn: $defaults.autoGainControl) {
+                        settingHeader("Auto Gain Control", info: "autoGainControl")
+                    }
+
+                    Toggle(isOn: $defaults.softLimiter) {
+                        settingHeader("Soft Limiter", info: "softLimiter")
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("Recording Normalization", info: "recordingNormalization")
+                        HStack {
+                            Slider(value: $defaults.recordingNormalization, in: 0.5...1.0, step: 0.05)
+                            Text("\(Int(defaults.recordingNormalization * 100))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("Recording Bitrate", info: "bitrate")
+                        Picker("Bitrate", selection: $defaults.bitrate) {
+                            ForEach(bitrateOptions, id: \.0) { option in
+                                Text(option.1).tag(option.0)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                } header: {
+                    Text("Recording")
+                }
+
+                // Mashup Defaults
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("Backing Track Volume", info: "mashupBackingVolume")
+                        HStack {
+                            Slider(value: $defaults.mashupBackingVolume, in: 0...1, step: 0.05)
+                            Text("\(Int(defaults.mashupBackingVolume * 100))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        settingHeader("New Recording Volume", info: "mashupNewVolume")
+                        HStack {
+                            Slider(value: $defaults.mashupNewVolume, in: 0...1, step: 0.05)
+                            Text("\(Int(defaults.mashupNewVolume * 100))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+                } header: {
+                    Text("Mashup Defaults")
                 }
             }
             .navigationTitle("Audio Settings")
@@ -2167,8 +2273,70 @@ private struct AudioDefaultsSheet: View {
                     }
                 }
             }
+            .alert(infoTitle(for: showingInfoPopup), isPresented: .constant(showingInfoPopup != nil)) {
+                Button("OK") { showingInfoPopup = nil }
+            } message: {
+                Text(infoDescription(for: showingInfoPopup))
+            }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private func settingHeader(_ title: String, info: String) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+            Button {
+                showingInfoPopup = info
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func infoTitle(for key: String?) -> String {
+        switch key {
+        case "playbackVolume": return "Playback Volume"
+        case "wavPlaybackBoost": return "WAV Playback Boost"
+        case "echoCancellation": return "Echo Cancellation"
+        case "noiseSuppression": return "Noise Suppression"
+        case "autoGainControl": return "Auto Gain Control"
+        case "softLimiter": return "Soft Limiter"
+        case "recordingNormalization": return "Recording Normalization"
+        case "bitrate": return "Recording Bitrate"
+        case "mashupBackingVolume": return "Backing Track Volume"
+        case "mashupNewVolume": return "New Recording Volume"
+        default: return "Info"
+        }
+    }
+
+    private func infoDescription(for key: String?) -> String {
+        switch key {
+        case "playbackVolume":
+            return "Controls the volume when playing back recordings."
+        case "wavPlaybackBoost":
+            return "Boost factor applied to WAV file playback. WAV files are often quieter than compressed formats."
+        case "echoCancellation":
+            return "Reduces echo from speakers being picked up by the microphone. Useful when not using headphones."
+        case "noiseSuppression":
+            return "Reduces background noise during recording. May affect audio quality."
+        case "autoGainControl":
+            return "Automatically adjusts microphone sensitivity to maintain consistent volume levels."
+        case "softLimiter":
+            return "Prevents audio clipping by gently compressing peaks that exceed the threshold."
+        case "recordingNormalization":
+            return "Target peak level for recorded audio. Higher values produce louder recordings."
+        case "bitrate":
+            return "Audio quality for recordings. Higher bitrates produce better quality but larger files."
+        case "mashupBackingVolume":
+            return "Default volume for the backing track when creating a new mashup."
+        case "mashupNewVolume":
+            return "Default volume for your new recording when creating a mashup."
+        default:
+            return ""
+        }
     }
 }
 

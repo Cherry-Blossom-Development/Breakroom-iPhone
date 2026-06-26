@@ -278,20 +278,38 @@ struct AudioDefaults: Codable {
     var echoCancellation: Bool
     var noiseSuppression: Bool
     var autoGainControl: Bool
+    var softLimiter: Bool
     var playbackVolume: Double
+    var wavPlaybackBoost: Double
+    var recordingNormalization: Double
+    var bitrate: Int
+    var mashupBackingVolume: Double
+    var mashupNewVolume: Double
 
     enum CodingKeys: String, CodingKey {
         case echoCancellation = "echo_cancellation"
         case noiseSuppression = "noise_suppression"
         case autoGainControl = "auto_gain_control"
+        case softLimiter = "soft_limiter"
         case playbackVolume = "playback_volume"
+        case wavPlaybackBoost = "wav_playback_boost"
+        case recordingNormalization = "recording_normalization"
+        case bitrate
+        case mashupBackingVolume = "mashup_backing_volume"
+        case mashupNewVolume = "mashup_new_volume"
     }
 
     static let `default` = AudioDefaults(
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
-        playbackVolume: 0.75
+        softLimiter: false,
+        playbackVolume: 0.75,
+        wavPlaybackBoost: 3.33,
+        recordingNormalization: 0.9,
+        bitrate: 256000,
+        mashupBackingVolume: 1.0,
+        mashupNewVolume: 1.0
     )
 }
 

@@ -50,10 +50,9 @@ struct MashupView: View {
     // MARK: - Computed Properties
 
     private var availableSessions: [Session] {
-        // Combine own individual sessions with band member sessions (exclude mashups)
-        let ownIndividual = ownSessions.filter { $0.isIndividual }
-        let bandNonMashups = bandMemberSessions.filter { !$0.isMashup }
-        return ownIndividual + bandNonMashups
+        // Combine all own sessions (including mashups) with all band member sessions
+        // Mashups can now be used as backing tracks for new mashups
+        return ownSessions + bandMemberSessions
     }
 
     // MARK: - Body
