@@ -81,7 +81,7 @@ struct SessionsView: View {
     // MARK: - Computed Properties
 
     private var bandSessions: [Session] {
-        sessions.filter { !$0.isIndividual }
+        sessions.filter { $0.sessionType == "band" }
     }
 
     private var individualSessions: [Session] {
