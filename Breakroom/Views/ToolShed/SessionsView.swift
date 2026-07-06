@@ -77,6 +77,7 @@ struct SessionsView: View {
     @State private var editingBandName = false
     @State private var editBandNameValue = ""
     @State private var bandToDelete: Band?
+    @State private var bandPageSetupId: Int?
 
     // MARK: - Computed Properties
 
@@ -212,6 +213,9 @@ struct SessionsView: View {
                     showPaywall = false
                 }
             )
+        }
+        .navigationDestination(item: $bandPageSetupId) { bandId in
+            BandPageSetupView(bandId: bandId)
         }
     }
 
@@ -912,6 +916,16 @@ struct SessionsView: View {
                         Button("Edit") {
                             editBandNameValue = band.name
                             editingBandName = true
+                        }
+                        .font(.subheadline)
+
+                        Button {
+                            bandPageSetupId = band.id
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "globe")
+                                Text("Band Page")
+                            }
                         }
                         .font(.subheadline)
 

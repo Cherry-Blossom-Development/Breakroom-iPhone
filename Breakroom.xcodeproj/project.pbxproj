@@ -37,6 +37,7 @@
 		3B695D203E20F3B546773DB2 /* InviteUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13784734C91770B11F74CE8D /* InviteUsersView.swift */; };
 		3EEF84274CB7C43242CFF356 /* TermsOfUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F069DEE7A28A6182917BB1 /* TermsOfUseView.swift */; };
 		3F10014E174AB41C4CD6BAA3 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391BCBCFC49257E9E96058E5 /* PushNotificationManager.swift */; };
+		3F7AD99EA5794FD125EA7F7D /* BandPageSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06E28417C8F8A0B7D8E4AB55 /* BandPageSetupView.swift */; };
 		4106D7529283A4856C0F5980 /* BlogManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4278DCD1E69862C0582F1090 /* BlogManagementView.swift */; };
 		438A55B58CE8084B9F9383D2 /* PositionsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91525D050EA8F2B609736F2 /* PositionsAPIService.swift */; };
 		446345F21ED087B5741FA337 /* SocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D5DA10CFED0F50F89FDF3D /* SocketManager.swift */; };
@@ -51,6 +52,7 @@
 		4FB924B5C4A12F3B06E3DF27 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AA0A819B1816531F0433D4C /* AuthService.swift */; };
 		5024134194D17D5AAF64B2BC /* BlogEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3620C9CA4480F805E75A34A /* BlogEditorView.swift */; };
 		52B4EA17D8D733F30C75D4B9 /* TicketModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319BB438E5D2DE8B9A00BB30 /* TicketModels.swift */; };
+		579B8E48DC9CEB517E954B02 /* BandPageSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42BDF5D1502B581D65359A25 /* BandPageSetupViewModel.swift */; };
 		5A813D5A68661C8A4F09226A /* ModerationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F449C3966DDAF253D9C7345 /* ModerationModels.swift */; };
 		5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77C18853F8F4E57876C8998 /* BlogAPIService.swift */; };
 		5BA0B29C7FC661A5FDB8C3F0 /* SubscriptionAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74EF9B8744BF9117C1DB353F /* SubscriptionAPIService.swift */; };
@@ -125,6 +127,7 @@
 		04A7113CD8E6A47BFDCA0B77 /* LyricModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricModels.swift; sourceTree = "<group>"; };
 		05769385EC924F9C434488B0 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		063104F42FA5362551B2EAE9 /* EulaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EulaView.swift; sourceTree = "<group>"; };
+		06E28417C8F8A0B7D8E4AB55 /* BandPageSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandPageSetupView.swift; sourceTree = "<group>"; };
 		0A8D398682165173267FE358 /* Breakroom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Breakroom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanbanRedirectView.swift; sourceTree = "<group>"; };
 		0DB690EA5FDB4F231A66DEB8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -167,6 +170,7 @@
 		3F2C80D347C141FABF0FEC7F /* EmploymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmploymentView.swift; sourceTree = "<group>"; };
 		40740E66D14A56BE618FCEB7 /* BlogModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogModels.swift; sourceTree = "<group>"; };
 		4278DCD1E69862C0582F1090 /* BlogManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogManagementView.swift; sourceTree = "<group>"; };
+		42BDF5D1502B581D65359A25 /* BandPageSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandPageSetupViewModel.swift; sourceTree = "<group>"; };
 		45F0D1DE0A47F7B054B61B05 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAPIService.swift; sourceTree = "<group>"; };
 		4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomModels.swift; sourceTree = "<group>"; };
@@ -262,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				D3F61C941989489C1B54449D /* ArtGalleryView.swift */,
+				06E28417C8F8A0B7D8E4AB55 /* BandPageSetupView.swift */,
 				0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */,
 				26DEBC966A34157A3A985E03 /* LyricLabView.swift */,
 				E2A84C3A79FA4644E4066A9D /* MashupView.swift */,
@@ -357,6 +362,7 @@
 			children = (
 				2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */,
 				3A8730F0204E12CEE0CD53AE /* BadgeStore.swift */,
+				42BDF5D1502B581D65359A25 /* BandPageSetupViewModel.swift */,
 				1C51EEBF4375ED97E18E8D80 /* BreakroomViewModel.swift */,
 				BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */,
 				99DF02304D718C0B38800258 /* ModerationStore.swift */,
@@ -626,6 +632,8 @@
 				EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */,
 				4C3319A6EFFF0F20953FC9CD /* BadgeAPIService.swift in Sources */,
 				9A1EBAE626FF7E42701D1618 /* BadgeStore.swift in Sources */,
+				3F7AD99EA5794FD125EA7F7D /* BandPageSetupView.swift in Sources */,
+				579B8E48DC9CEB517E954B02 /* BandPageSetupViewModel.swift in Sources */,
 				38B2BA632CD948B45C2AA86A /* BillingView.swift in Sources */,
 				1298C6AD4D168EB20A407F32 /* BlockWidgetView.swift in Sources */,
 				5B55DAB8E704A4389D0522D5 /* BlogAPIService.swift in Sources */,

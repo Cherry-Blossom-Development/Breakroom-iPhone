@@ -346,3 +346,146 @@ struct DeviceRegistrationRequest: Encodable {
 struct DeviceNameRequest: Encodable {
     let userName: String?
 }
+
+// MARK: - Band Page Models
+
+struct BandPageMember: Codable, Identifiable {
+    let id: Int
+    let handle: String
+    let firstName: String?
+    let lastName: String?
+    let photoUrl: String?
+    let role: String
+    var instrumentIds: [Int]
+
+    enum CodingKeys: String, CodingKey {
+        case id, handle, role
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case photoUrl = "photo_url"
+        case instrumentIds = "instrument_ids"
+    }
+
+    var displayName: String {
+        if let first = firstName, !first.isEmpty {
+            if let last = lastName, !last.isEmpty {
+                return "\(first) \(last)"
+            }
+            return first
+        }
+        return "@\(handle)"
+    }
+}
+
+struct BandPageSession: Codable, Identifiable {
+    let id: Int
+    let name: String?
+    let recordedAt: String?
+    let uploaderHandle: String
+    let instrumentName: String?
+    var onPage: Bool
+    var displayOrder: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case recordedAt = "recorded_at"
+        case uploaderHandle = "uploader_handle"
+        case instrumentName = "instrument_name"
+        case onPage = "on_page"
+        case displayOrder = "display_order"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        recordedAt = try container.decodeIfPresent(String.self, forKey: .recordedAt)
+        uploaderHandle = try container.decode(String.self, forKey: .uploaderHandle)
+        instrumentName = try container.decodeIfPresent(String.self, forKey: .instrumentName)
+        displayOrder = try container.decodeIfPresent(Int.self, forKey: .displayOrder) ?? 999
+
+        // Handle boolean/int for on_page
+        if let boolValue = try? container.decode(Bool.self, forKey: .onPage) {
+            onPage = boolValue
+        } else if let intValue = try? container.decode(Int.self, forKey: .onPage) {
+            onPage = intValue != 0
+        } else {
+            onPage = false
+        }
+    }
+}
+
+struct BandPageData: Codable {
+    let bandName: String
+    var bandUrl: String?
+    var story: String?
+    var backgroundPhotoUrl: String?
+    var backgroundColor: String?
+    var isPublished: Bool
+    let members: [BandPageMember]
+    let instruments: [Instrument]
+    let sessions: [BandPageSession]
+
+    enum CodingKeys: String, CodingKey {
+        case bandName = "band_name"
+        case bandUrl = "band_url"
+        case story
+        case backgroundPhotoUrl = "background_photo_url"
+        case backgroundColor = "background_color"
+        case isPublished = "is_published"
+        case members, instruments, sessions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        bandName = try container.decode(String.self, forKey: .bandName)
+        bandUrl = try container.decodeIfPresent(String.self, forKey: .bandUrl)
+        story = try container.decodeIfPresent(String.self, forKey: .story)
+        backgroundPhotoUrl = try container.decodeIfPresent(String.self, forKey: .backgroundPhotoUrl)
+        backgroundColor = try container.decodeIfPresent(String.self, forKey: .backgroundColor)
+        members = try container.decodeIfPresent([BandPageMember].self, forKey: .members) ?? []
+        instruments = try container.decodeIfPresent([Instrument].self, forKey: .instruments) ?? []
+        sessions = try container.decodeIfPresent([BandPageSession].self, forKey: .sessions) ?? []
+
+        // Handle boolean/int for is_published
+        if let boolValue = try? container.decode(Bool.self, forKey: .isPublished) {
+            isPublished = boolValue
+        } else if let intValue = try? container.decode(Int.self, forKey: .isPublished) {
+            isPublished = intValue != 0
+        } else {
+            isPublished = false
+        }
+    }
+}
+
+struct UpdateBandPageRequest: Encodable {
+    let bandUrl: String?
+    let story: String?
+    let backgroundColor: String?
+    let isPublished: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case bandUrl = "band_url"
+        case story
+        case backgroundColor = "background_color"
+        case isPublished = "is_published"
+    }
+}
+
+struct BandPageBackgroundResponse: Codable {
+    let backgroundPhotoUrl: String?
+    let backgroundPhotoKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case backgroundPhotoUrl = "background_photo_url"
+        case backgroundPhotoKey = "background_photo_key"
+    }
+}
+
+struct SetMemberInstrumentsRequest: Encodable {
+    let instrumentIds: [Int]
+}
+
+struct SetBandPageSongsRequest: Encodable {
+    let sessionIds: [Int]
+}

@@ -263,4 +263,71 @@ enum SessionsAPIService {
             body: body
         )
     }
+
+    // MARK: - Band Page
+
+    /// Get band page data for setup/editing
+    static func getBandPage(bandId: Int) async throws -> BandPageData {
+        try await APIClient.shared.request("/api/bands/\(bandId)/page")
+    }
+
+    /// Update band page settings
+    static func updateBandPage(
+        bandId: Int,
+        bandUrl: String?,
+        story: String?,
+        backgroundColor: String?,
+        isPublished: Bool
+    ) async throws {
+        let body = UpdateBandPageRequest(
+            bandUrl: bandUrl,
+            story: story,
+            backgroundColor: backgroundColor,
+            isPublished: isPublished
+        )
+        try await APIClient.shared.requestVoid(
+            "/api/bands/\(bandId)/page",
+            method: "PUT",
+            body: body
+        )
+    }
+
+    /// Upload band page background photo
+    static func uploadBandPageBackground(bandId: Int, imageData: Data) async throws -> BandPageBackgroundResponse {
+        try await APIClient.shared.uploadMultipart(
+            "/api/bands/\(bandId)/page/background",
+            fileData: imageData,
+            fieldName: "photo",
+            filename: "background.jpg",
+            mimeType: "image/jpeg"
+        )
+    }
+
+    /// Delete band page background photo
+    static func deleteBandPageBackground(bandId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/bands/\(bandId)/page/background",
+            method: "DELETE"
+        )
+    }
+
+    /// Set instruments for a band member on the band page
+    static func setBandPageMemberInstruments(bandId: Int, userId: Int, instrumentIds: [Int]) async throws {
+        let body = SetMemberInstrumentsRequest(instrumentIds: instrumentIds)
+        try await APIClient.shared.requestVoid(
+            "/api/bands/\(bandId)/page/members/\(userId)/instruments",
+            method: "PUT",
+            body: body
+        )
+    }
+
+    /// Set featured songs for the band page (ordered list of session IDs)
+    static func setBandPageSongs(bandId: Int, sessionIds: [Int]) async throws {
+        let body = SetBandPageSongsRequest(sessionIds: sessionIds)
+        try await APIClient.shared.requestVoid(
+            "/api/bands/\(bandId)/page/songs",
+            method: "PUT",
+            body: body
+        )
+    }
 }
