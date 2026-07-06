@@ -1,10 +1,30 @@
 import SwiftUI
 
+// Navigation wrapper for DM rooms
+struct DmNavigation: Hashable {
+    let dm: ChatDm
+    let partnerHandle: String
+
+    init(_ dm: ChatDm) {
+        self.dm = dm
+        self.partnerHandle = dm.partnerHandle
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(dm.id)
+    }
+
+    static func == (lhs: DmNavigation, rhs: DmNavigation) -> Bool {
+        lhs.dm.id == rhs.dm.id
+    }
+}
+
 struct ChatListView: View {
     @Environment(ChatSocketManager.self) private var socketManager
     @Environment(BadgeStore.self) private var badgeStore
     @State private var chatViewModel = ChatViewModel()
     @State private var selectedRoom: ChatRoom?
+    @State private var selectedDmNavigation: DmNavigation?
     @State private var showScheduledMessages = false
 
     var body: some View {
@@ -137,6 +157,131 @@ struct ChatListView: View {
                                 }
                             }
                         }
+
+                        // Direct Messages section
+                        Section("Direct Messages") {
+                            // Search field for finding users
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundStyle(.secondary)
+                                TextField("Find a user...", text: Binding(
+                                    get: { chatViewModel.dmSearchQuery },
+                                    set: { chatViewModel.updateDmSearchQuery($0) }
+                                ))
+                                .textFieldStyle(.plain)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+
+                                if !chatViewModel.dmSearchQuery.isEmpty {
+                                    Button {
+                                        chatViewModel.updateDmSearchQuery("")
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+
+                            // Search results
+                            if !chatViewModel.dmSearchResults.isEmpty {
+                                ForEach(chatViewModel.dmSearchResults) { user in
+                                    Button {
+                                        Task {
+                                            if let roomInfo = await chatViewModel.startDm(with: user) {
+                                                // Navigate to the DM
+                                                let dm = ChatDm(
+                                                    id: roomInfo.id,
+                                                    partnerId: roomInfo.partnerId,
+                                                    partnerHandle: roomInfo.partnerHandle,
+                                                    unreadCount: 0,
+                                                    lastMessage: nil,
+                                                    lastMessageAt: nil
+                                                )
+                                                selectedDmNavigation = DmNavigation(dm)
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            // Avatar circle with initial
+                                            Circle()
+                                                .fill(Color.accentColor.opacity(0.2))
+                                                .frame(width: 36, height: 36)
+                                                .overlay {
+                                                    Text(String(user.handle.prefix(1)).uppercased())
+                                                        .font(.headline)
+                                                        .foregroundStyle(Color.accentColor)
+                                                }
+
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("@\(user.handle)")
+                                                    .font(.subheadline)
+                                                    .fontWeight(.medium)
+                                                    .foregroundStyle(.primary)
+                                                if user.displayName != user.handle {
+                                                    Text(user.displayName)
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            }
+
+                                            Spacer()
+
+                                            if chatViewModel.isStartingDm {
+                                                ProgressView()
+                                                    .controlSize(.small)
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                    .disabled(chatViewModel.isStartingDm)
+                                }
+                            }
+
+                            // Existing DM threads
+                            ForEach(chatViewModel.dms) { dm in
+                                NavigationLink(value: DmNavigation(dm)) {
+                                    HStack(spacing: 12) {
+                                        // Avatar circle with initial
+                                        Circle()
+                                            .fill(Color.accentColor.opacity(0.2))
+                                            .frame(width: 36, height: 36)
+                                            .overlay {
+                                                Text(String(dm.partnerHandle.prefix(1)).uppercased())
+                                                    .font(.headline)
+                                                    .foregroundStyle(Color.accentColor)
+                                            }
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("@\(dm.partnerHandle)")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                            if let lastMessage = dm.lastMessage, !lastMessage.isEmpty {
+                                                Text(lastMessage)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(1)
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        // Unread badge
+                                        if dm.unreadCount > 0 {
+                                            Text("\(dm.unreadCount)")
+                                                .font(.caption2.bold())
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(.red)
+                                                .clipShape(Capsule())
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                                .accessibilityIdentifier("dmItem")
+                            }
+                        }
                     }
                 }
         }
@@ -177,6 +322,9 @@ struct ChatListView: View {
             }
             .navigationDestination(for: ChatRoom.self) { room in
                 ChatRoomView(room: room, chatViewModel: chatViewModel)
+            }
+            .navigationDestination(for: DmNavigation.self) { dmNav in
+                DmRoomView(dm: dmNav.dm, chatViewModel: chatViewModel)
             }
             .navigationDestination(isPresented: $showScheduledMessages) {
                 ScheduledMessagesView()
@@ -233,6 +381,8 @@ struct ChatListView: View {
             chatViewModel.socketManager = socketManager
             await chatViewModel.loadRooms()
             await chatViewModel.loadInvites()
+            await chatViewModel.loadDms()
+            await chatViewModel.loadAllUsersForDmSearch()
             await chatViewModel.checkPermissions()
             chatViewModel.connectSocket()
         }

@@ -387,3 +387,82 @@ struct ScheduledMessageMissed {
     let id: Int
     let messagePreview: String
 }
+
+// MARK: - Direct Messages
+
+struct ChatDm: Codable, Identifiable {
+    let id: Int  // Room ID
+    let partnerId: Int
+    let partnerHandle: String
+    var unreadCount: Int
+    let lastMessage: String?
+    let lastMessageAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case partnerId = "partner_id"
+        case partnerHandle = "partner_handle"
+        case unreadCount = "unread_count"
+        case lastMessage = "last_message"
+        case lastMessageAt = "last_message_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        partnerId = try container.decode(Int.self, forKey: .partnerId)
+        partnerHandle = try container.decode(String.self, forKey: .partnerHandle)
+        lastMessage = try container.decodeIfPresent(String.self, forKey: .lastMessage)
+        lastMessageAt = try container.decodeIfPresent(String.self, forKey: .lastMessageAt)
+
+        // MariaDB COUNT returns BIGINT which may serialize as string
+        if let intValue = try? container.decode(Int.self, forKey: .unreadCount) {
+            unreadCount = intValue
+        } else if let stringValue = try? container.decode(String.self, forKey: .unreadCount),
+                  let parsed = Int(stringValue) {
+            unreadCount = parsed
+        } else {
+            unreadCount = 0
+        }
+    }
+
+    // Memberwise init for manual creation
+    init(id: Int, partnerId: Int, partnerHandle: String, unreadCount: Int, lastMessage: String?, lastMessageAt: String?) {
+        self.id = id
+        self.partnerId = partnerId
+        self.partnerHandle = partnerHandle
+        self.unreadCount = unreadCount
+        self.lastMessage = lastMessage
+        self.lastMessageAt = lastMessageAt
+    }
+}
+
+struct DmsResponse: Codable {
+    let dms: [ChatDm]
+}
+
+struct StartDmRequest: Codable {
+    let userId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+    }
+}
+
+struct StartDmResponse: Codable {
+    let room: DmRoomInfo
+}
+
+struct DmRoomInfo: Codable {
+    let id: Int
+    let type: String
+    let partnerId: Int
+    let partnerHandle: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case partnerId = "partner_id"
+        case partnerHandle = "partner_handle"
+    }
+}

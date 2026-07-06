@@ -29,6 +29,14 @@ final class ChatViewModel {
     // Media upload
     var isUploadingMedia = false
 
+    // Direct Messages
+    var dms: [ChatDm] = []
+    var dmSearchQuery = ""
+    var dmSearchResults: [User] = []
+    var allUsersForDm: [User] = []
+    var isStartingDm = false
+    var selectedDm: ChatDm?
+
     // Pagination state
     var hasOlderMessages = false
     var oldestMessageDate: String?
@@ -404,5 +412,87 @@ final class ChatViewModel {
             socketManager?.leaveRoom(room.id)
             socketManager?.removeListeners(roomId: room.id)
         }
+    }
+
+    // MARK: - Direct Messages
+
+    func loadDms() async {
+        do {
+            dms = try await ChatAPIService.getDms()
+        } catch {
+            // Silently fail - DMs are supplementary
+        }
+    }
+
+    func loadAllUsersForDmSearch() async {
+        do {
+            allUsersForDm = try await ChatAPIService.getAllUsers()
+            // Filter out current user
+            if let userId = currentUserId {
+                allUsersForDm.removeAll { $0.id == userId }
+            }
+        } catch {
+            // Silently fail
+        }
+    }
+
+    func updateDmSearchQuery(_ query: String) {
+        dmSearchQuery = query
+        if query.isEmpty {
+            dmSearchResults = []
+        } else {
+            let lowercased = query.lowercased()
+            dmSearchResults = allUsersForDm.filter { user in
+                user.handle.lowercased().contains(lowercased) ||
+                user.displayName.lowercased().contains(lowercased)
+            }
+        }
+    }
+
+    func startDm(with user: User) async -> DmRoomInfo? {
+        isStartingDm = true
+        defer { isStartingDm = false }
+
+        do {
+            let roomInfo = try await ChatAPIService.startDm(userId: user.id)
+            // Clear search
+            dmSearchQuery = ""
+            dmSearchResults = []
+            // Reload DMs to include the new/existing one
+            await loadDms()
+            return roomInfo
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+            return nil
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
+    func selectDm(_ dm: ChatDm) async {
+        if let previous = selectedRoom {
+            socketManager?.leaveRoom(previous.id)
+            socketManager?.removeListeners(roomId: previous.id)
+        }
+
+        // Create a pseudo ChatRoom for DM display
+        selectedDm = dm
+        selectedRoom = nil  // Clear room selection since we're in a DM
+        hasOlderMessages = false
+        oldestMessageDate = nil
+        socketManager?.joinRoom(dm.id)
+        registerSocketListeners(for: dm.id)
+        await loadMessages(for: dm.id)
+    }
+
+    /// Check if current room is a DM
+    var isDmSelected: Bool {
+        selectedDm != nil
+    }
+
+    /// Get the current room ID (works for both regular rooms and DMs)
+    var currentRoomId: Int? {
+        selectedRoom?.id ?? selectedDm?.id
     }
 }

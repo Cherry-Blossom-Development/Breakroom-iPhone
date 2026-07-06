@@ -62,6 +62,7 @@
 		74CA770CD8B0AFB4A7B79E94 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05769385EC924F9C434488B0 /* ForgotPasswordView.swift */; };
 		762344AAD5E2CB18B316FB87 /* ChatRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130DAB511D587688461B04EE /* ChatRoomView.swift */; };
 		7878131D248338289F832E7D /* FriendsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */; };
+		7C5192828A5D04142CD88CF2 /* DmRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1537F1707524A1131AC6A4DB /* DmRoomView.swift */; };
 		7CE96892285A2CD9C863A5CB /* KanbanRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */; };
 		7E3C5091A1D3E2EAD7A89536 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540F3088B58164BD096499C8 /* PaywallView.swift */; };
 		7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45139 /* ProfileView.swift */; };
@@ -132,6 +133,7 @@
 		13784734C91770B11F74CE8D /* InviteUsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteUsersView.swift; sourceTree = "<group>"; };
 		13E88739A60E372810A63A28 /* StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensions.swift; sourceTree = "<group>"; };
 		1481D76535F7907396445ACC /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		1537F1707524A1131AC6A4DB /* DmRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DmRoomView.swift; sourceTree = "<group>"; };
 		18446587DDCAB3E01271A326 /* ToolShedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolShedView.swift; sourceTree = "<group>"; };
 		1A710575AF2E09EEAC3022E6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1ACA5B4BF01AE475BDCAD3AA /* BlogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogSettingsView.swift; sourceTree = "<group>"; };
@@ -426,6 +428,7 @@
 				94BF8508C6621E9166A2A57D /* ChatRoomFromIdView.swift */,
 				130DAB511D587688461B04EE /* ChatRoomView.swift */,
 				3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */,
+				1537F1707524A1131AC6A4DB /* DmRoomView.swift */,
 				5F163E417C694785B9F62DA9 /* EditRoomView.swift */,
 				13784734C91770B11F74CE8D /* InviteUsersView.swift */,
 				8971C842AD088C7B478ADF98 /* ScheduledMessagesView.swift */,
@@ -656,6 +659,7 @@
 				5F636D136CC2BA21A8785CB2 /* CoordinatedScrollView.swift in Sources */,
 				315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */,
 				DC990B8F149DCA3F0E9BDB61 /* CustomDomainSetupView.swift in Sources */,
+				7C5192828A5D04142CD88CF2 /* DmRoomView.swift in Sources */,
 				B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */,
 				5EE4BC4A00E07A9C907EB8CB /* EmploymentView.swift in Sources */,
 				10634D3DEA1B1B84E07F415A /* EulaView.swift in Sources */,

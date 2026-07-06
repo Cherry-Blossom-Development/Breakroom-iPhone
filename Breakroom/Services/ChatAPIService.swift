@@ -287,4 +287,23 @@ enum ChatAPIService {
             method: "POST"
         )
     }
+
+    // MARK: - Direct Messages
+
+    /// Get all DM threads for the current user
+    static func getDms() async throws -> [ChatDm] {
+        let response: DmsResponse = try await APIClient.shared.request("/api/chat/dms")
+        return response.dms
+    }
+
+    /// Start or resume a DM with a user (find-or-create)
+    static func startDm(userId: Int) async throws -> DmRoomInfo {
+        let body = StartDmRequest(userId: userId)
+        let response: StartDmResponse = try await APIClient.shared.request(
+            "/api/chat/dm",
+            method: "POST",
+            body: body
+        )
+        return response.room
+    }
 }
