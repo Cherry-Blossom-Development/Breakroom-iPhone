@@ -387,12 +387,15 @@ struct MessageBubble: View {
 
                 // Text message
                 if let text = message.message, !text.isEmpty {
-                    Text(text)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(isCurrentUser ? Color.accentColor : Color(.systemGray5))
-                        .foregroundStyle(isCurrentUser ? .white : .primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    LinkifiedText(
+                        text,
+                        linkColor: isCurrentUser ? .white.opacity(0.9) : .accentColor,
+                        textColor: isCurrentUser ? .white : .primary
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(isCurrentUser ? Color.accentColor : Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
             }
 

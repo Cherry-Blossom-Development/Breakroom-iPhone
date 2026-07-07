@@ -217,7 +217,8 @@ struct ChatCarouselWidget: View {
                 }
             }
             if let text = message.message, !text.isEmpty {
-                Text(text).font(.caption)
+                LinkifiedText(text, linkColor: .accentColor, textColor: .primary)
+                    .font(.caption)
             }
             Divider().padding(.top, 4)
         }

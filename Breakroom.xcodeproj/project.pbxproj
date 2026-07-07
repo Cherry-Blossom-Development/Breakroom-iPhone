@@ -24,6 +24,7 @@
 		2251956C5D3E89F123EB87E9 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F0D1DE0A47F7B054B61B05 /* LegalView.swift */; };
 		262A1398E3414912312E91EB /* SettingsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3328C5A13A1A5AC915109CE5 /* SettingsModels.swift */; };
 		29529B7D97396CA1581959D6 /* CollectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0125CB4C4CB971BC36C8BED4 /* CollectionsView.swift */; };
+		2B66AE743C85F1CFFDC1F5B4 /* LinkifiedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B46F92B41F7887C613E375B /* LinkifiedText.swift */; };
 		2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */; };
 		2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */; };
 		30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */; };
@@ -188,6 +189,7 @@
 		66CE9484D8A4723250F2973D /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
 		6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketAPIService.swift; sourceTree = "<group>"; };
 		6A9EB2ABB7D103B81F1E7AE1 /* FriendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsView.swift; sourceTree = "<group>"; };
+		6B46F92B41F7887C613E375B /* LinkifiedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkifiedText.swift; sourceTree = "<group>"; };
 		6CE02A450FDF8385DEF3420E /* BlogPostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogPostView.swift; sourceTree = "<group>"; };
 		711606DB3235C27FE38591F0 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		741C0D64D533BB2A875C97D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -322,6 +324,7 @@
 			isa = PBXGroup;
 			children = (
 				66CE9484D8A4723250F2973D /* FlagDialogView.swift */,
+				6B46F92B41F7887C613E375B /* LinkifiedText.swift */,
 				A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */,
 			);
 			path = Components;
@@ -685,6 +688,7 @@
 				7CE96892285A2CD9C863A5CB /* KanbanRedirectView.swift in Sources */,
 				355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */,
 				2251956C5D3E89F123EB87E9 /* LegalView.swift in Sources */,
+				2B66AE743C85F1CFFDC1F5B4 /* LinkifiedText.swift in Sources */,
 				0F3C797B8A50E4E0BC1D37EB /* LoginView.swift in Sources */,
 				623BFF942B9FC1DDF4DEEDBC /* LyricAPIService.swift in Sources */,
 				0F1E62F684481C2F899AF2C3 /* LyricLabView.swift in Sources */,
