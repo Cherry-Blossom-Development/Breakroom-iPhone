@@ -489,3 +489,63 @@ struct SetMemberInstrumentsRequest: Encodable {
 struct SetBandPageSongsRequest: Encodable {
     let sessionIds: [Int]
 }
+
+// MARK: - Band Set Lists
+
+struct BandSetlist: Codable, Identifiable {
+    let id: Int
+    let bandId: Int
+    var name: String
+    var songs: [String]
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case bandId = "band_id"
+        case name
+        case songs
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        bandId = try container.decode(Int.self, forKey: .bandId)
+        name = try container.decode(String.self, forKey: .name)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+
+        // Songs can be null, empty array, or array of strings
+        if let songsArray = try? container.decode([String].self, forKey: .songs) {
+            songs = songsArray
+        } else {
+            songs = []
+        }
+    }
+}
+
+struct SetlistsResponse: Decodable {
+    let setlists: [BandSetlist]
+}
+
+struct SetlistResponse: Decodable {
+    let setlist: BandSetlist
+}
+
+struct CreateSetlistRequest: Encodable {
+    let name: String
+}
+
+struct RenameSetlistRequest: Encodable {
+    let name: String
+}
+
+struct SetSetlistSongsRequest: Encodable {
+    let songs: [String]
+}
+
+struct SetlistSongsResponse: Decodable {
+    let songs: [String]
+}

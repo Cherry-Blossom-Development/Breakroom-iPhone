@@ -330,4 +330,53 @@ enum SessionsAPIService {
             body: body
         )
     }
+
+    // MARK: - Band Set Lists
+
+    /// Get all set lists for a band
+    static func getSetlists(bandId: Int) async throws -> [BandSetlist] {
+        let response: SetlistsResponse = try await APIClient.shared.request("/api/bands/\(bandId)/setlists")
+        return response.setlists
+    }
+
+    /// Create a new set list
+    static func createSetlist(bandId: Int, name: String) async throws -> BandSetlist {
+        let body = CreateSetlistRequest(name: name)
+        let response: SetlistResponse = try await APIClient.shared.request(
+            "/api/bands/\(bandId)/setlists",
+            method: "POST",
+            body: body
+        )
+        return response.setlist
+    }
+
+    /// Rename a set list
+    static func renameSetlist(bandId: Int, setlistId: Int, name: String) async throws -> BandSetlist {
+        let body = RenameSetlistRequest(name: name)
+        let response: SetlistResponse = try await APIClient.shared.request(
+            "/api/bands/\(bandId)/setlists/\(setlistId)",
+            method: "PATCH",
+            body: body
+        )
+        return response.setlist
+    }
+
+    /// Delete a set list
+    static func deleteSetlist(bandId: Int, setlistId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/bands/\(bandId)/setlists/\(setlistId)",
+            method: "DELETE"
+        )
+    }
+
+    /// Update songs in a set list
+    static func setSetlistSongs(bandId: Int, setlistId: Int, songs: [String]) async throws -> [String] {
+        let body = SetSetlistSongsRequest(songs: songs)
+        let response: SetlistSongsResponse = try await APIClient.shared.request(
+            "/api/bands/\(bandId)/setlists/\(setlistId)/songs",
+            method: "PUT",
+            body: body
+        )
+        return response.songs
+    }
 }

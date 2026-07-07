@@ -79,6 +79,10 @@ struct SessionsView: View {
     @State private var bandToDelete: Band?
     @State private var bandPageSetupId: Int?
 
+    // Set Lists
+    @State private var setlistsByBand: [Int: [BandSetlist]] = [:]
+    @State private var setlistToDelete: BandSetlist?
+
     // MARK: - Computed Properties
 
     private var bandSessions: [Session] {
@@ -203,6 +207,17 @@ struct SessionsView: View {
             }
         } message: {
             Text("Delete \"\(bandToDelete?.name ?? "")\"? This cannot be undone.")
+        }
+        .alert("Delete Set List", isPresented: .constant(setlistToDelete != nil)) {
+            Button("Cancel", role: .cancel) { setlistToDelete = nil }
+            Button("Delete", role: .destructive) {
+                if let setlist = setlistToDelete {
+                    Task { await deleteSetlist(setlist) }
+                }
+                setlistToDelete = nil
+            }
+        } message: {
+            Text("Delete \"\(setlistToDelete?.name ?? "")\"? This cannot be undone.")
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(
@@ -958,6 +973,21 @@ struct SessionsView: View {
                 }
             }
 
+            // Set Lists section
+            Divider()
+                .padding(.vertical, 8)
+
+            SetlistsSection(
+                bandId: band.id,
+                setlists: Binding(
+                    get: { setlistsByBand[band.id] ?? [] },
+                    set: { setlistsByBand[band.id] = $0 }
+                ),
+                onDelete: { setlist in
+                    setlistToDelete = setlist
+                }
+            )
+
             // Invite form (owner only)
             if band.isOwner {
                 Divider()
@@ -1288,7 +1318,12 @@ struct SessionsView: View {
         defer { isLoadingBand = false }
 
         do {
-            activeBand = try await SessionsAPIService.getBand(bandId: bandId)
+            async let bandTask = SessionsAPIService.getBand(bandId: bandId)
+            async let setlistsTask = SessionsAPIService.getSetlists(bandId: bandId)
+
+            let (band, setlists) = try await (bandTask, setlistsTask)
+            activeBand = band
+            setlistsByBand[bandId] = setlists
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1449,6 +1484,15 @@ struct SessionsView: View {
             if activeBand?.id == band.id {
                 activeBand = nil
             }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func deleteSetlist(_ setlist: BandSetlist) async {
+        do {
+            try await SessionsAPIService.deleteSetlist(bandId: setlist.bandId, setlistId: setlist.id)
+            setlistsByBand[setlist.bandId]?.removeAll { $0.id == setlist.id }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -2350,6 +2394,250 @@ private struct AudioDefaultsSheet: View {
             return "Default volume for your new recording when creating a mashup."
         default:
             return ""
+        }
+    }
+}
+
+// MARK: - Set Lists Section
+
+struct SetlistsSection: View {
+    let bandId: Int
+    @Binding var setlists: [BandSetlist]
+    let onDelete: (BandSetlist) -> Void
+
+    @State private var showCreate = false
+    @State private var newSetlistName = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Set Lists")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                Button {
+                    if showCreate {
+                        showCreate = false
+                    } else {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        newSetlistName = formatter.string(from: Date())
+                        showCreate = true
+                    }
+                } label: {
+                    Text(showCreate ? "Cancel" : "+ New Set List")
+                        .font(.subheadline)
+                }
+            }
+            .padding(.horizontal)
+
+            if showCreate {
+                HStack {
+                    TextField("Set List Name", text: $newSetlistName)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button("Create") {
+                        Task { await createSetlist() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(newSetlistName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .padding(.horizontal)
+            }
+
+            if setlists.isEmpty && !showCreate {
+                Text("No set lists yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
+
+            ForEach(Array(setlists.enumerated()), id: \.element.id) { index, setlist in
+                SetlistCard(
+                    bandId: bandId,
+                    setlist: $setlists[index],
+                    onDelete: { onDelete(setlist) }
+                )
+            }
+        }
+    }
+
+    private func createSetlist() async {
+        let name = newSetlistName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+
+        do {
+            let setlist = try await SessionsAPIService.createSetlist(bandId: bandId, name: name)
+            setlists.append(setlist)
+            showCreate = false
+            newSetlistName = ""
+        } catch {
+            // Handle error silently for now
+        }
+    }
+}
+
+struct SetlistCard: View {
+    let bandId: Int
+    @Binding var setlist: BandSetlist
+    let onDelete: () -> Void
+
+    @State private var nameField: String = ""
+    @State private var newSong = ""
+    @FocusState private var isNameFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Header with name and delete
+            HStack {
+                TextField("Set List Name", text: $nameField)
+                    .font(.subheadline.weight(.medium))
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isNameFocused)
+                    .onSubmit { saveNameIfChanged() }
+                    .onChange(of: isNameFocused) { _, focused in
+                        if !focused { saveNameIfChanged() }
+                    }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                }
+            }
+
+            // Songs list
+            if setlist.songs.isEmpty {
+                Text("No songs yet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(Array(setlist.songs.enumerated()), id: \.offset) { index, song in
+                    HStack {
+                        Text(song)
+                            .font(.subheadline)
+
+                        Spacer()
+
+                        Button {
+                            moveSong(at: index, direction: -1)
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .font(.caption)
+                        }
+                        .disabled(index == 0)
+
+                        Button {
+                            moveSong(at: index, direction: 1)
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                        }
+                        .disabled(index == setlist.songs.count - 1)
+
+                        Button {
+                            removeSong(at: index)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption)
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            // Add song field
+            HStack {
+                TextField("Add a song...", text: $newSong)
+                    .font(.caption)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { addSong() }
+
+                Button {
+                    addSong()
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.body)
+                }
+                .disabled(newSong.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding()
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal)
+        .onAppear {
+            nameField = setlist.name
+        }
+    }
+
+    private func saveNameIfChanged() {
+        let name = nameField.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, name != setlist.name else {
+            nameField = setlist.name
+            return
+        }
+
+        Task {
+            do {
+                let updated = try await SessionsAPIService.renameSetlist(bandId: bandId, setlistId: setlist.id, name: name)
+                setlist.name = updated.name
+            } catch {
+                nameField = setlist.name
+            }
+        }
+    }
+
+    private func addSong() {
+        let song = newSong.trimmingCharacters(in: .whitespaces)
+        guard !song.isEmpty else { return }
+
+        var songs = setlist.songs
+        songs.append(song)
+
+        Task {
+            do {
+                let updatedSongs = try await SessionsAPIService.setSetlistSongs(bandId: bandId, setlistId: setlist.id, songs: songs)
+                setlist.songs = updatedSongs
+                newSong = ""
+            } catch {
+                // Revert on error
+            }
+        }
+    }
+
+    private func removeSong(at index: Int) {
+        var songs = setlist.songs
+        songs.remove(at: index)
+
+        Task {
+            do {
+                let updatedSongs = try await SessionsAPIService.setSetlistSongs(bandId: bandId, setlistId: setlist.id, songs: songs)
+                setlist.songs = updatedSongs
+            } catch {
+                // Revert on error
+            }
+        }
+    }
+
+    private func moveSong(at index: Int, direction: Int) {
+        let newIndex = index + direction
+        guard newIndex >= 0, newIndex < setlist.songs.count else { return }
+
+        var songs = setlist.songs
+        songs.swapAt(index, newIndex)
+
+        Task {
+            do {
+                let updatedSongs = try await SessionsAPIService.setSetlistSongs(bandId: bandId, setlistId: setlist.id, songs: songs)
+                setlist.songs = updatedSongs
+            } catch {
+                // Revert on error
+            }
         }
     }
 }
