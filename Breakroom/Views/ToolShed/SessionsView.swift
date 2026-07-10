@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import UIKit
+import UniformTypeIdentifiers
 
 private let monthNames = [
     "", "January", "February", "March", "April", "May", "June",
@@ -82,6 +83,12 @@ struct SessionsView: View {
     // Set Lists
     @State private var setlistsByBand: [Int: [BandSetlist]] = [:]
     @State private var setlistToDelete: BandSetlist?
+
+    // Upload flow
+    @State private var showFilePicker = false
+    @State private var pendingUploadInfo: PendingUploadInfo?
+    @State private var practiceDefaultBandId: Int?
+    @State private var practiceCommonNames: [Int: [String]] = [:]
 
     // MARK: - Computed Properties
 
@@ -231,6 +238,13 @@ struct SessionsView: View {
         }
         .navigationDestination(item: $bandPageSetupId) { bandId in
             BandPageSetupView(bandId: bandId)
+        }
+        .fileImporter(
+            isPresented: $showFilePicker,
+            allowedContentTypes: [.audio, .mp3, .wav, .aiff, .mpeg4Audio],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
         }
     }
 
@@ -458,12 +472,25 @@ struct SessionsView: View {
     // MARK: - Components
 
     private func recordingHeader(context: String) -> some View {
-        HStack {
+        let isRecordingThisContext = (recordingState == .recording || recordingState == .saving) && recordingContext == context
+
+        return HStack {
             Text(context == "band" ? "Sessions" : "Record")
                 .font(.title2.bold())
                 .foregroundStyle(.purple)
 
             Spacer()
+
+            // Upload button (Band Practice only, when not recording)
+            if context == "band" && !isRecordingThisContext {
+                Button {
+                    showFilePicker = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Upload a recording")
+            }
 
             recordButton(context: context)
         }
@@ -1092,16 +1119,22 @@ struct SessionsView: View {
                 bands: activeBands,
                 instruments: instruments,
                 isSaving: isSavingSession,
+                pendingUploadInfo: pendingUploadInfo,
+                practiceDefaultBandId: practiceDefaultBandId,
+                practiceCommonNames: practiceCommonNames,
                 onSave: { name, date, bandId, instrumentId in
                     Task { await saveRecording(name: name, recordedAt: date, bandId: bandId, instrumentId: instrumentId) }
                 },
                 onDiscard: {
                     showSaveSheet = false
                     discardRecording()
+                },
+                onBandSelected: { bandId in
+                    Task { await loadPracticeSuggestionsForBand(bandId) }
                 }
             )
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .interactiveDismissDisabled()
     }
 
@@ -1655,7 +1688,85 @@ struct SessionsView: View {
             try? FileManager.default.removeItem(at: fileURL)
         }
         pendingRecordingURL = nil
+        pendingUploadInfo = nil
         recordingState = .idle
+    }
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let sourceURL = urls.first else { return }
+
+            // Start accessing security-scoped resource
+            guard sourceURL.startAccessingSecurityScopedResource() else {
+                errorMessage = "Could not access the selected file"
+                return
+            }
+
+            defer { sourceURL.stopAccessingSecurityScopedResource() }
+
+            // Copy to temp directory
+            let fileName = sourceURL.lastPathComponent
+            let ext = sourceURL.pathExtension.lowercased()
+            let tempDir = FileManager.default.temporaryDirectory
+            let destURL = tempDir.appendingPathComponent("upload_\(Date().timeIntervalSince1970).\(ext)")
+
+            do {
+                try FileManager.default.copyItem(at: sourceURL, to: destURL)
+
+                let mimeType = mimeTypeForExtension(ext)
+                pendingUploadInfo = PendingUploadInfo(
+                    originalFileName: fileName,
+                    mimeType: mimeType,
+                    fileURL: destURL
+                )
+                pendingRecordingURL = destURL
+                recordingContext = "band"
+                recordingState = .saving
+                showSaveSheet = true
+
+                // Load practice suggestions for default band
+                Task { await loadPracticeDefaultBand() }
+
+            } catch {
+                errorMessage = "Failed to copy file: \(error.localizedDescription)"
+            }
+
+        case .failure(let error):
+            errorMessage = "Failed to select file: \(error.localizedDescription)"
+        }
+    }
+
+    private func mimeTypeForExtension(_ ext: String) -> String {
+        switch ext {
+        case "mp3": return "audio/mpeg"
+        case "wav": return "audio/wav"
+        case "aac": return "audio/aac"
+        case "ogg": return "audio/ogg"
+        case "flac": return "audio/flac"
+        case "m4a": return "audio/m4a"
+        case "webm": return "audio/webm"
+        case "aiff", "aif": return "audio/aiff"
+        default: return "audio/mpeg"
+        }
+    }
+
+    private func loadPracticeDefaultBand() async {
+        do {
+            let suggestions = try await SessionsAPIService.getPracticeSuggestions()
+            practiceDefaultBandId = suggestions.defaultBandId
+        } catch {
+            // Not critical
+        }
+    }
+
+    private func loadPracticeSuggestionsForBand(_ bandId: Int) async {
+        do {
+            let suggestions = try await SessionsAPIService.getPracticeSuggestions(bandId: bandId)
+            practiceCommonNames[bandId] = suggestions.commonNames
+        } catch {
+            // Not critical
+        }
     }
 
     // MARK: - Playback Methods
@@ -1965,39 +2076,161 @@ private struct SaveRecordingView: View {
     let bands: [Band]
     let instruments: [Instrument]
     let isSaving: Bool
+    let pendingUploadInfo: PendingUploadInfo?
+    let practiceDefaultBandId: Int?
+    let practiceCommonNames: [Int: [String]]
     let onSave: (String, String?, Int?, Int?) -> Void
     let onDiscard: () -> Void
+    let onBandSelected: (Int) -> Void
 
     @State private var name: String
     @State private var date: String
     @State private var selectedBandId: Int?
     @State private var selectedInstrumentId: Int?
+    @State private var uploadRenameChoice: String = "keep" // "keep" or "rename"
+    @State private var showSuggestions = false
 
-    init(context: String, bands: [Band], instruments: [Instrument], isSaving: Bool, onSave: @escaping (String, String?, Int?, Int?) -> Void, onDiscard: @escaping () -> Void) {
+    private var isUpload: Bool { pendingUploadInfo != nil }
+    private var isBandPractice: Bool { context == "band" }
+
+    init(
+        context: String,
+        bands: [Band],
+        instruments: [Instrument],
+        isSaving: Bool,
+        pendingUploadInfo: PendingUploadInfo?,
+        practiceDefaultBandId: Int?,
+        practiceCommonNames: [Int: [String]],
+        onSave: @escaping (String, String?, Int?, Int?) -> Void,
+        onDiscard: @escaping () -> Void,
+        onBandSelected: @escaping (Int) -> Void
+    ) {
         self.context = context
         self.bands = bands
         self.instruments = instruments
         self.isSaving = isSaving
+        self.pendingUploadInfo = pendingUploadInfo
+        self.practiceDefaultBandId = practiceDefaultBandId
+        self.practiceCommonNames = practiceCommonNames
         self.onSave = onSave
         self.onDiscard = onDiscard
+        self.onBandSelected = onBandSelected
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let today = formatter.string(from: Date())
 
-        _name = State(initialValue: "Session - \(today)")
+        // For uploads, use filename (without extension) as default name
+        if let uploadInfo = pendingUploadInfo {
+            let fileName = uploadInfo.originalFileName
+            let nameWithoutExt = fileName.contains(".") ?
+                String(fileName[..<fileName.lastIndex(of: ".")!]) : fileName
+            _name = State(initialValue: nameWithoutExt)
+        } else {
+            _name = State(initialValue: "Session - \(today)")
+        }
         _date = State(initialValue: today)
+        _selectedBandId = State(initialValue: practiceDefaultBandId)
+    }
+
+    private var songSuggestions: [String] {
+        guard let bandId = selectedBandId else { return [] }
+        return practiceCommonNames[bandId] ?? []
+    }
+
+    private var filteredSuggestions: [String] {
+        let query = name.trimmingCharacters(in: .whitespaces).lowercased()
+        if query.isEmpty { return songSuggestions }
+        return songSuggestions.filter { $0.lowercased().contains(query) }
+    }
+
+    private var showNameDateFields: Bool {
+        !isUpload || uploadRenameChoice == "rename"
     }
 
     var body: some View {
         Form {
-            Section {
-                TextField("Session name", text: $name)
-                    .accessibilityIdentifier("sessionsSessionNameField")
-                    .disabled(isSaving)
-                TextField("Date (YYYY-MM-DD)", text: $date)
-                    .accessibilityIdentifier("sessionsSessionDateField")
-                    .disabled(isSaving)
+            // Upload rename choice (upload only)
+            if isUpload {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Rename uploaded file?")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        HStack {
+                            Button {
+                                uploadRenameChoice = "keep"
+                            } label: {
+                                HStack {
+                                    Image(systemName: uploadRenameChoice == "keep" ? "largecircle.fill.circle" : "circle")
+                                    Text("Keep filename")
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            Spacer()
+
+                            Button {
+                                uploadRenameChoice = "rename"
+                            } label: {
+                                HStack {
+                                    Image(systemName: uploadRenameChoice == "rename" ? "largecircle.fill.circle" : "circle")
+                                    Text("Rename it")
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        if uploadRenameChoice == "keep", let uploadInfo = pendingUploadInfo {
+                            Text(uploadInfo.originalFileName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
+            // Name and date fields
+            if showNameDateFields {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("Session name", text: $name)
+                            .accessibilityIdentifier("sessionsSessionNameField")
+                            .disabled(isSaving)
+                            .onChange(of: name) { _, _ in
+                                showSuggestions = !filteredSuggestions.isEmpty
+                            }
+
+                        // Suggestions dropdown for band practice
+                        if isBandPractice && showSuggestions && !filteredSuggestions.isEmpty {
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    ForEach(filteredSuggestions.prefix(5), id: \.self) { suggestion in
+                                        Button {
+                                            name = suggestion
+                                            showSuggestions = false
+                                        } label: {
+                                            Text(suggestion)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.vertical, 8)
+                                                .padding(.horizontal, 4)
+                                        }
+                                        .buttonStyle(.plain)
+                                        Divider()
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 150)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+
+                    TextField("Date (YYYY-MM-DD)", text: $date)
+                        .accessibilityIdentifier("sessionsSessionDateField")
+                        .disabled(isSaving)
+                }
             }
 
             Section {
@@ -2009,6 +2242,11 @@ private struct SaveRecordingView: View {
                 }
                 .accessibilityIdentifier("sessionsSessionBandPicker")
                 .disabled(isSaving)
+                .onChange(of: selectedBandId) { _, newValue in
+                    if let bandId = newValue {
+                        onBandSelected(bandId)
+                    }
+                }
 
                 if context == "individual" {
                     Picker("Instrument", selection: $selectedInstrumentId) {
@@ -2023,7 +2261,7 @@ private struct SaveRecordingView: View {
             }
         }
         .accessibilityIdentifier("sessionsSaveRecordingForm")
-        .navigationTitle("Save Recording")
+        .navigationTitle(isUpload ? "Upload Recording" : "Save Recording")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -2033,20 +2271,29 @@ private struct SaveRecordingView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    onSave(name, date.isEmpty ? nil : date, selectedBandId, selectedInstrumentId)
+                    let finalName = showNameDateFields ? name : (pendingUploadInfo?.originalFileName ?? name)
+                    let finalDate = showNameDateFields ? (date.isEmpty ? nil : date) : nil
+                    onSave(finalName, finalDate, selectedBandId, selectedInstrumentId)
                 } label: {
                     if isSaving {
                         HStack(spacing: 6) {
                             ProgressView()
                                 .controlSize(.small)
-                            Text("Saving...")
+                            Text(isUpload ? "Uploading..." : "Saving...")
                         }
                     } else {
-                        Text("Save")
+                        Text(isUpload ? "Upload" : "Save")
                     }
                 }
-                .disabled(name.isEmpty || isSaving)
+                .disabled((showNameDateFields && name.isEmpty) || isSaving)
                 .accessibilityIdentifier("sessionsSaveRecordingButton")
+            }
+        }
+        .onAppear {
+            // Auto-select default band if not already selected
+            if selectedBandId == nil, let defaultId = practiceDefaultBandId {
+                selectedBandId = defaultId
+                onBandSelected(defaultId)
             }
         }
     }

@@ -379,4 +379,15 @@ enum SessionsAPIService {
         )
         return response.songs
     }
+
+    // MARK: - Practice Suggestions
+
+    /// Get practice suggestions (default band and common session names)
+    static func getPracticeSuggestions(bandId: Int? = nil) async throws -> PracticeSuggestionsResponse {
+        var path = "/api/sessions/practice-suggestions"
+        if let bandId = bandId {
+            path += "?bandId=\(bandId)"
+        }
+        return try await APIClient.shared.request(path)
+    }
 }

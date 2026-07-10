@@ -549,3 +549,29 @@ struct SetSetlistSongsRequest: Encodable {
 struct SetlistSongsResponse: Decodable {
     let songs: [String]
 }
+
+// MARK: - Practice Suggestions
+
+struct PracticeSuggestionsResponse: Decodable {
+    let defaultBandId: Int?
+    let commonNames: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case defaultBandId = "default_band_id"
+        case commonNames = "common_names"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        defaultBandId = try container.decodeIfPresent(Int.self, forKey: .defaultBandId)
+        commonNames = try container.decodeIfPresent([String].self, forKey: .commonNames) ?? []
+    }
+}
+
+// MARK: - Pending Upload Info
+
+struct PendingUploadInfo {
+    let originalFileName: String
+    let mimeType: String
+    let fileURL: URL
+}
