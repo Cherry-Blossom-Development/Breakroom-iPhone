@@ -383,10 +383,17 @@ enum SessionsAPIService {
     // MARK: - Practice Suggestions
 
     /// Get practice suggestions (default band and common session names)
-    static func getPracticeSuggestions(bandId: Int? = nil) async throws -> PracticeSuggestionsResponse {
-        var path = "/api/sessions/practice-suggestions"
+    static func getPracticeSuggestions(bandId: Int? = nil, sessionType: String? = nil) async throws -> PracticeSuggestionsResponse {
+        var queryParams: [String] = []
         if let bandId = bandId {
-            path += "?bandId=\(bandId)"
+            queryParams.append("bandId=\(bandId)")
+        }
+        if let sessionType = sessionType {
+            queryParams.append("sessionType=\(sessionType)")
+        }
+        var path = "/api/sessions/practice-suggestions"
+        if !queryParams.isEmpty {
+            path += "?" + queryParams.joined(separator: "&")
         }
         return try await APIClient.shared.request(path)
     }

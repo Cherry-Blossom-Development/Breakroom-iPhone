@@ -86,6 +86,7 @@ struct SessionsView: View {
 
     // Upload flow
     @State private var showFilePicker = false
+    @State private var uploadContext = "band" // "band" or "individual"
     @State private var pendingUploadInfo: PendingUploadInfo?
     @State private var practiceDefaultBandId: Int?
     @State private var practiceCommonNames: [Int: [String]] = [:]
@@ -481,9 +482,10 @@ struct SessionsView: View {
 
             Spacer()
 
-            // Upload button (Band Practice only, when not recording)
-            if context == "band" && !isRecordingThisContext {
+            // Upload button (Band Practice and Individual, when not recording)
+            if (context == "band" || context == "individual") && !isRecordingThisContext {
                 Button {
+                    uploadContext = context
                     showFilePicker = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -1130,7 +1132,8 @@ struct SessionsView: View {
                     discardRecording()
                 },
                 onBandSelected: { bandId in
-                    Task { await loadPracticeSuggestionsForBand(bandId) }
+                    let sessionType = recordingContext == "band" ? "band" : "individual"
+                    Task { await loadPracticeSuggestionsForBand(bandId, sessionType: sessionType) }
                 }
             )
         }
@@ -1721,12 +1724,13 @@ struct SessionsView: View {
                     fileURL: destURL
                 )
                 pendingRecordingURL = destURL
-                recordingContext = "band"
+                recordingContext = uploadContext
                 recordingState = .saving
                 showSaveSheet = true
 
-                // Load practice suggestions for default band
-                Task { await loadPracticeDefaultBand() }
+                // Load practice suggestions for default band (scoped by session type)
+                let sessionType = uploadContext == "band" ? "band" : "individual"
+                Task { await loadPracticeDefaultBand(sessionType: sessionType) }
 
             } catch {
                 errorMessage = "Failed to copy file: \(error.localizedDescription)"
@@ -1751,18 +1755,18 @@ struct SessionsView: View {
         }
     }
 
-    private func loadPracticeDefaultBand() async {
+    private func loadPracticeDefaultBand(sessionType: String = "band") async {
         do {
-            let suggestions = try await SessionsAPIService.getPracticeSuggestions()
+            let suggestions = try await SessionsAPIService.getPracticeSuggestions(sessionType: sessionType)
             practiceDefaultBandId = suggestions.defaultBandId
         } catch {
             // Not critical
         }
     }
 
-    private func loadPracticeSuggestionsForBand(_ bandId: Int) async {
+    private func loadPracticeSuggestionsForBand(_ bandId: Int, sessionType: String = "band") async {
         do {
-            let suggestions = try await SessionsAPIService.getPracticeSuggestions(bandId: bandId)
+            let suggestions = try await SessionsAPIService.getPracticeSuggestions(bandId: bandId, sessionType: sessionType)
             practiceCommonNames[bandId] = suggestions.commonNames
         } catch {
             // Not critical
