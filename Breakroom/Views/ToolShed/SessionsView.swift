@@ -491,6 +491,7 @@ struct SessionsView: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.title3)
                 }
+                .accessibilityIdentifier("sessionsUploadButton")
                 .accessibilityLabel("Upload a recording")
             }
 
@@ -525,6 +526,7 @@ struct SessionsView: View {
                     .foregroundStyle(.red)
                     .fontWeight(.bold)
                     .monospacedDigit()
+                    .accessibilityIdentifier("sessionsRecordingTimer")
 
                 Button {
                     stopRecording()
