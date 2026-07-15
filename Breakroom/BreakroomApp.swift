@@ -17,6 +17,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         appLogger.warning("Registering for remote notifications...")
         application.registerForRemoteNotifications()
 
+        // Record analytics visit (once per app session)
+        Task {
+            await AnalyticsAPIService.recordVisit()
+        }
+
         // Try to get FCM token directly after a short delay
         Task {
             try? await Task.sleep(for: .seconds(3))

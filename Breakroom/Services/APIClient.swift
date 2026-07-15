@@ -81,6 +81,7 @@ final class APIClient: @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("ios", forHTTPHeaderField: "X-Client-Platform")
 
         if authenticated, let bearerToken = KeychainManager.bearerToken {
             request.setValue(bearerToken, forHTTPHeaderField: "Authorization")

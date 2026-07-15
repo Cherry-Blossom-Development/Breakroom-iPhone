@@ -30,6 +30,7 @@
 		30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */; };
 		315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */; };
 		315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */; };
+		331A5DBECE38BF1C077A6EDD /* AnalyticsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8EA7D9E4267B2C383BCE95A /* AnalyticsAPIService.swift */; };
 		332F9F634ADC7F2FE98E9CB6 /* GalleryAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */; };
 		355A9AD47D937E0C3825C747 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */; };
 		36B159C6E7FF0974FC237611 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB57CE1D061C3414AF0E0CD /* SignupView.swift */; };
@@ -215,6 +216,7 @@
 		AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		B33066537C65EE3DB5A792F8 /* GalleryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryModels.swift; sourceTree = "<group>"; };
 		B3E1BDE8A538D0DC1A01FC09 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		B8EA7D9E4267B2C383BCE95A /* AnalyticsAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsAPIService.swift; sourceTree = "<group>"; };
 		BAB122D13BA8F65E83C6AB63 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		C0ABB5873F23CD4401895C2A /* PublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileView.swift; sourceTree = "<group>"; };
 		C54271124AE81FBD22A84E55 /* BlockWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockWidgetView.swift; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 			isa = PBXGroup;
 			children = (
 				D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */,
+				B8EA7D9E4267B2C383BCE95A /* AnalyticsAPIService.swift */,
 				711606DB3235C27FE38591F0 /* APIClient.swift */,
 				1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */,
 				3AA0A819B1816531F0433D4C /* AuthService.swift */,
@@ -628,6 +631,7 @@
 				DF5B45B76D8E67B000CB7C5D /* APIClient.swift in Sources */,
 				BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */,
 				1FAA945C8597D9327F3790E1 /* AdminModels.swift in Sources */,
+				331A5DBECE38BF1C077A6EDD /* AnalyticsAPIService.swift in Sources */,
 				BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */,
 				81A275AB2AB85F97A2B8A48A /* AudioMixer.swift in Sources */,
 				2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */,

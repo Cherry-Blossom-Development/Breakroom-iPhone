@@ -10,6 +10,7 @@ enum KeychainManager {
         case userId = "user_id"
         case adminToken = "admin_token"
         case impersonatedHandle = "impersonated_handle"
+        case visitorId = "visitor_id"
     }
 
     static func save(_ value: String, for key: Key) {
@@ -107,5 +108,18 @@ enum KeychainManager {
     static func clearImpersonation() {
         delete(.adminToken)
         delete(.impersonatedHandle)
+    }
+
+    // MARK: - Analytics
+
+    /// Returns the persistent visitor ID, creating one if it doesn't exist.
+    /// This ID survives logout and is used for anonymous analytics tracking.
+    static var visitorId: String {
+        if let existing = get(.visitorId) {
+            return existing
+        }
+        let newId = UUID().uuidString
+        save(newId, for: .visitorId)
+        return newId
     }
 }
