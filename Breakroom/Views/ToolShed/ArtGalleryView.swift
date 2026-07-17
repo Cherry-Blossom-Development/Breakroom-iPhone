@@ -54,6 +54,9 @@ struct ArtGalleryView: View {
         .task {
             await loadData()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.artGallery.rawValue) }
+        }
         .refreshable {
             await loadData()
         }

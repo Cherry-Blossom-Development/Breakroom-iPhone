@@ -118,6 +118,9 @@ struct CollectionsView: View {
         .task {
             await loadCollections()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.artistShowcase.rawValue) }
+        }
         .sheet(isPresented: $showCreateSheet) {
             collectionFormSheet
         }

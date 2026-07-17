@@ -180,6 +180,9 @@ struct SessionsView: View {
         .task {
             await loadAllData()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.sessions.rawValue) }
+        }
         .alert("Error", isPresented: .constant(errorMessage != nil)) {
             Button("OK") { errorMessage = nil }
         } message: {

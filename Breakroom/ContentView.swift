@@ -484,6 +484,27 @@ struct MainTabView: View {
             isImpersonating = KeychainManager.isImpersonating
             impersonatedHandle = KeychainManager.impersonatedHandle
         }
+        .onChange(of: selectedTab) { _, newTab in
+            // Track feature usage when switching tabs
+            Task {
+                switch newTab {
+                case 1: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.chat.rawValue)
+                case 3: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.companyPortal.rawValue)
+                case 4: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.toolShed.rawValue)
+                default: break
+                }
+            }
+        }
+        .onChange(of: showBlogManagement) { _, isShowing in
+            if isShowing {
+                Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.blog.rawValue) }
+            }
+        }
+        .onChange(of: showFriends) { _, isShowing in
+            if isShowing {
+                Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.friends.rawValue) }
+            }
+        }
         } // Close VStack
     }
 

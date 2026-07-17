@@ -109,6 +109,9 @@ struct BandPageSetupView: View {
         .task {
             await viewModel.load()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.bandPages.rawValue) }
+        }
         .onChange(of: selectedPhoto) {
             guard let item = selectedPhoto else { return }
             selectedPhoto = nil

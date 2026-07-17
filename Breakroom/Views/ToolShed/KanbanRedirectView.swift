@@ -43,6 +43,9 @@ struct KanbanRedirectView: View {
         .task {
             await determineDestination()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.kanban.rawValue) }
+        }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
         } message: {

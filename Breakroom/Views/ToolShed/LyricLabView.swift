@@ -89,6 +89,9 @@ struct LyricLabView: View {
         .task {
             await loadData()
         }
+        .onAppear {
+            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.lyrics.rawValue) }
+        }
         .refreshable {
             await loadData()
         }
