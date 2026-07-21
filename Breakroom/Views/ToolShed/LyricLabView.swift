@@ -29,6 +29,9 @@ struct LyricLabView: View {
     @State private var editingIdea: Lyric?
     @State private var editingSong: Song?
 
+    // Promote idea to song
+    @State private var promotingIdea: Lyric?
+
     private var mySongs: [Song] {
         songs.filter { !$0.isCollaboration }
     }
@@ -137,6 +140,14 @@ struct LyricLabView: View {
                 if let idx = songs.firstIndex(where: { $0.id == updatedSong.id }) {
                     songs[idx] = updatedSong
                 }
+            }
+        }
+        .sheet(item: $promotingIdea) { idea in
+            PromoteToSongSheet(idea: idea) { newSong in
+                // Song created and idea reassigned - refresh data and show the new song
+                songs.insert(newSong, at: 0)
+                ideas.removeAll { $0.id == idea.id }
+                selectedSong = newSong
             }
         }
         .alert("Delete Song", isPresented: $showDeleteSongConfirm) {
@@ -350,6 +361,11 @@ struct LyricLabView: View {
                 editingIdea = idea
             } label: {
                 Label("Edit", systemImage: "pencil")
+            }
+            Button {
+                promotingIdea = idea
+            } label: {
+                Label("Promote to Song", systemImage: "music.note.list")
             }
             Divider()
             Button(role: .destructive) {
@@ -768,6 +784,141 @@ struct EditIdeaSheet: View {
                 status: status.rawValue
             )
             onSave(updated)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isSaving = false
+    }
+}
+
+// MARK: - Promote to Song Sheet
+
+struct PromoteToSongSheet: View {
+    let idea: Lyric
+    let onPromoted: (Song) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description = ""
+    @State private var genre = ""
+    @State private var songDate = Date()
+    @State private var status: SongStatus = .writing
+    @State private var visibility: SongVisibility = .private
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
+
+    init(idea: Lyric, onPromoted: @escaping (Song) -> Void) {
+        self.idea = idea
+        self.onPromoted = onPromoted
+        // Pre-fill title from the idea's title, or the first line of its content
+        let suggestedTitle = idea.title ?? idea.content.components(separatedBy: .newlines).first ?? ""
+        _title = State(initialValue: suggestedTitle)
+    }
+
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Song Info") {
+                    TextField("Title *", text: $title)
+                    TextEditor(text: $description)
+                        .frame(minHeight: 80)
+                        .overlay(alignment: .topLeading) {
+                            if description.isEmpty {
+                                Text("Description")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    TextField("Genre", text: $genre)
+                    DatePicker("Date", selection: $songDate, displayedComponents: .date)
+                }
+
+                Section("Status") {
+                    Picker("Status", selection: $status) {
+                        ForEach(SongStatus.allCases, id: \.self) { s in
+                            Text(s.displayName).tag(s)
+                        }
+                    }
+                }
+
+                Section("Visibility") {
+                    Picker("Visibility", selection: $visibility) {
+                        ForEach(SongVisibility.allCases, id: \.self) { v in
+                            Text(v.displayName).tag(v)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Promote to Song")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await promote() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Create")
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred")
+            }
+        }
+    }
+
+    private func promote() async {
+        isSaving = true
+        let desc = description.trimmingCharacters(in: .whitespaces)
+        let g = genre.trimmingCharacters(in: .whitespaces)
+
+        do {
+            // Step 1: Create the song
+            let song = try await LyricAPIService.createSong(
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: desc.isEmpty ? nil : desc,
+                genre: g.isEmpty ? nil : g,
+                status: status.rawValue,
+                visibility: visibility.rawValue,
+                songDate: dateFormatter.string(from: songDate)
+            )
+
+            // Step 2: Update the idea to assign it to the new song
+            // PUT /lyrics/:id isn't a partial patch, so we must resend all fields
+            _ = try await LyricAPIService.updateLyric(
+                id: idea.id,
+                songId: song.id,
+                title: idea.title,
+                content: idea.content,
+                sectionType: idea.sectionType ?? "idea",
+                sectionOrder: idea.sectionOrder,
+                mood: idea.mood,
+                notes: idea.notes,
+                status: idea.status ?? "draft"
+            )
+
+            onPromoted(song)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
