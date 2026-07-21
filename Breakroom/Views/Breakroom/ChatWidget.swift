@@ -282,6 +282,7 @@ struct ChatWidget: View {
             .buttonStyle(.plain)
             .fixedSize()
             .disabled(isUploadingMedia)
+            .accessibilityLabel("Attach photo or video")
             .accessibilityIdentifier("widgetMediaButton")
 
             TextField("Message", text: $messageText)
@@ -320,6 +321,7 @@ struct ChatWidget: View {
             }
             .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)
+            .accessibilityLabel(isSending ? "Sending message" : "Send message")
             .accessibilityIdentifier("widgetSendButton")
         }
         .padding(.horizontal, 10)
@@ -336,6 +338,7 @@ struct ChatWidget: View {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.title2)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             Text("No chat room assigned")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -548,6 +551,7 @@ struct ChatWidgetMessageRow: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
             }
+            .accessibilityLabel("Message options")
         }
     }
 

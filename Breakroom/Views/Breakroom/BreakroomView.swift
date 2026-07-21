@@ -34,6 +34,7 @@ struct BreakroomView: View {
                         } label: {
                             Image(systemName: "plus")
                         }
+                        .accessibilityLabel("Add block")
 
                         Button {
                             Task { await viewModel.refresh() }
@@ -45,6 +46,7 @@ struct BreakroomView: View {
                             }
                         }
                         .disabled(viewModel.isRefreshing)
+                        .accessibilityLabel(viewModel.isRefreshing ? "Refreshing" : "Refresh")
                     }
                 }
             }
@@ -135,6 +137,7 @@ struct BlockCard: View {
                 Image(systemName: block.type?.systemImage ?? "square")
                     .foregroundStyle(accentColor)
                     .frame(width: 24)
+                    .accessibilityHidden(true)
 
                 Text(block.displayTitle)
                     .font(.headline)
@@ -151,12 +154,14 @@ struct BlockCard: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Remove \(block.displayTitle)")
 
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, 16)
@@ -359,9 +364,11 @@ struct AddBlockSheet: View {
                                     if selectedRoomId == room.id {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(Color.accentColor)
+                                            .accessibilityHidden(true)
                                     }
                                 }
                             }
+                            .accessibilityAddTraits(selectedRoomId == room.id ? .isSelected : [])
                         }
                     }
                 }
@@ -383,15 +390,18 @@ struct AddBlockSheet: View {
             HStack {
                 Image(systemName: type.systemImage)
                     .frame(width: 24)
+                    .accessibilityHidden(true)
                 Text(type.defaultTitle)
                     .foregroundStyle(.primary)
                 Spacer()
                 if selectedType == type {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
                 }
             }
         }
+        .accessibilityAddTraits(selectedType == type ? .isSelected : [])
     }
 
     private func loadChatRooms() async {

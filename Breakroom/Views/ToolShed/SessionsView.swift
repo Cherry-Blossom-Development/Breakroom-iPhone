@@ -1883,6 +1883,7 @@ private struct SessionRow: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
             .accessibilityIdentifier("sessionsPlayButton_\(session.id)")
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1960,6 +1961,7 @@ private struct SessionRow: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
             }
+            .accessibilityLabel("Share \(session.name)")
             .accessibilityIdentifier("sessionsShareButton_\(session.id)")
 
             Button(action: onDelete) {
@@ -1969,6 +1971,7 @@ private struct SessionRow: View {
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Delete \(session.name)")
             .accessibilityIdentifier("sessionsDeleteButton_\(session.id)")
         }
         .padding(.horizontal)
@@ -1994,6 +1997,7 @@ private struct BandMemberSessionRow: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
             .accessibilityIdentifier("sessionsBandMemberPlayButton_\(session.id)")
 
             VStack(alignment: .leading, spacing: 2) {
@@ -2043,6 +2047,7 @@ private struct BandMemberSessionRow: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
             }
+            .accessibilityLabel("Share \(session.name)")
         }
         .padding(.horizontal)
         .padding(.vertical, 8)

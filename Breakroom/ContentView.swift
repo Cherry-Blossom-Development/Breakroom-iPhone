@@ -84,6 +84,7 @@ struct ContentView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "clock.fill")
                             .font(.title2)
+                            .accessibilityHidden(true)
                         Text("Scheduled Message Reminder")
                             .font(.headline)
                     }
@@ -156,6 +157,7 @@ struct ContentView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.title2)
                             .foregroundStyle(.orange)
+                            .accessibilityHidden(true)
                         Text("Scheduled Message Not Sent")
                             .font(.headline)
                     }
@@ -401,6 +403,7 @@ struct MainTabView: View {
                                     }
                                 }
                             }
+                            .accessibilityLabel(badgeStore.totalNonChat > 0 ? "Menu, \(badgeStore.totalNonChat) notifications" : "Menu")
                             .accessibilityIdentifier("menuButton")
                             .onTapGesture {
                                 badgeStore.onMenuOpen()
@@ -409,9 +412,11 @@ struct MainTabView: View {
                         ToolbarItem(placement: .principal) {
                             HStack(spacing: 6) {
                                 Image("Logo")
+                                    .accessibilityHidden(true)
                                 Text("Breakroom")
                                     .font(.headline)
                             }
+                            .accessibilityElement(children: .combine)
                         }
                     }
                     .task {
@@ -513,6 +518,7 @@ struct MainTabView: View {
     private func impersonationBanner(handle: String) -> some View {
         HStack {
             Image(systemName: "person.fill.viewfinder")
+                .accessibilityHidden(true)
             Text("Impersonating @\(handle)")
                 .font(.subheadline.weight(.medium))
             Spacer()

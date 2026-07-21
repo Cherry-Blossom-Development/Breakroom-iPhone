@@ -86,6 +86,7 @@ struct LyricLabView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Add song or idea")
                 .accessibilityIdentifier("lyricLabPlusButton")
             }
         }
@@ -300,6 +301,7 @@ struct LyricLabView: View {
             .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+            .accessibilityLabel("Status: \(status.displayName)")
     }
 
     // MARK: - Ideas Tab
@@ -392,6 +394,7 @@ struct LyricLabView: View {
             .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+            .accessibilityLabel("Status: \(status.displayName)")
     }
 
     // MARK: - Data Loading

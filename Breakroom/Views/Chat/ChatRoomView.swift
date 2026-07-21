@@ -137,6 +137,7 @@ struct ChatRoomView: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .disabled(chatViewModel.isUploadingMedia)
+                .accessibilityLabel("Attach photo or video")
 
                 TextField("Message", text: $chatViewModel.messageText, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -156,6 +157,7 @@ struct ChatRoomView: View {
                         .font(.title2)
                 }
                 .disabled(chatViewModel.messageText.trimmingCharacters(in: .whitespaces).isEmpty)
+                .accessibilityLabel("Send message")
                 .accessibilityIdentifier("sendButton")
             }
             .padding(.horizontal)
@@ -168,6 +170,7 @@ struct ChatRoomView: View {
                     Circle()
                         .fill(socketManager.connectionState == .connected ? .green : .red)
                         .frame(width: 8, height: 8)
+                        .accessibilityLabel(socketManager.connectionState == .connected ? "Connected" : "Disconnected")
                     VStack(spacing: 0) {
                         Text("# \(room.name)")
                             .font(.headline)
@@ -373,6 +376,7 @@ struct MessageBubble: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 24, height: 24)
                     }
+                    .accessibilityLabel("Message options")
                 }
 
                 // Image attachment

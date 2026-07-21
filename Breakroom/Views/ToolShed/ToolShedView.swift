@@ -57,6 +57,7 @@ struct ToolShedView: View {
                     .font(.title3)
                     .foregroundStyle(category.color)
                     .frame(width: 32)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(category.title)
                         .font(.headline)
@@ -83,6 +84,7 @@ struct ToolShedView: View {
                     .frame(width: 40, height: 40)
                     .background(category.color.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tool.name)
