@@ -301,6 +301,28 @@ struct MessageBubble: View {
         return !hasImage && !hasVideo
     }
 
+    private var accessibilityDescription: String {
+        let sender = message.handle ?? "Unknown"
+        let time = formattedTime
+
+        var content = ""
+        if let text = message.message, !text.isEmpty {
+            content = text
+        }
+        if message.imagePath != nil && !message.imagePath!.isEmpty {
+            content += content.isEmpty ? "sent an image" : ", with image"
+        }
+        if message.videoPath != nil && !message.videoPath!.isEmpty {
+            content += content.isEmpty ? "sent a video" : ", with video"
+        }
+
+        if isCurrentUser {
+            return "You said: \(content). \(time)"
+        } else {
+            return "\(sender) said: \(content). \(time)"
+        }
+    }
+
     private var formattedTime: String {
         guard let dateString = message.createdAt else { return "" }
 
@@ -404,6 +426,64 @@ struct MessageBubble: View {
             }
 
             if !isCurrentUser { Spacer(minLength: 60) }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+        .modifier(MessageBubbleAccessibilityActions(
+            isCurrentUser: isCurrentUser,
+            isTextOnly: isTextOnlyMessage,
+            handle: message.handle,
+            onEdit: onEdit,
+            onDelete: onDelete,
+            onFlag: onFlag,
+            onBlock: onBlock
+        ))
+    }
+}
+
+// MARK: - Message Accessibility Actions
+
+private struct MessageBubbleAccessibilityActions: ViewModifier {
+    let isCurrentUser: Bool
+    let isTextOnly: Bool
+    let handle: String?
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onFlag: () -> Void
+    let onBlock: () -> Void
+
+    func body(content: Content) -> some View {
+        Group {
+            if isCurrentUser {
+                content
+                    .accessibilityAction(named: "Delete message") {
+                        onDelete()
+                    }
+                    .modifier(EditActionModifier(isTextOnly: isTextOnly, onEdit: onEdit))
+            } else {
+                content
+                    .accessibilityAction(named: "Report message") {
+                        onFlag()
+                    }
+                    .accessibilityAction(named: "Block \(handle ?? "user")") {
+                        onBlock()
+                    }
+            }
+        }
+    }
+}
+
+private struct EditActionModifier: ViewModifier {
+    let isTextOnly: Bool
+    let onEdit: () -> Void
+
+    func body(content: Content) -> some View {
+        if isTextOnly {
+            content.accessibilityAction(named: "Edit message") {
+                onEdit()
+            }
+        } else {
+            content
         }
     }
 }

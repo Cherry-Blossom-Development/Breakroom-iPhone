@@ -283,6 +283,43 @@ struct LyricLabView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(songAccessibilityLabel(song))
+        .accessibilityAction(named: "Edit") {
+            editingSong = song
+        }
+        .accessibilityAction(named: "View lyrics") {
+            selectedSong = song
+        }
+        .accessibilityAction(named: "Delete") {
+            songToDelete = song
+            showDeleteSongConfirm = true
+        }
+    }
+
+    private func songAccessibilityLabel(_ song: Song) -> String {
+        var parts: [String] = [song.title]
+
+        parts.append("Status: \(song.songStatus.displayName)")
+
+        if let genre = song.genre, !genre.isEmpty {
+            parts.append("Genre: \(genre)")
+        }
+
+        if let role = song.collaboratorRole {
+            parts.append("Role: \(role.displayName)")
+        }
+
+        if let count = song.lyricCount, count > 0 {
+            parts.append("\(count) lyric\(count == 1 ? "" : "s")")
+        }
+
+        if let description = song.description, !description.isEmpty {
+            let preview = description.count > 80 ? String(description.prefix(80)) + "..." : description
+            parts.append(preview)
+        }
+
+        return parts.joined(separator: ". ")
     }
 
     private func statusBadge(_ status: SongStatus) -> some View {
@@ -377,6 +414,41 @@ struct LyricLabView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ideaAccessibilityLabel(idea))
+        .accessibilityAction(named: "Edit") {
+            editingIdea = idea
+        }
+        .accessibilityAction(named: "Promote to song") {
+            promotingIdea = idea
+        }
+        .accessibilityAction(named: "Delete") {
+            ideaToDelete = idea
+            showDeleteIdeaConfirm = true
+        }
+    }
+
+    private func ideaAccessibilityLabel(_ idea: Lyric) -> String {
+        var parts: [String] = []
+
+        // Content preview
+        let preview = idea.contentPreview
+        parts.append(preview)
+
+        // Mood
+        if let mood = idea.mood, !mood.isEmpty {
+            parts.append("Mood: \(mood)")
+        }
+
+        // Status
+        parts.append("Status: \(idea.lyricStatus.displayName)")
+
+        // Date
+        if let date = idea.createdAt {
+            parts.append(formatDate(date))
+        }
+
+        return parts.joined(separator: ". ")
     }
 
     private func lyricStatusBadge(_ status: LyricStatus) -> some View {
@@ -418,9 +490,11 @@ struct LyricLabView: View {
         do {
             try await LyricAPIService.deleteSong(id: song.id)
             songs.removeAll { $0.id == song.id }
+            AccessibilityNotification.Announcement("Song deleted").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to delete song").post()
         }
     }
 
@@ -428,9 +502,11 @@ struct LyricLabView: View {
         do {
             try await LyricAPIService.deleteLyric(id: idea.id)
             ideas.removeAll { $0.id == idea.id }
+            AccessibilityNotification.Announcement("Idea deleted").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to delete idea").post()
         }
     }
 
@@ -921,11 +997,13 @@ struct PromoteToSongSheet: View {
                 status: idea.status ?? "draft"
             )
 
+            AccessibilityNotification.Announcement("Idea promoted to song: \(song.title)").post()
             onPromoted(song)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to promote idea").post()
         }
         isSaving = false
     }

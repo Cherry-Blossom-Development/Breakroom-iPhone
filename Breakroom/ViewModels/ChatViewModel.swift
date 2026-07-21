@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -383,6 +384,7 @@ final class ChatViewModel {
             guard let self else { return }
             if !self.messages.contains(where: { $0.id == message.id }) {
                 self.messages.append(message)
+                self.announceNewMessage(message)
             }
         }
         socketManager?.addEditListener(roomId: roomId) { [weak self] message in
@@ -412,6 +414,28 @@ final class ChatViewModel {
             socketManager?.leaveRoom(room.id)
             socketManager?.removeListeners(roomId: room.id)
         }
+    }
+
+    private func announceNewMessage(_ message: ChatMessage) {
+        // Don't announce our own messages
+        if message.userId == currentUserId {
+            return
+        }
+
+        let sender = message.handle ?? "Someone"
+        var announcement = "New message from \(sender)"
+
+        if let text = message.message, !text.isEmpty {
+            // Truncate long messages for the announcement
+            let preview = text.count > 50 ? String(text.prefix(50)) + "..." : text
+            announcement += ": \(preview)"
+        } else if message.imagePath != nil {
+            announcement += ": sent an image"
+        } else if message.videoPath != nil {
+            announcement += ": sent a video"
+        }
+
+        AccessibilityNotification.Announcement(announcement).post()
     }
 
     // MARK: - Direct Messages

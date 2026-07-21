@@ -72,6 +72,8 @@ struct ChatWidget: View {
             socketManager.addMessageListener(roomId: roomId) { message in
                 if !messages.contains(where: { $0.id == message.id }) {
                     messages.append(message)
+                    // Announce new messages from others for VoiceOver users
+                    announceNewMessage(message)
                 }
             }
             socketManager.addEditListener(roomId: roomId) { message in
@@ -398,22 +400,29 @@ struct ChatWidget: View {
 
     private func handlePickedMedia(_ item: PhotosPickerItem, roomId: Int) async {
         isUploadingMedia = true
+        AccessibilityNotification.Announcement("Uploading media").post()
         defer { isUploadingMedia = false }
 
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            AccessibilityNotification.Announcement("Upload failed").post()
+            return
+        }
 
         do {
             let message: ChatMessage
             if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
                 message = try await ChatAPIService.uploadVideo(roomId: roomId, videoData: data, filename: "video.mp4")
+                AccessibilityNotification.Announcement("Video sent").post()
             } else {
                 message = try await ChatAPIService.uploadImage(roomId: roomId, imageData: data, filename: "image.jpg")
+                AccessibilityNotification.Announcement("Image sent").post()
             }
             if !messages.contains(where: { $0.id == message.id }) {
                 messages.append(message)
             }
         } catch {
             self.error = error.localizedDescription
+            AccessibilityNotification.Announcement("Upload failed").post()
         }
     }
 
@@ -466,6 +475,30 @@ struct ChatWidget: View {
             self.error = error.localizedDescription
         }
     }
+
+    private func announceNewMessage(_ message: ChatMessage) {
+        // Don't announce our own messages
+        if let storedId = KeychainManager.get(.userId),
+           let currentUserId = Int(storedId),
+           message.userId == currentUserId {
+            return
+        }
+
+        let sender = message.handle ?? "Someone"
+        var announcement = "New message from \(sender)"
+
+        if let text = message.message, !text.isEmpty {
+            // Truncate long messages for the announcement
+            let preview = text.count > 50 ? String(text.prefix(50)) + "..." : text
+            announcement += ": \(preview)"
+        } else if message.imagePath != nil {
+            announcement += ": sent an image"
+        } else if message.videoPath != nil {
+            announcement += ": sent a video"
+        }
+
+        AccessibilityNotification.Announcement(announcement).post()
+    }
 }
 
 // MARK: - Message Row
@@ -489,6 +522,28 @@ struct ChatWidgetMessageRow: View {
         return !hasImage && !hasVideo
     }
 
+    private var accessibilityDescription: String {
+        let sender = message.handle ?? "Unknown"
+        let time = formattedTime
+
+        var content = ""
+        if let text = message.message, !text.isEmpty {
+            content = text
+        }
+        if message.imagePath != nil && !message.imagePath!.isEmpty {
+            content += content.isEmpty ? "sent an image" : ", with image"
+        }
+        if message.videoPath != nil && !message.videoPath!.isEmpty {
+            content += content.isEmpty ? "sent a video" : ", with video"
+        }
+
+        if isCurrentUser {
+            return "You said: \(content). \(time)"
+        } else {
+            return "\(sender) said: \(content). \(time)"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             headerRow
@@ -498,6 +553,16 @@ struct ChatWidgetMessageRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+        .modifier(MessageAccessibilityActions(
+            isCurrentUser: isCurrentUser,
+            isTextOnly: isTextOnlyMessage,
+            onEdit: onEdit,
+            onDelete: onDelete,
+            onFlag: onFlag,
+            onBlock: onBlock
+        ))
     }
 
     private var headerRow: some View {
@@ -594,6 +659,50 @@ struct ChatWidgetMessageRow: View {
         // Always show month/day and time
         timeFormatter.dateFormat = "MMM d, h:mm a"
         return timeFormatter.string(from: date)
+    }
+}
+
+// MARK: - Message Accessibility Actions
+
+private struct MessageAccessibilityActions: ViewModifier {
+    let isCurrentUser: Bool
+    let isTextOnly: Bool
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onFlag: () -> Void
+    let onBlock: () -> Void
+
+    func body(content: Content) -> some View {
+        if isCurrentUser {
+            content
+                .accessibilityAction(named: "Delete message") {
+                    onDelete()
+                }
+                .modifier(EditActionModifier(isTextOnly: isTextOnly, onEdit: onEdit))
+        } else {
+            content
+                .accessibilityAction(named: "Report message") {
+                    onFlag()
+                }
+                .accessibilityAction(named: "Block user") {
+                    onBlock()
+                }
+        }
+    }
+}
+
+private struct EditActionModifier: ViewModifier {
+    let isTextOnly: Bool
+    let onEdit: () -> Void
+
+    func body(content: Content) -> some View {
+        if isTextOnly {
+            content.accessibilityAction(named: "Edit message") {
+                onEdit()
+            }
+        } else {
+            content
+        }
     }
 }
 
