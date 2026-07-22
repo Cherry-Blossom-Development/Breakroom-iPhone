@@ -148,6 +148,8 @@ struct EmploymentView: View {
         } label: {
             Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         }
+        .accessibilityLabel(hasActiveFilters ? "Filters active" : "Filter positions")
+        .accessibilityHint("Double tap to filter by location or employment type")
     }
 
     // MARK: - Welcome Header
@@ -208,6 +210,9 @@ struct EmploymentView: View {
                     .foregroundStyle(.primary)
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     .listRowSeparator(.hidden)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(positionAccessibilityLabel(position))
+                    .accessibilityHint("Double tap to view details")
                 }
             }
         }
@@ -316,6 +321,36 @@ struct EmploymentView: View {
         .padding(12)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Accessibility
+
+    private func positionAccessibilityLabel(_ position: Position) -> String {
+        var parts: [String] = [position.title]
+
+        if let company = position.companyName {
+            parts.append("at \(company)")
+        }
+
+        if !position.formattedEmploymentType.isEmpty {
+            parts.append(position.formattedEmploymentType)
+        }
+
+        if !position.formattedLocationType.isEmpty {
+            parts.append(position.formattedLocationType)
+        }
+
+        if !position.locationString.isEmpty {
+            parts.append(position.locationString)
+        }
+
+        parts.append(position.formattedPay)
+
+        if !position.relativeDate.isEmpty {
+            parts.append("Posted \(position.relativeDate)")
+        }
+
+        return parts.joined(separator: ". ")
     }
 
     // MARK: - Data

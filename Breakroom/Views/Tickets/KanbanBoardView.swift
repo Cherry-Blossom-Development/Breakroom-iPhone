@@ -75,6 +75,7 @@ struct KanbanBoardView: View {
                 Circle()
                     .fill(statusColor(status))
                     .frame(width: 10, height: 10)
+                    .accessibilityHidden(true)
                 Text(status.displayName)
                     .font(.headline)
                 Spacer()
@@ -85,11 +86,14 @@ struct KanbanBoardView: View {
                     .padding(.vertical, 2)
                     .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(status.displayName) column, \(columnTickets.count) ticket\(columnTickets.count == 1 ? "" : "s")")
 
             // Ticket cards
             if columnTickets.isEmpty {
@@ -152,6 +156,9 @@ struct KanbanBoardView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(ticketAccessibilityLabel(ticket))
+            .accessibilityHint("Double tap to edit ticket")
 
             // Status transition buttons (separate from tap area)
             statusTransitionButtons(ticket, currentStatus: status)
@@ -161,6 +168,16 @@ struct KanbanBoardView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+    }
+
+    private func ticketAccessibilityLabel(_ ticket: Ticket) -> String {
+        var parts: [String] = [ticket.title]
+        parts.append("Priority: \(ticket.ticketPriority.displayName)")
+        parts.append("Status: \(ticket.ticketStatus.displayName)")
+        if let assignee = ticket.assigneeDisplayName {
+            parts.append("Assigned to \(assignee)")
+        }
+        return parts.joined(separator: ". ")
     }
 
     private func statusTransitionButtons(_ ticket: Ticket, currentStatus: TicketStatus) -> some View {
@@ -184,6 +201,7 @@ struct KanbanBoardView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Move to \(target.displayName)")
             }
             Spacer()
         }
@@ -259,9 +277,11 @@ struct KanbanBoardView: View {
             if let idx = tickets.firstIndex(where: { $0.id == ticket.id }) {
                 tickets[idx] = updated
             }
+            AccessibilityNotification.Announcement("Ticket moved to \(status.displayName)").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to move ticket").post()
         }
     }
 }

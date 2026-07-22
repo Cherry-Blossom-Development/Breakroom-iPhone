@@ -104,6 +104,9 @@ struct CompanyPortalView: View {
                         myCompanyRow(company)
                     }
                     .foregroundStyle(.primary)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(myCompanyAccessibilityLabel(company))
+                    .accessibilityHint("Double tap to view company details")
                 }
                 .listStyle(.plain)
                 .refreshable {
@@ -172,12 +175,14 @@ struct CompanyPortalView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
                 TextField("Search companies...", text: $searchText)
                     .textInputAutocapitalization(.words)
                     .onSubmit { performSearch() }
                     .onChange(of: searchText) { _, newValue in
                         debounceSearch(newValue)
                     }
+                    .accessibilityLabel("Search companies")
 
                 if !searchText.isEmpty {
                     Button {
@@ -188,6 +193,7 @@ struct CompanyPortalView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Clear search")
                 }
             }
             .padding(10)
@@ -214,6 +220,9 @@ struct CompanyPortalView: View {
                         searchResultRow(company)
                     }
                     .foregroundStyle(.primary)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(searchResultAccessibilityLabel(company))
+                    .accessibilityHint("Double tap to view company details")
                 }
                 .listStyle(.plain)
             } else {
@@ -319,6 +328,33 @@ struct CompanyPortalView: View {
                           isCreating)
             }
         }
+    }
+
+    // MARK: - Accessibility
+
+    private func myCompanyAccessibilityLabel(_ company: MyCompany) -> String {
+        var parts: [String] = [company.name]
+        if let badge = company.roleBadge {
+            parts.append(badge)
+        }
+        if let title = company.title, !title.isEmpty {
+            parts.append(title)
+        }
+        if !company.locationString.isEmpty {
+            parts.append(company.locationString)
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    private func searchResultAccessibilityLabel(_ company: CompanySearchResult) -> String {
+        var parts: [String] = [company.name]
+        if let desc = company.description, !desc.isEmpty {
+            parts.append(desc)
+        }
+        if !company.locationString.isEmpty {
+            parts.append(company.locationString)
+        }
+        return parts.joined(separator: ". ")
     }
 
     // MARK: - Data Loading

@@ -112,6 +112,8 @@ struct BlogEditorView: View {
                     }
                     .frame(minWidth: 70)
                 }
+                .accessibilityLabel("Font: \(selectedFont)")
+                .accessibilityHint("Double tap to change font")
 
                 // Size picker
                 Menu {
@@ -135,23 +137,32 @@ struct BlogEditorView: View {
                             .font(.caption2)
                     }
                 }
+                .accessibilityLabel("Size: \(selectedSize)")
+                .accessibilityHint("Double tap to change text size")
 
                 Divider()
                     .frame(height: 20)
+                    .accessibilityHidden(true)
 
                 // Text formatting
                 Button { editorCoordinator.execCommand("bold") } label: {
                     Text("B").bold()
                 }
+                .accessibilityLabel("Bold")
+
                 Button { editorCoordinator.execCommand("italic") } label: {
                     Text("I").italic()
                 }
+                .accessibilityLabel("Italic")
+
                 Button { editorCoordinator.execCommand("underline") } label: {
                     Text("U").underline()
                 }
+                .accessibilityLabel("Underline")
 
                 Divider()
                     .frame(height: 20)
+                    .accessibilityHidden(true)
 
                 // Link button
                 Button {
@@ -160,15 +171,18 @@ struct BlogEditorView: View {
                 } label: {
                     Image(systemName: "link")
                 }
+                .accessibilityLabel("Insert link")
 
                 // Image picker
                 if isUploadingImage {
                     ProgressView()
                         .controlSize(.small)
+                        .accessibilityLabel("Uploading image")
                 } else {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Image(systemName: "photo")
                     }
+                    .accessibilityLabel("Insert image from photo library")
                 }
             }
             .padding(.horizontal)
@@ -182,6 +196,7 @@ struct BlogEditorView: View {
         HStack {
             Toggle("Published", isOn: $isPublished)
                 .fixedSize()
+                .accessibilityHint(isPublished ? "Post will be visible to others" : "Post will be saved as draft")
             Spacer()
             Button {
                 Task { await save() }
@@ -196,12 +211,14 @@ struct BlogEditorView: View {
             .buttonStyle(.borderedProminent)
             .tint(showSavedFeedback ? .green : nil)
             .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+            .accessibilityLabel(isSaving ? "Saving post" : (showSavedFeedback ? "Post saved" : "Save post"))
         }
         .padding()
     }
 
     private func uploadPhoto(_ item: PhotosPickerItem) async {
         isUploadingImage = true
+        AccessibilityNotification.Announcement("Uploading image").post()
         defer { isUploadingImage = false }
 
         do {
@@ -209,9 +226,11 @@ struct BlogEditorView: View {
             let filename = "image_\(Int(Date().timeIntervalSince1970)).jpg"
             let url = try await BlogAPIService.uploadImage(imageData: data, filename: filename)
             editorCoordinator.insertImage(url: url)
+            AccessibilityNotification.Announcement("Image inserted").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to upload image").post()
         }
     }
 
@@ -252,6 +271,7 @@ struct BlogEditorView: View {
                 )
             }
             onSave(savedPost)
+            AccessibilityNotification.Announcement("Post saved successfully").post()
             if isPublished {
                 dismiss()
             } else {
@@ -264,6 +284,7 @@ struct BlogEditorView: View {
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to save post").post()
         }
     }
 }

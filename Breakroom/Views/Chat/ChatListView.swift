@@ -48,31 +48,38 @@ struct ChatListView: View {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("# \(invite.roomName)")
                                             .font(.headline)
+                                            .accessibilityHidden(true)
                                         if let desc = invite.roomDescription, !desc.isEmpty {
                                             Text(desc)
                                                 .font(.subheadline)
                                                 .foregroundStyle(.secondary)
                                                 .lineLimit(1)
+                                                .accessibilityHidden(true)
                                         }
                                         Text("Invited by \(invite.invitedByHandle)")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
+                                            .accessibilityHidden(true)
                                         HStack(spacing: 12) {
                                             Button("Accept") {
                                                 Task { await chatViewModel.acceptInvite(invite) }
                                             }
                                             .buttonStyle(.borderedProminent)
                                             .controlSize(.small)
+                                            .accessibilityLabel("Accept invite to \(invite.roomName)")
 
                                             Button("Decline") {
                                                 Task { await chatViewModel.declineInvite(invite) }
                                             }
                                             .buttonStyle(.bordered)
                                             .controlSize(.small)
+                                            .accessibilityLabel("Decline invite to \(invite.roomName)")
                                         }
                                         .padding(.top, 2)
                                     }
                                     .padding(.vertical, 4)
+                                    .accessibilityElement(children: .contain)
+                                    .accessibilityLabel(inviteAccessibilityLabel(invite))
                                 }
                             }
                         }
@@ -119,6 +126,7 @@ struct ChatListView: View {
                                             .foregroundStyle(.secondary)
                                             .frame(width: 24, height: 24)
                                     }
+                                    .accessibilityLabel("Room actions for \(room.name)")
 
                                     NavigationLink(value: room) {
                                         HStack {
@@ -130,6 +138,7 @@ struct ChatListView: View {
                                                         Image(systemName: "crown.fill")
                                                             .font(.caption)
                                                             .foregroundStyle(.orange)
+                                                            .accessibilityHidden(true)
                                                     }
                                                 }
                                                 if let description = room.description, !description.isEmpty {
@@ -149,11 +158,13 @@ struct ChatListView: View {
                                                     .padding(.vertical, 2)
                                                     .background(.red)
                                                     .clipShape(Capsule())
+                                                    .accessibilityHidden(true)
                                             }
                                         }
                                         .padding(.vertical, 4)
                                     }
                                     .accessibilityIdentifier("roomItem")
+                                    .accessibilityLabel(roomAccessibilityLabel(room))
                                 }
                             }
                         }
@@ -164,6 +175,7 @@ struct ChatListView: View {
                             HStack {
                                 Image(systemName: "magnifyingglass")
                                     .foregroundStyle(.secondary)
+                                    .accessibilityHidden(true)
                                 TextField("Find a user...", text: Binding(
                                     get: { chatViewModel.dmSearchQuery },
                                     set: { chatViewModel.updateDmSearchQuery($0) }
@@ -171,6 +183,7 @@ struct ChatListView: View {
                                 .textFieldStyle(.plain)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
+                                .accessibilityLabel("Search for user to message")
 
                                 if !chatViewModel.dmSearchQuery.isEmpty {
                                     Button {
@@ -179,6 +192,7 @@ struct ChatListView: View {
                                         Image(systemName: "xmark.circle.fill")
                                             .foregroundStyle(.secondary)
                                     }
+                                    .accessibilityLabel("Clear search")
                                 }
                             }
                             .padding(.vertical, 4)
@@ -212,6 +226,7 @@ struct ChatListView: View {
                                                         .font(.headline)
                                                         .foregroundStyle(Color.accentColor)
                                                 }
+                                                .accessibilityHidden(true)
 
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text("@\(user.handle)")
@@ -235,6 +250,8 @@ struct ChatListView: View {
                                         .padding(.vertical, 4)
                                     }
                                     .disabled(chatViewModel.isStartingDm)
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel("Start message with \(user.displayName), @\(user.handle)")
                                 }
                             }
 
@@ -251,6 +268,7 @@ struct ChatListView: View {
                                                     .font(.headline)
                                                     .foregroundStyle(Color.accentColor)
                                             }
+                                            .accessibilityHidden(true)
 
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("@\(dm.partnerHandle)")
@@ -275,11 +293,14 @@ struct ChatListView: View {
                                                 .padding(.vertical, 2)
                                                 .background(.red)
                                                 .clipShape(Capsule())
+                                                .accessibilityHidden(true)
                                         }
                                     }
                                     .padding(.vertical, 4)
                                 }
                                 .accessibilityIdentifier("dmItem")
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(dmAccessibilityLabel(dm))
                             }
                         }
                     }
@@ -300,6 +321,7 @@ struct ChatListView: View {
                         } label: {
                             Image(systemName: "clock.badge")
                         }
+                        .accessibilityLabel("Scheduled messages")
 
                         Button {
                             Task {
@@ -309,6 +331,7 @@ struct ChatListView: View {
                         } label: {
                             Image(systemName: "plus.circle")
                         }
+                        .accessibilityLabel("Join a room")
 
                         if chatViewModel.canCreateRoomPermission {
                             Button {
@@ -316,6 +339,7 @@ struct ChatListView: View {
                             } label: {
                                 Image(systemName: "plus.bubble")
                             }
+                            .accessibilityLabel("Create new room")
                         }
                     }
                 }
@@ -392,6 +416,43 @@ struct ChatListView: View {
         Circle()
             .fill(socketManager.connectionState == .connected ? .green : .red)
             .frame(width: 8, height: 8)
+            .accessibilityLabel(socketManager.connectionState == .connected ? "Connected" : "Disconnected")
+    }
+
+    // MARK: - Accessibility Helpers
+
+    private func inviteAccessibilityLabel(_ invite: ChatInvite) -> String {
+        var parts: [String] = ["Invite to room \(invite.roomName)"]
+        if let desc = invite.roomDescription, !desc.isEmpty {
+            parts.append(desc)
+        }
+        parts.append("Invited by \(invite.invitedByHandle)")
+        return parts.joined(separator: ". ")
+    }
+
+    private func roomAccessibilityLabel(_ room: ChatRoom) -> String {
+        var parts: [String] = [room.name]
+        if chatViewModel.isRoomOwner(room) {
+            parts.append("You are the owner")
+        }
+        if let description = room.description, !description.isEmpty {
+            parts.append(description)
+        }
+        if let unread = badgeStore.chatUnread[room.id], unread > 0 {
+            parts.append("\(unread) unread message\(unread == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    private func dmAccessibilityLabel(_ dm: ChatDm) -> String {
+        var parts: [String] = ["Direct message with @\(dm.partnerHandle)"]
+        if let lastMessage = dm.lastMessage, !lastMessage.isEmpty {
+            parts.append("Last message: \(lastMessage)")
+        }
+        if dm.unreadCount > 0 {
+            parts.append("\(dm.unreadCount) unread message\(dm.unreadCount == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ". ")
     }
 }
 
@@ -441,6 +502,9 @@ struct AddRoomSheet: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(discoverableRoomLabel(room))
+                        .accessibilityHint("Double tap to join")
                     }
                 }
             }
@@ -452,5 +516,13 @@ struct AddRoomSheet: View {
                 }
             }
         }
+    }
+
+    private func discoverableRoomLabel(_ room: ChatRoom) -> String {
+        var parts: [String] = [room.name]
+        if let description = room.description, !description.isEmpty {
+            parts.append(description)
+        }
+        return parts.joined(separator: ". ")
     }
 }

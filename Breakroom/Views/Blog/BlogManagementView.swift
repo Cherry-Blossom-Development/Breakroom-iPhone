@@ -57,12 +57,14 @@ struct BlogManagementView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .accessibilityLabel("Blog settings")
 
                     NavigationLink {
                         BlogEditorView(existingPost: nil, onSave: handleSave)
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("New blog post")
                 }
             }
         }
@@ -117,6 +119,13 @@ struct BlogManagementView: View {
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(postAccessibilityLabel(post))
+                .accessibilityHint("Double tap to edit")
+                .accessibilityAction(named: "Delete") {
+                    postToDelete = post
+                    showDeleteConfirmation = true
                 }
             }
         }
@@ -199,10 +208,29 @@ struct BlogManagementView: View {
 
         do {
             try await BlogAPIService.deletePost(id: post.id)
+            AccessibilityNotification.Announcement("Post deleted: \(post.title)").post()
         } catch {
             posts.insert(removed, at: min(index, posts.count))
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to delete post").post()
         }
+    }
+
+    // MARK: - Accessibility
+
+    private func postAccessibilityLabel(_ post: BlogPost) -> String {
+        var parts: [String] = [post.title]
+
+        let status = (post.isPublished ?? 0) != 0 ? "Published" : "Draft"
+        parts.append(status)
+
+        if !post.plainTextPreview.isEmpty {
+            parts.append(post.plainTextPreview)
+        }
+
+        parts.append(post.relativeDate)
+
+        return parts.joined(separator: ". ")
     }
 }
