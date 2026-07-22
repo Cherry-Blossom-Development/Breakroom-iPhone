@@ -152,6 +152,12 @@ struct FriendsView: View {
             Spacer()
         }
         .padding(.vertical, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(friend.displayName), @\(friend.handle)")
+        .accessibilityAction(named: "Remove friend") {
+            friendToRemove = friend
+            showRemoveConfirmation = true
+        }
     }
 
     // MARK: - Requests Tab
@@ -176,6 +182,7 @@ struct FriendsView: View {
     private func requestRow(_ request: FriendRequest) -> some View {
         HStack(spacing: 12) {
             userAvatar(url: request.photoURL, name: request.displayName, handle: request.handle)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(request.displayName)
@@ -184,6 +191,7 @@ struct FriendsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityHidden(true)
 
             Spacer()
 
@@ -199,6 +207,7 @@ struct FriendsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
+                    .accessibilityLabel("Accept request from \(request.displayName)")
 
                     Button(role: .destructive) {
                         Task { await declineRequest(request) }
@@ -207,10 +216,13 @@ struct FriendsView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityLabel("Decline request from \(request.displayName)")
                 }
             }
         }
         .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Friend request from \(request.displayName), @\(request.handle)")
     }
 
     // MARK: - Sent Tab
@@ -485,9 +497,11 @@ struct FriendsView: View {
                 photoPath: request.photoPath,
                 friendsSince: nil
             ))
+            AccessibilityNotification.Announcement("Friend request accepted. \(request.displayName) is now your friend.").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to accept request").post()
         }
         processingUserId = nil
     }
@@ -497,9 +511,11 @@ struct FriendsView: View {
         do {
             try await FriendsAPIService.declineRequest(userId: request.id)
             requests.removeAll { $0.id == request.id }
+            AccessibilityNotification.Announcement("Friend request declined").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to decline request").post()
         }
         processingUserId = nil
     }
@@ -509,9 +525,11 @@ struct FriendsView: View {
         do {
             try await FriendsAPIService.cancelRequest(userId: request.id)
             sent.removeAll { $0.id == request.id }
+            AccessibilityNotification.Announcement("Friend request cancelled").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to cancel request").post()
         }
         processingUserId = nil
     }
@@ -522,6 +540,7 @@ struct FriendsView: View {
 
         do {
             try await FriendsAPIService.removeFriend(userId: friend.id)
+            AccessibilityNotification.Announcement("\(friend.displayName) removed from friends").post()
         } catch {
             // Restore on failure
             if let index {
@@ -529,6 +548,7 @@ struct FriendsView: View {
             }
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to remove friend").post()
         }
     }
 
@@ -537,9 +557,11 @@ struct FriendsView: View {
         do {
             try await FriendsAPIService.unblockUser(userId: user.id)
             blocked.removeAll { $0.id == user.id }
+            AccessibilityNotification.Announcement("\(user.displayName) unblocked").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to unblock user").post()
         }
         processingUserId = nil
     }
