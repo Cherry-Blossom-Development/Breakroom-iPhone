@@ -127,6 +127,8 @@ struct DmRoomView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 4)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Uploading media")
             }
 
             // Message input
@@ -137,6 +139,7 @@ struct DmRoomView: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .disabled(chatViewModel.isUploadingMedia)
+                .accessibilityLabel("Attach photo or video")
 
                 TextField("Message", text: $chatViewModel.messageText, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -148,6 +151,7 @@ struct DmRoomView: View {
                         chatViewModel.handleTypingChanged()
                     }
                     .accessibilityIdentifier("messageInput")
+                    .accessibilityLabel("Message to @\(dm.partnerHandle)")
 
                 Button {
                     Task { await sendDmMessage() }
@@ -157,6 +161,7 @@ struct DmRoomView: View {
                 }
                 .disabled(chatViewModel.messageText.trimmingCharacters(in: .whitespaces).isEmpty)
                 .accessibilityIdentifier("sendButton")
+                .accessibilityLabel("Send message")
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
@@ -168,10 +173,13 @@ struct DmRoomView: View {
                     Circle()
                         .fill(socketManager.connectionState == .connected ? .green : .red)
                         .frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
                     Text("@\(dm.partnerHandle)")
                         .font(.headline)
                         .lineLimit(1)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Direct message with @\(dm.partnerHandle). \(socketManager.connectionState == .connected ? "Connected" : "Disconnected")")
             }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()

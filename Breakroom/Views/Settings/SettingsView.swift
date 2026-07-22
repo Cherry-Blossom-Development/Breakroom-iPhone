@@ -88,6 +88,7 @@ struct SettingsView: View {
         HStack {
             Text(title)
                 .font(.subheadline)
+                .accessibilityHidden(true)
             Spacer()
             Toggle("", isOn: isOn)
                 .labelsHidden()
@@ -95,6 +96,7 @@ struct SettingsView: View {
                 .onChange(of: isOn.wrappedValue) { _, _ in
                     Task { await saveSettings() }
                 }
+                .accessibilityLabel(title)
         }
         .opacity(notificationsEnabled ? 1.0 : 0.4)
     }
@@ -148,6 +150,10 @@ struct SettingsView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Confirm account deletion")
+                    .accessibilityValue(deletionConfirmed ? "Confirmed" : "Not confirmed")
+                    .accessibilityHint("I understand this will permanently delete my account and all associated data")
 
                     if let deletionError {
                         Text(deletionError)

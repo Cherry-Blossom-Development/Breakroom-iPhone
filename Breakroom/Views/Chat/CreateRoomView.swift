@@ -43,11 +43,13 @@ struct CreateRoomView: View {
                                         Image(systemName: "xmark.circle.fill")
                                             .font(.caption)
                                     }
+                                    .accessibilityLabel("Remove \(user.displayName)")
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(.fill.tertiary)
                                 .clipShape(Capsule())
+                                .accessibilityElement(children: .combine)
                             }
                         }
                     }
@@ -136,10 +138,15 @@ private struct UserRow: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
                 }
             }
         }
         .foregroundStyle(.primary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(user.displayName), @\(user.handle)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityHint(isSelected ? "Double tap to remove from invite list" : "Double tap to add to invite list")
     }
 }
 

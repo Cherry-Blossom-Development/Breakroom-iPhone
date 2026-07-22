@@ -177,6 +177,7 @@ struct ProfileView: View {
                     .font(.subheadline)
                 }
                 .disabled(uploading)
+                .accessibilityLabel(uploading ? "Uploading photo" : (profile.photoPath != nil ? "Change profile photo" : "Add profile photo"))
 
                 if profile.photoPath != nil {
                     Button(role: .destructive) {
@@ -185,6 +186,7 @@ struct ProfileView: View {
                         Label("Remove", systemImage: "trash")
                             .font(.subheadline)
                     }
+                    .accessibilityLabel("Remove profile photo")
                 }
             }
         }
@@ -247,12 +249,14 @@ struct ProfileView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.caption)
                             }
+                            .accessibilityLabel("Remove \(skill.name)")
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Color.green.opacity(0.15))
                         .foregroundStyle(.green)
                         .clipShape(Capsule())
+                        .accessibilityElement(children: .combine)
                     }
                 }
             } else {
@@ -358,6 +362,7 @@ struct ProfileView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityLabel("Edit \(job.title) at \(job.company)")
             }
 
             HStack(spacing: 12) {

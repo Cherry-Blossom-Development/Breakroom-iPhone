@@ -16,6 +16,7 @@ struct LoginView: View {
                     .scaledToFit()
                     .frame(width: 180, height: 180)
                     .accessibilityIdentifier("appLogo")
+                    .accessibilityLabel("Prosaurus logo")
 
                 VStack(spacing: 16) {
                     TextField("Handle", text: $handle)

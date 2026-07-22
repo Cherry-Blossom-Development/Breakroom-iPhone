@@ -151,6 +151,20 @@ struct HelpDeskView: View {
             .padding(.vertical, 4)
         }
         .foregroundStyle(.primary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ticketAccessibilityLabel(ticket))
+        .accessibilityHint(canEditTicket(ticket) ? "Double tap to edit" : "Double tap to view details")
+    }
+
+    private func ticketAccessibilityLabel(_ ticket: Ticket) -> String {
+        var parts: [String] = [ticket.title]
+        parts.append("Status: \(ticket.ticketStatus.displayName)")
+        parts.append("Priority: \(ticket.ticketPriority.displayName)")
+        if let assignee = ticket.assigneeDisplayName {
+            parts.append("Assigned to \(assignee)")
+        }
+        parts.append("Created by \(ticket.creatorDisplayName)")
+        return parts.joined(separator: ". ")
     }
 
     private func statusBadge(_ status: TicketStatus) -> some View {
@@ -435,6 +449,7 @@ struct EditTicketSheet: View {
                     }
                 }
                 .disabled(newCommentText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
+                .accessibilityLabel(isPostingComment ? "Posting comment" : "Post comment")
             }
         } header: {
             Text("Comments (\(visibleComments.count))")
@@ -460,6 +475,7 @@ struct EditTicketSheet: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .disabled(editCommentText.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Save edited comment")
 
                     Button("Cancel") {
                         editingCommentId = nil
@@ -467,6 +483,7 @@ struct EditTicketSheet: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityLabel("Cancel editing")
                 }
             }
             .padding(.vertical, 4)
@@ -475,11 +492,13 @@ struct EditTicketSheet: View {
                 HStack {
                     Text(comment.handle)
                         .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
 
                     if let date = comment.createdAt {
                         Text(formatCommentDate(date))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     }
 
                     if comment.wasEdited {
@@ -487,6 +506,7 @@ struct EditTicketSheet: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                             .italic()
+                            .accessibilityHidden(true)
                     }
 
                     Spacer()
@@ -504,14 +524,30 @@ struct EditTicketSheet: View {
                             Image(systemName: "ellipsis")
                                 .foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("Comment actions")
                     }
                 }
 
                 Text(comment.content)
                     .font(.subheadline)
+                    .accessibilityHidden(true)
             }
             .padding(.vertical, 2)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(commentAccessibilityLabel(comment))
         }
+    }
+
+    private func commentAccessibilityLabel(_ comment: TicketComment) -> String {
+        var parts: [String] = ["\(comment.handle) commented"]
+        parts.append(comment.content)
+        if comment.wasEdited {
+            parts.append("edited")
+        }
+        if let date = comment.createdAt {
+            parts.append(formatCommentDate(date))
+        }
+        return parts.joined(separator: ". ")
     }
 
     private func formatCommentDate(_ dateStr: String) -> String {
@@ -719,6 +755,7 @@ struct ViewTicketSheet: View {
                     }
                 }
                 .disabled(newCommentText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
+                .accessibilityLabel(isPostingComment ? "Posting comment" : "Post comment")
             }
         } header: {
             Text("Comments (\(visibleComments.count))")
@@ -744,6 +781,7 @@ struct ViewTicketSheet: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .disabled(editCommentText.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Save edited comment")
 
                     Button("Cancel") {
                         editingCommentId = nil
@@ -751,6 +789,7 @@ struct ViewTicketSheet: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityLabel("Cancel editing")
                 }
             }
             .padding(.vertical, 4)
@@ -759,11 +798,13 @@ struct ViewTicketSheet: View {
                 HStack {
                     Text(comment.handle)
                         .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
 
                     if let date = comment.createdAt {
                         Text(formatCommentDate(date))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     }
 
                     if comment.wasEdited {
@@ -771,6 +812,7 @@ struct ViewTicketSheet: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                             .italic()
+                            .accessibilityHidden(true)
                     }
 
                     Spacer()
@@ -788,14 +830,30 @@ struct ViewTicketSheet: View {
                             Image(systemName: "ellipsis")
                                 .foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("Comment actions")
                     }
                 }
 
                 Text(comment.content)
                     .font(.subheadline)
+                    .accessibilityHidden(true)
             }
             .padding(.vertical, 2)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(commentAccessibilityLabel(comment))
         }
+    }
+
+    private func commentAccessibilityLabel(_ comment: TicketComment) -> String {
+        var parts: [String] = ["\(comment.handle) commented"]
+        parts.append(comment.content)
+        if comment.wasEdited {
+            parts.append("edited")
+        }
+        if let date = comment.createdAt {
+            parts.append(formatCommentDate(date))
+        }
+        return parts.joined(separator: ". ")
     }
 
     private func formatCommentDate(_ dateStr: String) -> String {
@@ -836,8 +894,9 @@ struct ViewTicketSheet: View {
             let comment = try await TicketAPIService.addComment(ticketId: ticket.id, content: content)
             comments.append(comment)
             newCommentText = ""
+            AccessibilityNotification.Announcement("Comment posted").post()
         } catch {
-            // Could show error alert
+            AccessibilityNotification.Announcement("Failed to post comment").post()
         }
         isPostingComment = false
     }
@@ -853,8 +912,9 @@ struct ViewTicketSheet: View {
             }
             editingCommentId = nil
             editCommentText = ""
+            AccessibilityNotification.Announcement("Comment updated").post()
         } catch {
-            // Could show error alert
+            AccessibilityNotification.Announcement("Failed to update comment").post()
         }
     }
 
@@ -875,8 +935,9 @@ struct ViewTicketSheet: View {
                     handle: old.handle
                 )
             }
+            AccessibilityNotification.Announcement("Comment deleted").post()
         } catch {
-            // Could show error alert
+            AccessibilityNotification.Announcement("Failed to delete comment").post()
         }
     }
 }

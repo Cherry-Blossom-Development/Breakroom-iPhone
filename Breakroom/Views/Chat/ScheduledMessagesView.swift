@@ -301,6 +301,7 @@ struct ScheduledMessagesView: View {
                 .font(.caption)
                 .buttonStyle(.bordered)
                 .disabled(msg.status == "warning_sent" && !msg.isEditing)
+                .accessibilityLabel("Edit this scheduled message")
 
                 Button("Cancel") {
                     Task { await cancelMessage(msg.id) }
@@ -308,6 +309,7 @@ struct ScheduledMessagesView: View {
                 .font(.caption)
                 .buttonStyle(.bordered)
                 .tint(.red)
+                .accessibilityLabel("Cancel this scheduled message")
             }
         }
         .padding()
@@ -317,6 +319,17 @@ struct ScheduledMessagesView: View {
                 .stroke(rowBorderColor(for: msg), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(scheduledMessageAccessibilityLabel(msg))
+    }
+
+    private func scheduledMessageAccessibilityLabel(_ msg: ScheduledMessage) -> String {
+        var parts: [String] = []
+        parts.append("Scheduled message for room \(msg.roomName ?? "Unknown")")
+        parts.append(formatSendTime(msg.scheduledAt))
+        parts.append(statusLabel(for: msg))
+        parts.append(msg.messageText)
+        return parts.joined(separator: ". ")
     }
 
     // MARK: - Helpers
