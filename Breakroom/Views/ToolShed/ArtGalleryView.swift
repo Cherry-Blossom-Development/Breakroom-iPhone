@@ -240,6 +240,7 @@ struct ArtGalleryView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
+            .accessibilityHidden(true)
 
             // Title and status
             HStack {
@@ -250,6 +251,7 @@ struct ArtGalleryView: View {
                 Circle()
                     .fill(artwork.isPublishedBool ? Color.green : Color.gray)
                     .frame(width: 8, height: 8)
+                    .accessibilityHidden(true)
             }
 
             // Actions
@@ -262,6 +264,7 @@ struct ArtGalleryView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
 
                 Spacer()
 
@@ -274,12 +277,42 @@ struct ArtGalleryView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.red.opacity(0.8))
+                .accessibilityHidden(true)
             }
         }
         .padding(8)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(artworkAccessibilityLabel(artwork))
+        .accessibilityAction(named: "View full size") {
+            selectedArtwork = artwork
+        }
+        .accessibilityAction(named: "Edit") {
+            editingArtwork = artwork
+        }
+        .accessibilityAction(named: "Delete") {
+            artworkToDelete = artwork
+            showDeleteConfirm = true
+        }
+    }
+
+    private func artworkAccessibilityLabel(_ artwork: Artwork) -> String {
+        var parts: [String] = [artwork.title]
+
+        if artwork.isPublishedBool {
+            parts.append("Published")
+        } else {
+            parts.append("Draft")
+        }
+
+        if let description = artwork.description, !description.isEmpty {
+            let preview = description.count > 60 ? String(description.prefix(60)) + "..." : description
+            parts.append(preview)
+        }
+
+        return parts.joined(separator: ". ")
     }
 
     // MARK: - Data Loading
@@ -311,9 +344,11 @@ struct ArtGalleryView: View {
         do {
             try await GalleryAPIService.deleteArtwork(id: artwork.id)
             artworks.removeAll { $0.id == artwork.id }
+            AccessibilityNotification.Announcement("Artwork deleted").post()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            AccessibilityNotification.Announcement("Failed to delete artwork").post()
         }
     }
 }
@@ -934,11 +969,13 @@ struct ArtworkLightbox: View {
                             .foregroundStyle(.white)
                             .padding()
                     }
+                    .accessibilityLabel("Close")
                     Spacer()
                     Text("\(currentIndex + 1) / \(artworks.count)")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.8))
                         .padding()
+                        .accessibilityLabel("Image \(currentIndex + 1) of \(artworks.count)")
                 }
 
                 Spacer()
@@ -971,6 +1008,7 @@ struct ArtworkLightbox: View {
                             .frame(width: 60, height: 60)
                     }
                     .disabled(!hasPrevious)
+                    .accessibilityLabel("Previous image")
 
                     Spacer()
 
@@ -985,6 +1023,7 @@ struct ArtworkLightbox: View {
                             .frame(width: 60, height: 60)
                     }
                     .disabled(!hasNext)
+                    .accessibilityLabel("Next image")
                 }
                 .padding(.bottom)
             }
