@@ -216,6 +216,7 @@ struct CollectionsView: View {
                     }
                     .disabled(index == 0)
                     .buttonStyle(.bordered)
+                    .accessibilityLabel("Move \(collection.name) up")
 
                     // Down button
                     Button {
@@ -226,6 +227,7 @@ struct CollectionsView: View {
                     }
                     .disabled(index == collections.count - 1)
                     .buttonStyle(.bordered)
+                    .accessibilityLabel("Move \(collection.name) down")
                 }
                 .padding()
                 .background(Color(.secondarySystemBackground))
@@ -545,8 +547,10 @@ struct CollectionsView: View {
         do {
             try await CollectionsAPIService.deleteCollection(id: collection.id)
             collections.removeAll { $0.id == collection.id }
+            AccessibilityNotification.Announcement("Collection deleted").post()
         } catch {
             self.error = error.localizedDescription
+            AccessibilityNotification.Announcement("Failed to delete collection").post()
         }
     }
 }
@@ -564,6 +568,7 @@ private struct SetupLinkRow: View {
                 .font(.title3)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 32)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -580,10 +585,13 @@ private struct SetupLinkRow: View {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title). \(description)")
     }
 }
 
@@ -645,6 +653,7 @@ private struct CollectionCard: View {
                             .font(.body)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityLabel("Edit \(collection.name)")
 
                     Button(role: .destructive) {
                         onDelete()
@@ -653,6 +662,7 @@ private struct CollectionCard: View {
                             .font(.body)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityLabel("Delete \(collection.name)")
                 }
             }
             .padding()
@@ -660,6 +670,9 @@ private struct CollectionCard: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(collection.name) collection")
+        .accessibilityHint("Double tap to manage items")
     }
 }
 
