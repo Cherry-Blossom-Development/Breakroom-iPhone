@@ -149,6 +149,8 @@ private struct FilterPill: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(label), \(count) order\(count == 1 ? "" : "s")")
+        .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 }
 
@@ -164,6 +166,16 @@ private struct OrderCard: View {
     @State private var trackingNumber = ""
     @State private var isShipping = false
     @State private var shipError: String?
+
+    private var orderAccessibilityLabel: String {
+        var parts: [String] = []
+        parts.append(order.itemName ?? "Unknown item")
+        parts.append(order.totalFormatted)
+        parts.append("Status: \(order.statusLabel)")
+        parts.append("Buyer: \(order.buyerName ?? "Unknown")")
+        parts.append(order.formattedDate)
+        return parts.joined(separator: ". ")
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -213,10 +225,14 @@ private struct OrderCard: View {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 }
                 .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(orderAccessibilityLabel)
+            .accessibilityHint(isExpanded ? "Double tap to collapse" : "Double tap to expand details")
 
             // Expanded details
             if isExpanded {

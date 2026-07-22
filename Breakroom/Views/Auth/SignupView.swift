@@ -25,6 +25,7 @@ struct SignupView: View {
                     .scaledToFit()
                     .frame(width: 80, height: 80)
                     .padding(.top, 24)
+                    .accessibilityLabel("Prosaurus logo")
 
                 Text("Create Account")
                     .font(.largeTitle)

@@ -91,6 +91,8 @@ struct BillingView: View {
         .padding()
         .background(planSubscribed ? Color.purple.opacity(0.15) : Color(.tertiarySystemFill))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Current plan: \(planSubscribed ? "Pro" : "Free"). \(planSubscribed ? "0 percent" : "5 percent") platform fee on sales")
     }
 
     // MARK: - Free Tier Card

@@ -44,6 +44,7 @@ struct InviteUsersView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            .accessibilityHidden(true)
                             Spacer()
                             Button {
                                 Task { await inviteUser(user) }
@@ -58,7 +59,10 @@ struct InviteUsersView: View {
                             .buttonStyle(.borderedProminent)
                             .controlSize(.small)
                             .disabled(invitingUserId != nil)
+                            .accessibilityLabel(invitingUserId == user.id ? "Inviting \(user.displayName)" : "Invite \(user.displayName)")
                         }
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel("\(user.displayName), @\(user.handle)")
                     }
                 }
             }
@@ -95,8 +99,9 @@ struct InviteUsersView: View {
             try await ChatAPIService.inviteUser(roomId: room.id, userId: user.id)
             // Add to members so they disappear from the invite list
             members.append(ChatMember(id: user.id, handle: user.handle, role: nil, joinedAt: nil))
+            AccessibilityNotification.Announcement("Invitation sent to \(user.displayName)").post()
         } catch {
-            // Invitation failed silently; button resets
+            AccessibilityNotification.Announcement("Failed to invite \(user.displayName)").post()
         }
         invitingUserId = nil
     }
