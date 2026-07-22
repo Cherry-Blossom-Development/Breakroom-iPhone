@@ -1626,6 +1626,7 @@ struct SessionsView: View {
 
             recordingState = .recording
             recordingSeconds = 0
+            AccessibilityNotification.Announcement("Recording started").post()
 
             recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] _ in
                 Task { @MainActor in
@@ -1634,6 +1635,7 @@ struct SessionsView: View {
             }
         } catch {
             errorMessage = "Failed to start recording: \(error.localizedDescription)"
+            AccessibilityNotification.Announcement("Failed to start recording").post()
         }
     }
 
@@ -1646,6 +1648,7 @@ struct SessionsView: View {
 
         recordingState = .saving
         showSaveSheet = true
+        AccessibilityNotification.Announcement("Recording stopped. Ready to save.").post()
     }
 
     private func saveRecording(name: String, recordedAt: String?, bandId: Int?, instrumentId: Int?) async {
@@ -1678,13 +1681,16 @@ struct SessionsView: View {
             try? FileManager.default.removeItem(at: fileURL)
             pendingRecordingURL = nil
             showSaveSheet = false
+            AccessibilityNotification.Announcement("Recording saved: \(name)").post()
         } catch APIError.subscriptionRequired {
             // Show paywall when free limit is reached
             // Keep the recording file so user can retry after subscribing
             showPaywall = true
             showSaveSheet = false
+            AccessibilityNotification.Announcement("Subscription required to save more recordings").post()
         } catch {
             errorMessage = error.localizedDescription
+            AccessibilityNotification.Announcement("Failed to save recording").post()
         }
 
         isSavingSession = false
@@ -1698,6 +1704,7 @@ struct SessionsView: View {
         pendingRecordingURL = nil
         pendingUploadInfo = nil
         recordingState = .idle
+        AccessibilityNotification.Announcement("Recording discarded").post()
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
@@ -1977,6 +1984,29 @@ private struct SessionRow: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .accessibilityIdentifier("sessionsRow_\(session.id)")
+        .accessibilityAction(named: "Edit name") {
+            onEdit()
+        }
+    }
+
+    private var sessionInfoLabel: String {
+        var parts: [String] = [session.name]
+
+        parts.append(session.formattedDate)
+
+        if let band = session.bandName {
+            parts.append("Band: \(band)")
+        }
+
+        if let instrument = session.instrumentName {
+            parts.append("Instrument: \(instrument)")
+        }
+
+        if !session.formattedFileSize.isEmpty {
+            parts.append(session.formattedFileSize)
+        }
+
+        return parts.joined(separator: ". ")
     }
 }
 
@@ -2052,6 +2082,26 @@ private struct BandMemberSessionRow: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
     }
+
+    private var sessionInfoLabel: String {
+        var parts: [String] = [session.name]
+
+        if let instrument = session.instrumentName {
+            parts.append("Instrument: \(instrument)")
+        }
+
+        if let handle = session.uploaderHandle {
+            parts.append("by @\(handle)")
+        }
+
+        parts.append(session.formattedDate)
+
+        if !session.formattedFileSize.isEmpty {
+            parts.append(session.formattedFileSize)
+        }
+
+        return parts.joined(separator: ". ")
+    }
 }
 
 // MARK: - Rating Chip
@@ -2073,6 +2123,7 @@ private struct RatingChip: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityDescription)
     }
 
     private var chipText: String {
@@ -2080,6 +2131,23 @@ private struct RatingChip: View {
             return String(format: "★ %.1f (%d)", avg, ratingCount)
         }
         return "Rate"
+    }
+
+    private var accessibilityDescription: String {
+        var parts: [String] = []
+
+        if let avg = avgRating, ratingCount > 0 {
+            parts.append(String(format: "Average rating %.1f out of 5", avg))
+            parts.append("\(ratingCount) rating\(ratingCount == 1 ? "" : "s")")
+        }
+
+        if let my = myRating {
+            parts.append("Your rating: \(my) out of 5")
+        } else {
+            parts.append("Tap to rate")
+        }
+
+        return parts.joined(separator: ". ")
     }
 }
 
