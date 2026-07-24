@@ -30,281 +30,7 @@ struct ChatListView: View {
     var body: some View {
         ZStack {
             Color.clear // Ensures accessibility identifier anchor is always present
-
-            if chatViewModel.isLoadingRooms {
-                    ProgressView("Loading rooms...")
-                } else if chatViewModel.rooms.isEmpty && chatViewModel.pendingInvites.isEmpty {
-                    ContentUnavailableView(
-                        "No Chat Rooms",
-                        systemImage: "bubble.left.and.bubble.right",
-                        description: Text("Join or create a chat room to get started.")
-                    )
-                } else {
-                    List {
-                        // Pending invites section
-                        if !chatViewModel.pendingInvites.isEmpty {
-                            Section("Pending Invites") {
-                                ForEach(chatViewModel.pendingInvites) { invite in
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text("# \(invite.roomName)")
-                                            .font(.headline)
-                                            .accessibilityHidden(true)
-                                        if let desc = invite.roomDescription, !desc.isEmpty {
-                                            Text(desc)
-                                                .font(.subheadline)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(1)
-                                                .accessibilityHidden(true)
-                                        }
-                                        Text("Invited by \(invite.invitedByHandle)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .accessibilityHidden(true)
-                                        HStack(spacing: 12) {
-                                            Button("Accept") {
-                                                Task { await chatViewModel.acceptInvite(invite) }
-                                            }
-                                            .buttonStyle(.borderedProminent)
-                                            .controlSize(.small)
-                                            .accessibilityLabel("Accept invite to \(invite.roomName)")
-
-                                            Button("Decline") {
-                                                Task { await chatViewModel.declineInvite(invite) }
-                                            }
-                                            .buttonStyle(.bordered)
-                                            .controlSize(.small)
-                                            .accessibilityLabel("Decline invite to \(invite.roomName)")
-                                        }
-                                        .padding(.top, 2)
-                                    }
-                                    .padding(.vertical, 4)
-                                    .accessibilityElement(children: .contain)
-                                    .accessibilityLabel(inviteAccessibilityLabel(invite))
-                                }
-                            }
-                        }
-
-                        // Rooms section
-                        Section {
-                            ForEach(chatViewModel.rooms) { room in
-                                HStack(spacing: 12) {
-                                    // Kebab menu on the left
-                                    Menu {
-                                        if chatViewModel.isRoomOwner(room) {
-                                            Button {
-                                                chatViewModel.roomToEdit = room
-                                                chatViewModel.showInviteUsers = true
-                                            } label: {
-                                                Label("Invite", systemImage: "person.badge.plus")
-                                            }
-
-                                            Button {
-                                                chatViewModel.roomToEdit = room
-                                                chatViewModel.showEditRoom = true
-                                            } label: {
-                                                Label("Edit", systemImage: "pencil")
-                                            }
-
-                                            Button(role: .destructive) {
-                                                chatViewModel.roomToDelete = room
-                                                chatViewModel.showDeleteConfirmation = true
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-
-                                        Button(role: .destructive) {
-                                            chatViewModel.roomToLeave = room
-                                            chatViewModel.showLeaveConfirmation = true
-                                        } label: {
-                                            Label("Leave", systemImage: "arrow.left.circle")
-                                        }
-                                    } label: {
-                                        Image(systemName: "ellipsis")
-                                            .rotationEffect(.degrees(90))
-                                            .font(.body)
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: 24, height: 24)
-                                    }
-                                    .accessibilityLabel("Room actions for \(room.name)")
-
-                                    NavigationLink(value: room) {
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                HStack(spacing: 4) {
-                                                    Text("# \(room.name)")
-                                                        .font(.headline)
-                                                    if chatViewModel.isRoomOwner(room) {
-                                                        Image(systemName: "crown.fill")
-                                                            .font(.caption)
-                                                            .foregroundStyle(.orange)
-                                                            .accessibilityHidden(true)
-                                                    }
-                                                }
-                                                if let description = room.description, !description.isEmpty {
-                                                    Text(description)
-                                                        .font(.subheadline)
-                                                        .foregroundStyle(.secondary)
-                                                        .lineLimit(1)
-                                                }
-                                            }
-                                            Spacer()
-                                            // Unread badge
-                                            if let unread = badgeStore.chatUnread[room.id], unread > 0 {
-                                                Text("\(unread)")
-                                                    .font(.caption2.bold())
-                                                    .foregroundStyle(.white)
-                                                    .padding(.horizontal, 6)
-                                                    .padding(.vertical, 2)
-                                                    .background(.red)
-                                                    .clipShape(Capsule())
-                                                    .accessibilityHidden(true)
-                                            }
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                    .accessibilityIdentifier("roomItem")
-                                    .accessibilityLabel(roomAccessibilityLabel(room))
-                                }
-                            }
-                        }
-
-                        // Direct Messages section
-                        Section("Direct Messages") {
-                            // Search field for finding users
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                                TextField("Find a user...", text: Binding(
-                                    get: { chatViewModel.dmSearchQuery },
-                                    set: { chatViewModel.updateDmSearchQuery($0) }
-                                ))
-                                .textFieldStyle(.plain)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .accessibilityLabel("Search for user to message")
-
-                                if !chatViewModel.dmSearchQuery.isEmpty {
-                                    Button {
-                                        chatViewModel.updateDmSearchQuery("")
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .accessibilityLabel("Clear search")
-                                }
-                            }
-                            .padding(.vertical, 4)
-
-                            // Search results
-                            if !chatViewModel.dmSearchResults.isEmpty {
-                                ForEach(chatViewModel.dmSearchResults) { user in
-                                    Button {
-                                        Task {
-                                            if let roomInfo = await chatViewModel.startDm(with: user) {
-                                                // Navigate to the DM
-                                                let dm = ChatDm(
-                                                    id: roomInfo.id,
-                                                    partnerId: roomInfo.partnerId,
-                                                    partnerHandle: roomInfo.partnerHandle,
-                                                    unreadCount: 0,
-                                                    lastMessage: nil,
-                                                    lastMessageAt: nil
-                                                )
-                                                selectedDmNavigation = DmNavigation(dm)
-                                            }
-                                        }
-                                    } label: {
-                                        HStack(spacing: 12) {
-                                            // Avatar circle with initial
-                                            Circle()
-                                                .fill(Color.accentColor.opacity(0.2))
-                                                .frame(width: 36, height: 36)
-                                                .overlay {
-                                                    Text(String(user.handle.prefix(1)).uppercased())
-                                                        .font(.headline)
-                                                        .foregroundStyle(Color.accentColor)
-                                                }
-                                                .accessibilityHidden(true)
-
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text("@\(user.handle)")
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
-                                                    .foregroundStyle(.primary)
-                                                if user.displayName != user.handle {
-                                                    Text(user.displayName)
-                                                        .font(.caption)
-                                                        .foregroundStyle(.secondary)
-                                                }
-                                            }
-
-                                            Spacer()
-
-                                            if chatViewModel.isStartingDm {
-                                                ProgressView()
-                                                    .controlSize(.small)
-                                            }
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                    .disabled(chatViewModel.isStartingDm)
-                                    .accessibilityElement(children: .ignore)
-                                    .accessibilityLabel("Start message with \(user.displayName), @\(user.handle)")
-                                }
-                            }
-
-                            // Existing DM threads
-                            ForEach(chatViewModel.dms) { dm in
-                                NavigationLink(value: DmNavigation(dm)) {
-                                    HStack(spacing: 12) {
-                                        // Avatar circle with initial
-                                        Circle()
-                                            .fill(Color.accentColor.opacity(0.2))
-                                            .frame(width: 36, height: 36)
-                                            .overlay {
-                                                Text(String(dm.partnerHandle.prefix(1)).uppercased())
-                                                    .font(.headline)
-                                                    .foregroundStyle(Color.accentColor)
-                                            }
-                                            .accessibilityHidden(true)
-
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("@\(dm.partnerHandle)")
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
-                                            if let lastMessage = dm.lastMessage, !lastMessage.isEmpty {
-                                                Text(lastMessage)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(1)
-                                            }
-                                        }
-
-                                        Spacer()
-
-                                        // Unread badge
-                                        if dm.unreadCount > 0 {
-                                            Text("\(dm.unreadCount)")
-                                                .font(.caption2.bold())
-                                                .foregroundStyle(.white)
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(.red)
-                                                .clipShape(Capsule())
-                                                .accessibilityHidden(true)
-                                        }
-                                    }
-                                    .padding(.vertical, 4)
-                                }
-                                .accessibilityIdentifier("dmItem")
-                                .accessibilityElement(children: .ignore)
-                                .accessibilityLabel(dmAccessibilityLabel(dm))
-                            }
-                        }
-                    }
-                }
+            mainContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
@@ -417,6 +143,320 @@ struct ChatListView: View {
             .fill(socketManager.connectionState == .connected ? .green : .red)
             .frame(width: 8, height: 8)
             .accessibilityLabel(socketManager.connectionState == .connected ? "Connected" : "Disconnected")
+    }
+
+    // MARK: - Extracted Views
+
+    @ViewBuilder
+    private var mainContent: some View {
+        if chatViewModel.isLoadingRooms {
+            ProgressView("Loading rooms...")
+        } else if chatViewModel.rooms.isEmpty && chatViewModel.pendingInvites.isEmpty {
+            ContentUnavailableView(
+                "No Chat Rooms",
+                systemImage: "bubble.left.and.bubble.right",
+                description: Text("Join or create a chat room to get started.")
+            )
+        } else {
+            List {
+                pendingInvitesSection
+                roomsSection
+                directMessagesSection
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pendingInvitesSection: some View {
+        if !chatViewModel.pendingInvites.isEmpty {
+            Section("Pending Invites") {
+                ForEach(chatViewModel.pendingInvites) { invite in
+                    inviteRow(invite)
+                }
+            }
+        }
+    }
+
+    private func inviteRow(_ invite: ChatInvite) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("# \(invite.roomName)")
+                .font(.headline)
+                .accessibilityHidden(true)
+            if let desc = invite.roomDescription, !desc.isEmpty {
+                Text(desc)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .accessibilityHidden(true)
+            }
+            Text("Invited by \(invite.invitedByHandle)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            HStack(spacing: 12) {
+                Button("Accept") {
+                    Task { await chatViewModel.acceptInvite(invite) }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .accessibilityLabel("Accept invite to \(invite.roomName)")
+
+                Button("Decline") {
+                    Task { await chatViewModel.declineInvite(invite) }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .accessibilityLabel("Decline invite to \(invite.roomName)")
+            }
+            .padding(.top, 2)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(inviteAccessibilityLabel(invite))
+    }
+
+    private var roomsSection: some View {
+        Section {
+            ForEach(chatViewModel.rooms) { room in
+                roomRow(room)
+            }
+        }
+    }
+
+    private func roomRow(_ room: ChatRoom) -> some View {
+        HStack(spacing: 12) {
+            roomMenu(room)
+
+            NavigationLink(value: room) {
+                roomContent(room)
+            }
+            .accessibilityIdentifier("roomItem")
+            .accessibilityLabel(roomAccessibilityLabel(room))
+        }
+    }
+
+    private func roomMenu(_ room: ChatRoom) -> some View {
+        Menu {
+            if chatViewModel.isRoomOwner(room) {
+                Button {
+                    chatViewModel.roomToEdit = room
+                    chatViewModel.showInviteUsers = true
+                } label: {
+                    Label("Invite", systemImage: "person.badge.plus")
+                }
+
+                Button {
+                    chatViewModel.roomToEdit = room
+                    chatViewModel.showEditRoom = true
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+
+                Button(role: .destructive) {
+                    chatViewModel.roomToDelete = room
+                    chatViewModel.showDeleteConfirmation = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+
+            Button(role: .destructive) {
+                chatViewModel.roomToLeave = room
+                chatViewModel.showLeaveConfirmation = true
+            } label: {
+                Label("Leave", systemImage: "arrow.left.circle")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .rotationEffect(.degrees(90))
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+        }
+        .accessibilityLabel("Room actions for \(room.name)")
+    }
+
+    private func roomContent(_ room: ChatRoom) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("# \(room.name)")
+                        .font(.headline)
+                    if chatViewModel.isRoomOwner(room) {
+                        Image(systemName: "crown.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .accessibilityHidden(true)
+                    }
+                }
+                if let description = room.description, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            if let unread = badgeStore.chatUnread[room.id], unread > 0 {
+                Text("\(unread)")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.red)
+                    .clipShape(Capsule())
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var directMessagesSection: some View {
+        Section("Direct Messages") {
+            dmSearchField
+            dmSearchResults
+            dmThreadsList
+        }
+    }
+
+    private var dmSearchField: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField("Find a user...", text: Binding(
+                get: { chatViewModel.dmSearchQuery },
+                set: { chatViewModel.updateDmSearchQuery($0) }
+            ))
+            .textFieldStyle(.plain)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+            .accessibilityLabel("Search for user to message")
+
+            if !chatViewModel.dmSearchQuery.isEmpty {
+                Button {
+                    chatViewModel.updateDmSearchQuery("")
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var dmSearchResults: some View {
+        if !chatViewModel.dmSearchResults.isEmpty {
+            ForEach(chatViewModel.dmSearchResults) { user in
+                dmSearchResultRow(user)
+            }
+        }
+    }
+
+    private func dmSearchResultRow(_ user: User) -> some View {
+        Button {
+            Task {
+                if let roomInfo = await chatViewModel.startDm(with: user) {
+                    let dm = ChatDm(
+                        id: roomInfo.id,
+                        partnerId: roomInfo.partnerId,
+                        partnerHandle: roomInfo.partnerHandle,
+                        unreadCount: 0,
+                        lastMessage: nil,
+                        lastMessageAt: nil
+                    )
+                    selectedDmNavigation = DmNavigation(dm)
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.2))
+                    .frame(width: 36, height: 36)
+                    .overlay {
+                        Text(String(user.handle.prefix(1)).uppercased())
+                            .font(.headline)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("@\(user.handle)")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                    if user.displayName != user.handle {
+                        Text(user.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if chatViewModel.isStartingDm {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .disabled(chatViewModel.isStartingDm)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Start message with \(user.displayName), @\(user.handle)")
+    }
+
+    private var dmThreadsList: some View {
+        ForEach(chatViewModel.dms) { dm in
+            dmThreadRow(dm)
+        }
+    }
+
+    private func dmThreadRow(_ dm: ChatDm) -> some View {
+        NavigationLink(value: DmNavigation(dm)) {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.2))
+                    .frame(width: 36, height: 36)
+                    .overlay {
+                        Text(String(dm.partnerHandle.prefix(1)).uppercased())
+                            .font(.headline)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("@\(dm.partnerHandle)")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    if let lastMessage = dm.lastMessage, !lastMessage.isEmpty {
+                        Text(lastMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                if dm.unreadCount > 0 {
+                    Text("\(dm.unreadCount)")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.red)
+                        .clipShape(Capsule())
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .accessibilityIdentifier("dmItem")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(dmAccessibilityLabel(dm))
     }
 
     // MARK: - Accessibility Helpers
