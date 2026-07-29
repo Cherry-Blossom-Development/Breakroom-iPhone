@@ -348,27 +348,21 @@ enum CollectionsAPIService {
         return try await APIClient.shared.request("/api/storefront/orders/\(orderId)/ship", method: "PUT", body: body)
     }
 
-    // MARK: - Billing / Stripe Connect
+    // MARK: - Billing / Square Connect
 
     /// Get the user's billing plan (free vs pro)
     static func getBillingPlan() async throws -> BillingPlan {
         try await APIClient.shared.request("/api/billing/plan")
     }
 
-    /// Get Stripe Connect status
+    /// Get Square Connect status
     static func getConnectStatus() async throws -> ConnectStatus {
         try await APIClient.shared.request("/api/billing/connect/status")
     }
 
-    /// Start Stripe Connect onboarding - returns URL to open
+    /// Start Square Connect onboarding - returns URL to open
     static func startConnect() async throws -> ConnectStartResponse {
         try await APIClient.shared.request("/api/billing/connect/start", method: "POST")
-    }
-
-    /// Get Stripe billing portal URL for managing subscription
-    static func getBillingPortalUrl() async throws -> String {
-        let response: BillingPortalResponse = try await APIClient.shared.request("/api/billing/portal-url")
-        return response.url
     }
 
     // MARK: - Storefront

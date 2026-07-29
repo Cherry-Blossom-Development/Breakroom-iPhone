@@ -1,13 +1,9 @@
 # Stripe → Square Migration — iPhone Side
 
-**Status**: BLOCKED — do not start until the backend migration has shipped
-**Blocked on**: `Breakroom/docs/stripe-to-square-migration.md` in the **Breakroom repo**
-(Vue frontend + Express backend, not this repo) — specifically its Phase 3 ("Backend:
-Storefront checkout + webhooks") needs to be live in production before this app changes
-anything, since this app just consumes whatever `platform` value and URLs the backend's
-`/api/billing/*` endpoints return. If you're picking this up on a machine that doesn't
-have the Breakroom repo checked out, you'll need to check with Dallas on whether that
-backend work has actually shipped before starting anything here.
+**Status**: DONE (2026-07-29)
+**Was blocked on**: `Breakroom/docs/stripe-to-square-migration.md` in the **Breakroom repo**
+— Phases 1-6 have since shipped, so this app's changes were implemented against the real
+backend contract.
 
 ## Background (for a cold read, no prior conversation context)
 
@@ -114,3 +110,18 @@ check with Dallas directly if there's any doubt about backend readiness.
 - 2026-07-24: Doc created during a planning session run from the Android repo (this repo
   was inventoried remotely as part of that session, not edited). No code changes made
   here yet. Blocked on backend work in the Breakroom repo.
+- 2026-07-29: Backend Phases 1-6 confirmed shipped (see the Breakroom repo's migration
+  doc). Implemented all changes:
+  - `BillingView.swift`: Changed `"stripe"` platform check to `"square"`, removed dead
+    `getBillingPortalUrl()` call (Square has no hosted portal), now opens web URL
+    `https://www.prosaurus.com/collections/payment-setup` instead. Updated fee breakdown
+    copy from "Stripe" to "Square".
+  - `PaymentSetupView.swift`: Updated all "Stripe" UI copy to "Square" across connect
+    cards and "How it works" section. Changed dashboard URL from
+    `dashboard.stripe.com/express` to `squareup.com/dashboard`.
+  - `CollectionsView.swift`: Updated "Connect Stripe" to "Connect Square".
+  - `CollectionsAPIService.swift`: Removed dead `getBillingPortalUrl()` function, updated
+    section comments from "Stripe" to "Square".
+  - `CollectionsModels.swift`: Updated section comment, removed unused
+    `BillingPortalResponse` struct.
+  Verified with a full build. Migration complete.

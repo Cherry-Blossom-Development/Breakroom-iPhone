@@ -360,7 +360,7 @@ struct Order: Codable, Identifiable {
     }
 }
 
-// MARK: - Billing / Stripe Connect
+// MARK: - Billing / Square Connect
 
 struct BillingPlan: Codable {
     let subscribed: Bool
@@ -381,10 +381,6 @@ struct ConnectStatus: Codable {
 struct ConnectStartResponse: Codable {
     let url: String?
     let status: String?
-}
-
-struct BillingPortalResponse: Codable {
-    let url: String
 }
 
 // MARK: - Storefront

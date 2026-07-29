@@ -280,7 +280,7 @@ struct CollectionsView: View {
                     SetupLinkRow(
                         icon: "creditcard",
                         title: "Payment Setup",
-                        description: "Connect Stripe to receive payouts"
+                        description: "Connect Square to receive payouts"
                     )
                 }
 

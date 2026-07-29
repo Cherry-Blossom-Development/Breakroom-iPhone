@@ -99,7 +99,7 @@ struct PaymentSetupView: View {
             default: return "Pro plan active"
             }
         }
-        return "Upgrade to Pro to keep 100% of your sale price (minus Stripe's processing fee)"
+        return "Upgrade to Pro to keep 100% of your sale price (minus Square's processing fee)"
     }
 
     // MARK: - Connect Cards
@@ -120,7 +120,7 @@ struct PaymentSetupView: View {
                     Text("No payout account connected")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    Text("Connect a Stripe account to receive payouts from your sales.")
+                    Text("Connect a Square account to receive payouts from your sales.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -134,7 +134,7 @@ struct PaymentSetupView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(isStartingConnect ? "Redirecting…" : "Connect with Stripe")
+                    Text(isStartingConnect ? "Redirecting…" : "Connect with Square")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -163,7 +163,7 @@ struct PaymentSetupView: View {
                     Text("Setup incomplete")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    Text("Your Stripe account was created but onboarding isn't finished yet.")
+                    Text("Your Square account was created but onboarding isn't finished yet.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -177,7 +177,7 @@ struct PaymentSetupView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(isStartingConnect ? "Redirecting…" : "Continue Stripe Setup")
+                    Text(isStartingConnect ? "Redirecting…" : "Continue Square Setup")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -202,7 +202,7 @@ struct PaymentSetupView: View {
                     }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Stripe account connected")
+                    Text("Square account connected")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                     Text("Your account is ready to accept payments. Payouts go directly to your bank.")
@@ -212,11 +212,11 @@ struct PaymentSetupView: View {
             }
 
             Button {
-                if let url = URL(string: "https://dashboard.stripe.com/express") {
+                if let url = URL(string: "https://squareup.com/dashboard") {
                     UIApplication.shared.open(url)
                 }
             } label: {
-                Text("Open Stripe Dashboard ↗")
+                Text("Open Square Dashboard ↗")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -237,8 +237,8 @@ struct PaymentSetupView: View {
 
             howItWorksStep(
                 number: "1",
-                title: "Connect your Stripe payout account",
-                description: "Create or link a Stripe account. Stripe collects your bank info for payouts."
+                title: "Connect your Square payout account",
+                description: "Create or link a Square account. Square collects your bank info for payouts."
             )
 
             howItWorksStep(
@@ -250,7 +250,7 @@ struct PaymentSetupView: View {
             howItWorksStep(
                 number: "3",
                 title: "Customers buy from your store",
-                description: "Stripe processes payments securely. Pro members keep 100% of their sale price (minus Stripe's ~2.9% + $0.30 fee). Free members also have a 5% platform fee deducted."
+                description: "Square processes payments securely. Pro members keep 100% of their sale price (minus Square's ~2.9% + $0.30 fee). Free members also have a 5% platform fee deducted."
             )
         }
     }

@@ -247,7 +247,7 @@ struct BillingView: View {
             Text("How art sale fees work")
                 .font(.headline)
 
-            Text("When a buyer purchases artwork through your storefront, payment is processed by Stripe. Stripe always charges their standard processing fee — this is not a Prosaurus fee and cannot be waived.")
+            Text("When a buyer purchases artwork through your storefront, payment is processed by Square. Square always charges their standard processing fee — this is not a Prosaurus fee and cannot be waived.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -255,7 +255,7 @@ struct BillingView: View {
                 feeExampleCard(
                     label: "Free — $10 sale",
                     rows: [
-                        ("Stripe", "−$0.59", false),
+                        ("Square", "−$0.59", false),
                         ("Platform fee", "−$0.50", false)
                     ],
                     total: "$8.91",
@@ -265,7 +265,7 @@ struct BillingView: View {
                 feeExampleCard(
                     label: "Pro — $10 sale",
                     rows: [
-                        ("Stripe", "−$0.59", false),
+                        ("Square", "−$0.59", false),
                         ("Platform fee", "waived", true)
                     ],
                     total: "$9.41",
@@ -364,17 +364,12 @@ struct BillingView: View {
         isOpeningPortal = true
 
         switch planPlatform {
-        case "stripe":
-            // Open Stripe billing portal
-            do {
-                let url = try await CollectionsAPIService.getBillingPortalUrl()
-                if let portalURL = URL(string: url) {
-                    await MainActor.run {
-                        UIApplication.shared.open(portalURL)
-                    }
+        case "square":
+            // Open web app for Square subscription management (Square has no hosted portal)
+            if let url = URL(string: "https://www.prosaurus.com/collections/payment-setup") {
+                await MainActor.run {
+                    UIApplication.shared.open(url)
                 }
-            } catch {
-                self.error = "Failed to open billing portal"
             }
 
         case "apple":
