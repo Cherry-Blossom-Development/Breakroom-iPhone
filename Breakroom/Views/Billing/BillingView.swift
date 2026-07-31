@@ -364,8 +364,10 @@ struct BillingView: View {
         isOpeningPortal = true
 
         switch planPlatform {
-        case "square":
-            // Open web app for Square subscription management (Square has no hosted portal)
+        case "square", "paypal":
+            // Neither Square nor PayPal has a hosted customer portal -- managing
+            // (cancel/update card) is a custom web-only flow, so this just opens
+            // the web app rather than calling a portal endpoint.
             if let url = URL(string: "https://www.prosaurus.com/collections/payment-setup") {
                 await MainActor.run {
                     UIApplication.shared.open(url)
