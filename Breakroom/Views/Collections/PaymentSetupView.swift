@@ -13,6 +13,10 @@ struct PaymentSetupView: View {
     @State private var connectStatus = "not_connected" // "not_connected", "pending", "active"
     @State private var isStartingConnect = false
 
+    // View mode: "chooser" or "manage" — mirrors CollectionsPaymentPage.vue
+    @State private var viewMode = "chooser"
+    @State private var initialViewModeResolved = false
+
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -32,24 +36,27 @@ struct PaymentSetupView: View {
                                 .padding(.horizontal)
                         }
 
-                        // Payout Account section
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Payout Account")
-                                .font(.headline)
-                                .padding(.horizontal)
+                        // Payment method chooser / manage
+                        if viewMode == "chooser" {
+                            processorChooserSection
+                        } else {
+                            // Manage view
+                            VStack(alignment: .leading, spacing: 12) {
+                                manageHeader
 
-                            switch connectStatus {
-                            case "active":
-                                activeConnectCard
-                            case "pending":
-                                pendingConnectCard
-                            default:
-                                notConnectedCard
+                                switch connectStatus {
+                                case "active":
+                                    activeConnectCard
+                                case "pending":
+                                    pendingConnectCard
+                                default:
+                                    notConnectedCard
+                                }
                             }
-                        }
 
-                        // How it works
-                        howItWorksSection
+                            // How it works
+                            howItWorksSection
+                        }
                     }
                     .padding()
                 }
@@ -226,6 +233,129 @@ struct PaymentSetupView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
+    // MARK: - Processor Chooser
+
+    private var manageHeader: some View {
+        HStack {
+            Text("Payout Account — Square")
+                .font(.headline)
+            Spacer()
+            Button("Change payment method") {
+                viewMode = "chooser"
+            }
+            .font(.caption)
+        }
+        .padding(.horizontal)
+    }
+
+    private var processorChooserSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Choose a Payment Method")
+                .font(.headline)
+
+            Text("Pick a processor to handle your payouts. You can come back here to switch or add another processor later.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            // Square card
+            processorCard(
+                name: "Square",
+                badge: squareBadge,
+                badgeColor: connectStatus == "active" ? .blue : .secondary,
+                description: "Instant self-serve setup — create or link a Square account and start accepting payments within a few minutes.",
+                points: [
+                    "Payouts go straight to your bank on Square's schedule",
+                    "Square's standard processing fee applies (~2.9% + $0.30)",
+                    "Manage your account anytime from the Square Dashboard"
+                ],
+                buttonLabel: connectStatus == "not_connected" ? "Choose Square" : "Manage Square",
+                enabled: true
+            ) {
+                viewMode = "manage"
+            }
+
+            // PayPal card (coming soon)
+            processorCard(
+                name: "PayPal",
+                badge: "Coming Soon",
+                badgeColor: .secondary,
+                description: "Connect a PayPal Business account to receive payouts instead of — or alongside — Square.",
+                points: [
+                    "Payouts go to your PayPal balance, transferable to your bank",
+                    "PayPal's standard processing fee applies",
+                    "We're finalizing PayPal's marketplace approval — check back soon"
+                ],
+                buttonLabel: "Coming Soon",
+                enabled: false
+            ) { }
+        }
+    }
+
+    private var squareBadge: String? {
+        switch connectStatus {
+        case "active": return "Connected"
+        case "pending": return "Setup incomplete"
+        default: return nil
+        }
+    }
+
+    private func processorCard(
+        name: String,
+        badge: String?,
+        badgeColor: Color,
+        description: String,
+        points: [String],
+        buttonLabel: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(name)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                Spacer()
+                if let badge {
+                    Text(badge)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(badgeColor.opacity(0.15))
+                        .foregroundStyle(badgeColor)
+                        .clipShape(Capsule())
+                }
+            }
+
+            Text(description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(points, id: \.self) { point in
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("•")
+                            .foregroundStyle(.secondary)
+                        Text(point)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Button(action: action) {
+                Text(buttonLabel)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!enabled)
+        }
+        .padding()
+        .background(enabled ? Color(.systemBackground) : Color(.secondarySystemBackground).opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: enabled ? .black.opacity(0.1) : .clear, radius: 4, y: 2)
+    }
+
     // MARK: - How It Works
 
     private var howItWorksSection: some View {
@@ -295,6 +425,14 @@ struct PaymentSetupView: View {
             planFeePercent = plan.feePercent
             planPlatform = plan.platform
             connectStatus = status.status
+
+            // Land on the manage view (rather than the chooser) if Square is already set up.
+            // Only decide initial view once — a later refresh (e.g. from returning from the
+            // browser) shouldn't undo a user's manual "Change payment method" tap back to chooser.
+            if !initialViewModeResolved && status.status != "not_connected" {
+                viewMode = "manage"
+            }
+            initialViewModeResolved = true
         } catch {
             self.error = error.localizedDescription
         }
