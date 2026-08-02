@@ -84,6 +84,12 @@ struct SessionsView: View {
     @State private var setlistsByBand: [Int: [BandSetlist]] = [:]
     @State private var setlistToDelete: BandSetlist?
 
+    // Shortlists
+    @State private var shortlists: [Shortlist] = []
+    @State private var selectedShortlist: Shortlist?
+    @State private var shortlistSessions: [Session] = []
+    @State private var isLoadingShortlist = false
+
     // Upload flow
     @State private var showFilePicker = false
     @State private var uploadContext = "band" // "band" or "individual"
@@ -468,8 +474,110 @@ struct SessionsView: View {
 
                     bandDetailView(band)
                 }
+
+                // Shortlists section
+                if !shortlists.isEmpty {
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    shortlistsSection
+                }
             }
             .padding(.vertical)
+        }
+        .sheet(item: $selectedShortlist) { shortlist in
+            ShortlistDetailSheet(
+                shortlist: shortlist,
+                sessions: shortlistSessions,
+                isLoading: isLoadingShortlist,
+                bands: activeBands,
+                nowPlayingId: nowPlayingId,
+                onPlay: { session in playSession(session) },
+                onRate: { session in openRatingPopup(session, source: "own") },
+                onRemove: { session in
+                    Task { await removeFromShortlist(shortlist: shortlist, session: session) }
+                },
+                onClose: { selectedShortlist = nil }
+            )
+        }
+    }
+
+    private var shortlistsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Shortlists")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.horizontal)
+
+            ForEach(shortlists) { shortlist in
+                shortlistRow(shortlist)
+            }
+        }
+    }
+
+    private func shortlistRow(_ shortlist: Shortlist) -> some View {
+        Button {
+            Task { await openShortlist(shortlist) }
+        } label: {
+            HStack {
+                Image(systemName: "bookmark.fill")
+                    .foregroundStyle(.purple)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(shortlist.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+
+                    Text("\(shortlist.itemCount) items • \(shortlist.bandName ?? "")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+    }
+
+    private func openShortlist(_ shortlist: Shortlist) async {
+        isLoadingShortlist = true
+        selectedShortlist = shortlist
+
+        do {
+            let detail = try await SessionsAPIService.getShortlistDetail(shortlistId: shortlist.id)
+            shortlistSessions = detail.sessions
+        } catch {
+            errorMessage = "Failed to load shortlist"
+            selectedShortlist = nil
+        }
+
+        isLoadingShortlist = false
+    }
+
+    private func removeFromShortlist(shortlist: Shortlist, session: Session) async {
+        do {
+            try await SessionsAPIService.removeSessionFromShortlist(
+                shortlistId: shortlist.id,
+                sessionId: session.id
+            )
+            shortlistSessions.removeAll { $0.id == session.id }
+
+            // Update item count in local shortlists
+            if let index = shortlists.firstIndex(where: { $0.id == shortlist.id }) {
+                // Create a new shortlist with decremented count - we can't mutate directly
+                await loadShortlists()
+            }
+        } catch {
+            errorMessage = "Failed to remove from shortlist"
         }
     }
 
@@ -768,6 +876,7 @@ struct SessionsView: View {
                         BandMemberSessionRow(
                             session: session,
                             isPlaying: nowPlayingId == session.id,
+                            bands: activeBands,
                             onPlay: { playSession(session) },
                             onRate: { openRatingPopup(session, source: "bandMember") }
                         )
@@ -1207,8 +1316,17 @@ struct SessionsView: View {
         async let audioDefaultsTask: () = loadAudioDefaults()
         async let deviceTask: () = registerDevice()
         async let subscriptionTask: () = checkSubscriptionStatus()
+        async let shortlistsTask: () = loadShortlists()
 
-        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask, deviceTask, subscriptionTask)
+        _ = await (sessionsTask, bandMemberTask, bandsTask, instrumentsTask, audioDefaultsTask, deviceTask, subscriptionTask, shortlistsTask)
+    }
+
+    private func loadShortlists() async {
+        do {
+            shortlists = try await SessionsAPIService.getMyShortlists()
+        } catch {
+            // Non-critical - shortlists just won't show
+        }
     }
 
     private func checkSubscriptionStatus() async {
@@ -1438,7 +1556,8 @@ struct SessionsView: View {
                     sessionType: old.sessionType, bandId: old.bandId, bandName: old.bandName,
                     instrumentId: old.instrumentId, instrumentName: old.instrumentName,
                     uploaderHandle: old.uploaderHandle, avgRating: response.avgRating,
-                    ratingCount: response.ratingCount, myRating: response.myRating
+                    ratingCount: response.ratingCount, myRating: response.myRating,
+                    shortlistCount: old.shortlistCount, commentCount: old.commentCount
                 )
             }
 
@@ -1451,7 +1570,8 @@ struct SessionsView: View {
                     sessionType: old.sessionType, bandId: old.bandId, bandName: old.bandName,
                     instrumentId: old.instrumentId, instrumentName: old.instrumentName,
                     uploaderHandle: old.uploaderHandle, avgRating: response.avgRating,
-                    ratingCount: response.ratingCount, myRating: response.myRating
+                    ratingCount: response.ratingCount, myRating: response.myRating,
+                    shortlistCount: old.shortlistCount, commentCount: old.commentCount
                 )
             }
         } catch {
@@ -1874,12 +1994,43 @@ private struct SessionRow: View {
     let instruments: [Instrument]
     let showBandPicker: Bool
     let showInstrumentPicker: Bool
+    let showShortlistButton: Bool
     let onPlay: () -> Void
     let onRate: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onBandChange: (Int?) -> Void
     let onInstrumentChange: (Int?) -> Void
+
+    init(
+        session: Session,
+        isPlaying: Bool,
+        bands: [Band],
+        instruments: [Instrument],
+        showBandPicker: Bool,
+        showInstrumentPicker: Bool,
+        showShortlistButton: Bool = true,
+        onPlay: @escaping () -> Void,
+        onRate: @escaping () -> Void,
+        onEdit: @escaping () -> Void,
+        onDelete: @escaping () -> Void,
+        onBandChange: @escaping (Int?) -> Void,
+        onInstrumentChange: @escaping (Int?) -> Void
+    ) {
+        self.session = session
+        self.isPlaying = isPlaying
+        self.bands = bands
+        self.instruments = instruments
+        self.showBandPicker = showBandPicker
+        self.showInstrumentPicker = showInstrumentPicker
+        self.showShortlistButton = showShortlistButton
+        self.onPlay = onPlay
+        self.onRate = onRate
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        self.onBandChange = onBandChange
+        self.onInstrumentChange = onInstrumentChange
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -1958,6 +2109,10 @@ private struct SessionRow: View {
                 onTap: onRate
             )
 
+            if showShortlistButton && !bands.isEmpty {
+                ShortlistButton(session: session, bands: bands)
+            }
+
             ShareLink(
                 item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
                 subject: Text(session.name),
@@ -2015,6 +2170,7 @@ private struct SessionRow: View {
 private struct BandMemberSessionRow: View {
     let session: Session
     let isPlaying: Bool
+    let bands: [Band]
     let onPlay: () -> Void
     let onRate: () -> Void
 
@@ -2066,6 +2222,10 @@ private struct BandMemberSessionRow: View {
                 myRating: session.myRating,
                 onTap: onRate
             )
+
+            if !bands.isEmpty {
+                ShortlistButton(session: session, bands: bands)
+            }
 
             ShareLink(
                 item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
@@ -2968,6 +3128,107 @@ struct SetlistCard: View {
                 // Revert on error
             }
         }
+    }
+}
+
+// MARK: - Shortlist Detail Sheet
+
+private struct ShortlistDetailSheet: View {
+    let shortlist: Shortlist
+    let sessions: [Session]
+    let isLoading: Bool
+    let bands: [Band]
+    let nowPlayingId: Int?
+    let onPlay: (Session) -> Void
+    let onRate: (Session) -> Void
+    let onRemove: (Session) -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView("Loading shortlist...")
+                } else if sessions.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "bookmark")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("No recordings in this shortlist")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(sessions) { session in
+                            shortlistSessionRow(session)
+                        }
+                    }
+                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle(shortlist.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done", action: onClose)
+                }
+            }
+        }
+    }
+
+    private func shortlistSessionRow(_ session: Session) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                onPlay(session)
+            } label: {
+                Image(systemName: nowPlayingId == session.id ? "stop.fill" : "play.fill")
+                    .font(.title3)
+                    .foregroundStyle(nowPlayingId == session.id ? .red : .purple)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.name)
+                    .font(.body)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    Text(session.formattedDate)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if let uploader = session.uploaderHandle {
+                        Text("@\(uploader)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+
+            Spacer()
+
+            RatingChip(
+                avgRating: session.avgRating,
+                ratingCount: session.ratingCount,
+                myRating: session.myRating,
+                onTap: { onRate(session) }
+            )
+
+            Button {
+                onRemove(session)
+            } label: {
+                Image(systemName: "bookmark.slash")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove from shortlist")
+        }
+        .padding(.vertical, 4)
     }
 }
 

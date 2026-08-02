@@ -397,4 +397,101 @@ enum SessionsAPIService {
         }
         return try await APIClient.shared.request(path)
     }
+
+    // MARK: - Shortlists
+
+    /// Get all shortlists across all bands the user is an active member of
+    static func getMyShortlists() async throws -> [Shortlist] {
+        let response: ShortlistsResponse = try await APIClient.shared.request("/api/shortlists/mine")
+        return response.shortlists
+    }
+
+    /// Create a new shortlist for a band
+    static func createShortlist(bandId: Int, name: String) async throws -> Shortlist {
+        let body = CreateShortlistRequest(bandId: bandId, name: name)
+        let response: ShortlistResponse = try await APIClient.shared.request(
+            "/api/shortlists",
+            method: "POST",
+            body: body
+        )
+        return response.shortlist
+    }
+
+    /// Rename a shortlist
+    static func renameShortlist(shortlistId: Int, name: String) async throws {
+        let body = RenameShortlistRequest(name: name)
+        try await APIClient.shared.requestVoid(
+            "/api/shortlists/\(shortlistId)",
+            method: "PATCH",
+            body: body
+        )
+    }
+
+    /// Delete a shortlist
+    static func deleteShortlist(shortlistId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/shortlists/\(shortlistId)",
+            method: "DELETE"
+        )
+    }
+
+    /// Get shortlist detail with its sessions
+    static func getShortlistDetail(shortlistId: Int) async throws -> ShortlistDetailResponse {
+        try await APIClient.shared.request("/api/shortlists/\(shortlistId)")
+    }
+
+    /// Add a session to a shortlist
+    static func addSessionToShortlist(shortlistId: Int, sessionId: Int) async throws {
+        let body = AddSessionToShortlistRequest(sessionId: sessionId)
+        try await APIClient.shared.requestVoid(
+            "/api/shortlists/\(shortlistId)/sessions",
+            method: "POST",
+            body: body
+        )
+    }
+
+    /// Remove a session from a shortlist
+    static func removeSessionFromShortlist(shortlistId: Int, sessionId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/shortlists/\(shortlistId)/sessions/\(sessionId)",
+            method: "DELETE"
+        )
+    }
+
+    /// Get which shortlist IDs a session belongs to (within bands the user is a member of)
+    static func getSessionShortlistIds(sessionId: Int) async throws -> [Int] {
+        let response: SessionShortlistIdsResponse = try await APIClient.shared.request(
+            "/api/sessions/\(sessionId)/shortlists"
+        )
+        return response.shortlistIds
+    }
+
+    // MARK: - Session Comments
+
+    /// Get comments for a session (threaded)
+    static func getSessionComments(sessionId: Int) async throws -> [SessionComment] {
+        let response: SessionCommentsResponse = try await APIClient.shared.request(
+            "/api/sessions/\(sessionId)/comments"
+        )
+        return response.comments
+    }
+
+    /// Post a comment on a session (optionally as a reply)
+    static func postSessionComment(sessionId: Int, content: String, parentId: Int? = nil) async throws -> SessionComment {
+        let body = PostCommentRequest(content: content, parentId: parentId)
+        let response: PostCommentResponse = try await APIClient.shared.request(
+            "/api/sessions/\(sessionId)/comments",
+            method: "POST",
+            body: body
+        )
+        return response.comment
+    }
+
+    /// Delete a comment (only your own)
+    static func deleteSessionComment(commentId: Int) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/sessions/comments/\(commentId)",
+            method: "DELETE"
+        )
+    }
 }

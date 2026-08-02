@@ -35,6 +35,8 @@ struct Session: Codable, Identifiable, Hashable {
     let avgRating: Double?
     let ratingCount: Int
     let myRating: Int?
+    let shortlistCount: Int?
+    let commentCount: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, name
@@ -52,6 +54,13 @@ struct Session: Codable, Identifiable, Hashable {
         case avgRating = "avg_rating"
         case ratingCount = "rating_count"
         case myRating = "my_rating"
+        case shortlistCount = "shortlist_count"
+        case commentCount = "comment_count"
+    }
+
+    /// Is this session on any shortlist?
+    var isShortlisted: Bool {
+        (shortlistCount ?? 0) > 0
     }
 
     /// Is this an individual session?
@@ -574,4 +583,187 @@ struct PendingUploadInfo {
     let originalFileName: String
     let mimeType: String
     let fileURL: URL
+}
+
+// MARK: - Shortlists
+
+/// Band-owned, named groups of recordings for focused evaluation
+struct Shortlist: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let bandId: Int
+    let bandName: String?
+    let createdBy: Int?
+    let createdAt: String?
+    let itemCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case bandId = "band_id"
+        case bandName = "band_name"
+        case createdBy = "created_by"
+        case createdAt = "created_at"
+        case itemCount = "item_count"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        bandId = try container.decode(Int.self, forKey: .bandId)
+        bandName = try container.decodeIfPresent(String.self, forKey: .bandName)
+        createdBy = try container.decodeIfPresent(Int.self, forKey: .createdBy)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        // item_count may come as Int or String
+        if let intValue = try? container.decode(Int.self, forKey: .itemCount) {
+            itemCount = intValue
+        } else if let strValue = try? container.decode(String.self, forKey: .itemCount),
+                  let parsed = Int(strValue) {
+            itemCount = parsed
+        } else {
+            itemCount = 0
+        }
+    }
+}
+
+struct ShortlistsResponse: Decodable {
+    let shortlists: [Shortlist]
+}
+
+struct ShortlistResponse: Decodable {
+    let shortlist: Shortlist
+}
+
+struct ShortlistDetailResponse: Decodable {
+    let shortlist: Shortlist
+    let sessions: [Session]
+}
+
+struct CreateShortlistRequest: Encodable {
+    let bandId: Int
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case bandId = "band_id"
+        case name
+    }
+}
+
+struct RenameShortlistRequest: Encodable {
+    let name: String
+}
+
+struct AddSessionToShortlistRequest: Encodable {
+    let sessionId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+    }
+}
+
+struct SessionShortlistIdsResponse: Decodable {
+    let shortlistIds: [Int]
+}
+
+// MARK: - Session Comments
+
+/// Author info embedded in a session comment
+struct CommentAuthor: Codable, Hashable {
+    let handle: String
+    let firstName: String?
+    let lastName: String?
+    let photo: String?
+
+    enum CodingKeys: String, CodingKey {
+        case handle
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case photo
+    }
+
+    var displayName: String {
+        if let first = firstName, !first.isEmpty {
+            if let last = lastName, !last.isEmpty {
+                return "\(first) \(last)"
+            }
+            return first
+        }
+        return "@\(handle)"
+    }
+}
+
+/// A comment on a session, with one level of threading (replies)
+struct SessionComment: Codable, Identifiable, Hashable {
+    let id: Int
+    let sessionId: Int
+    let userId: Int
+    let parentId: Int?
+    let content: String
+    let createdAt: String
+    let author: CommentAuthor
+    var replies: [SessionComment]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case sessionId = "session_id"
+        case userId = "user_id"
+        case parentId = "parent_id"
+        case content
+        case createdAt = "created_at"
+        case author
+        case replies
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        sessionId = try container.decode(Int.self, forKey: .sessionId)
+        userId = try container.decode(Int.self, forKey: .userId)
+        parentId = try container.decodeIfPresent(Int.self, forKey: .parentId)
+        content = try container.decode(String.self, forKey: .content)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        author = try container.decode(CommentAuthor.self, forKey: .author)
+        replies = try container.decodeIfPresent([SessionComment].self, forKey: .replies) ?? []
+    }
+
+    /// Relative time display (e.g., "2h ago", "3d ago")
+    var relativeTime: String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: createdAt) else {
+            formatter.formatOptions = [.withInternetDateTime]
+            guard let date = formatter.date(from: createdAt) else { return "" }
+            return formatRelative(date)
+        }
+        return formatRelative(date)
+    }
+
+    private func formatRelative(_ date: Date) -> String {
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return "just now" }
+        if seconds < 3600 { return "\(seconds / 60)m ago" }
+        if seconds < 86400 { return "\(seconds / 3600)h ago" }
+        if seconds < 604800 { return "\(seconds / 86400)d ago" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
+    }
+}
+
+struct SessionCommentsResponse: Decodable {
+    let comments: [SessionComment]
+}
+
+struct PostCommentRequest: Encodable {
+    let content: String
+    let parentId: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case content
+        case parentId = "parent_id"
+    }
+}
+
+struct PostCommentResponse: Decodable {
+    let comment: SessionComment
 }
