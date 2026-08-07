@@ -28,6 +28,20 @@ struct NotificationSettings: Codable {
     }
 }
 
+// MARK: - Alternate Email
+
+struct AlternateEmailResponse: Codable {
+    let alternateEmail: String?
+    let alternateEmailVerified: Bool
+    let sendNoticesToAlternateEmail: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case alternateEmail = "alternate_email"
+        case alternateEmailVerified = "alternate_email_verified"
+        case sendNoticesToAlternateEmail = "send_notices_to_alternate_email"
+    }
+}
+
 // MARK: - Account Deletion
 
 struct DeletionRequestResponse: Codable {

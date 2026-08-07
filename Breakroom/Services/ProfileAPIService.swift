@@ -102,14 +102,43 @@ enum ProfileAPIService {
     // MARK: - Notification Settings
 
     static func getNotificationSettings() async throws -> NotificationSettings {
-        try await APIClient.shared.request("/api/profile/notification-settings")
+        try await APIClient.shared.request("/api/user/notification-settings")
     }
 
     static func saveNotificationSettings(_ settings: NotificationSettings) async throws {
         try await APIClient.shared.requestVoid(
-            "/api/profile/notification-settings",
+            "/api/user/notification-settings",
             method: "POST",
             body: settings
+        )
+    }
+
+    // MARK: - Alternate Email
+
+    static func getAlternateEmail() async throws -> AlternateEmailResponse {
+        try await APIClient.shared.request("/api/user/alternate-email")
+    }
+
+    static func setAlternateEmail(_ email: String) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/user/alternate-email",
+            method: "PUT",
+            body: ["alternate_email": email]
+        )
+    }
+
+    static func resendAlternateEmailVerification() async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/user/alternate-email/resend",
+            method: "POST"
+        )
+    }
+
+    static func setAlternateEmailNotify(_ enabled: Bool) async throws {
+        try await APIClient.shared.requestVoid(
+            "/api/user/alternate-email/notify",
+            method: "PUT",
+            body: ["enabled": enabled]
         )
     }
 
@@ -117,7 +146,7 @@ enum ProfileAPIService {
 
     static func requestAccountDeletion() async throws {
         try await APIClient.shared.requestVoid(
-            "/api/profile/request-deletion",
+            "/api/profile/deletion-request",
             method: "POST"
         )
     }

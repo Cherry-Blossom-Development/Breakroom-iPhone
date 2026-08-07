@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isLoading = true
     @State private var isSaving = false
@@ -12,6 +13,15 @@ struct SettingsView: View {
     @State private var notifyChatMessages = true
     @State private var notifyFriendRequests = true
     @State private var notifyBlogComments = true
+
+    // Alternate email
+    @State private var alternateEmail: String?
+    @State private var alternateEmailVerified = false
+    @State private var sendNoticesToAlternateEmail = false
+    @State private var alternateEmailInput = ""
+    @State private var isEditingAlternateEmail = false
+    @State private var isAlternateEmailSaving = false
+    @State private var alternateEmailError: String?
 
     // Account deletion
     @State private var deletionConfirmed = false
@@ -32,6 +42,11 @@ struct SettingsView: View {
         .task {
             await loadSettings()
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await loadAlternateEmail() }
+            }
+        }
         .alert("Error", isPresented: .init(
             get: { error != nil },
             set: { if !$0 { error = nil } }
@@ -47,6 +62,7 @@ struct SettingsView: View {
     private var settingsContent: some View {
         Form {
             notificationsSection
+            alternateEmailSection
             accountDeletionSection
         }
     }
@@ -99,6 +115,144 @@ struct SettingsView: View {
                 .accessibilityLabel(title)
         }
         .opacity(notificationsEnabled ? 1.0 : 0.4)
+    }
+
+    // MARK: - Alternate Email Section
+
+    private var alternateEmailSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Add a secondary email address to receive important account notices (band invites, seller notifications, etc.).")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if let email = alternateEmail, !isEditingAlternateEmail {
+                    // Has an alternate email set
+                    alternateEmailDisplay(email: email)
+                } else {
+                    // No email set or editing
+                    alternateEmailForm
+                }
+
+                if let alternateEmailError {
+                    Text(alternateEmailError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+        } header: {
+            Text("Alternate Email")
+        }
+    }
+
+    private func alternateEmailDisplay(email: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(email)
+                        .font(.body)
+
+                    if alternateEmailVerified {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Verified")
+                                .foregroundStyle(.green)
+                        }
+                        .font(.caption)
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .foregroundStyle(.orange)
+                            Text("Pending verification — check your inbox")
+                                .foregroundStyle(.orange)
+                        }
+                        .font(.caption)
+                    }
+                }
+                Spacer()
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            if alternateEmailVerified {
+                // Verified: show toggle for sending notices
+                notificationToggle(
+                    title: "Also send notices to this address",
+                    isOn: Binding(
+                        get: { sendNoticesToAlternateEmail },
+                        set: { newValue in
+                            Task { await toggleAlternateEmailNotify(newValue) }
+                        }
+                    )
+                )
+            } else {
+                // Unverified: show resend button
+                Button {
+                    Task { await resendVerification() }
+                } label: {
+                    HStack {
+                        if isAlternateEmailSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text("Resend Verification Email")
+                    }
+                }
+                .disabled(isAlternateEmailSaving)
+            }
+
+            // Change / Remove buttons
+            HStack(spacing: 12) {
+                Button("Change") {
+                    alternateEmailInput = email
+                    isEditingAlternateEmail = true
+                }
+                .font(.subheadline)
+
+                Button("Remove", role: .destructive) {
+                    Task { await removeAlternateEmail() }
+                }
+                .font(.subheadline)
+            }
+        }
+    }
+
+    private var alternateEmailForm: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TextField("Email address", text: $alternateEmailInput)
+                .textFieldStyle(.roundedBorder)
+                .textContentType(.emailAddress)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+
+            HStack {
+                Button {
+                    Task { await saveAlternateEmail() }
+                } label: {
+                    HStack {
+                        if isAlternateEmailSaving {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text("Send Verification Email")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(alternateEmailInput.trimmingCharacters(in: .whitespaces).isEmpty || isAlternateEmailSaving)
+
+                if isEditingAlternateEmail {
+                    Button("Cancel") {
+                        isEditingAlternateEmail = false
+                        alternateEmailInput = ""
+                        alternateEmailError = nil
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Account Deletion Section
@@ -197,6 +351,16 @@ struct SettingsView: View {
 
     private func loadSettings() async {
         isLoading = true
+
+        async let notificationTask: () = loadNotificationSettings()
+        async let alternateEmailTask: () = loadAlternateEmail()
+
+        _ = await (notificationTask, alternateEmailTask)
+
+        isLoading = false
+    }
+
+    private func loadNotificationSettings() async {
         do {
             let settings = try await ProfileAPIService.getNotificationSettings()
             notificationsEnabled = settings.notificationsEnabled
@@ -206,7 +370,95 @@ struct SettingsView: View {
         } catch {
             // Use defaults if settings don't exist yet
         }
-        isLoading = false
+    }
+
+    private func loadAlternateEmail() async {
+        do {
+            let response = try await ProfileAPIService.getAlternateEmail()
+            alternateEmail = response.alternateEmail
+            alternateEmailVerified = response.alternateEmailVerified
+            sendNoticesToAlternateEmail = response.sendNoticesToAlternateEmail
+            isEditingAlternateEmail = false
+        } catch {
+            // Non-critical, just won't show alternate email
+        }
+    }
+
+    private func saveAlternateEmail() async {
+        let email = alternateEmailInput.trimmingCharacters(in: .whitespaces)
+        guard !email.isEmpty else { return }
+
+        isAlternateEmailSaving = true
+        alternateEmailError = nil
+
+        do {
+            try await ProfileAPIService.setAlternateEmail(email)
+            alternateEmail = email
+            alternateEmailVerified = false
+            sendNoticesToAlternateEmail = false
+            isEditingAlternateEmail = false
+            alternateEmailInput = ""
+        } catch let error as APIError {
+            switch error {
+            case .serverError(let message):
+                if message.contains("409") || message.lowercased().contains("already") {
+                    alternateEmailError = "This email is already in use by another account."
+                } else if message.contains("400") || message.lowercased().contains("invalid") {
+                    alternateEmailError = "Please enter a valid email address."
+                } else {
+                    alternateEmailError = "Failed to set alternate email."
+                }
+            default:
+                alternateEmailError = "Failed to set alternate email."
+            }
+        } catch {
+            alternateEmailError = "Failed to set alternate email."
+        }
+
+        isAlternateEmailSaving = false
+    }
+
+    private func resendVerification() async {
+        isAlternateEmailSaving = true
+        alternateEmailError = nil
+
+        do {
+            try await ProfileAPIService.resendAlternateEmailVerification()
+            alternateEmailError = nil
+        } catch {
+            alternateEmailError = "Failed to resend verification email."
+        }
+
+        isAlternateEmailSaving = false
+    }
+
+    private func removeAlternateEmail() async {
+        isAlternateEmailSaving = true
+        alternateEmailError = nil
+
+        do {
+            try await ProfileAPIService.setAlternateEmail("")
+            alternateEmail = nil
+            alternateEmailVerified = false
+            sendNoticesToAlternateEmail = false
+            alternateEmailInput = ""
+        } catch {
+            alternateEmailError = "Failed to remove alternate email."
+        }
+
+        isAlternateEmailSaving = false
+    }
+
+    private func toggleAlternateEmailNotify(_ enabled: Bool) async {
+        let previousValue = sendNoticesToAlternateEmail
+        sendNoticesToAlternateEmail = enabled
+
+        do {
+            try await ProfileAPIService.setAlternateEmailNotify(enabled)
+        } catch {
+            sendNoticesToAlternateEmail = previousValue
+            alternateEmailError = "Failed to update notification preference."
+        }
     }
 
     private func saveSettings() async {
