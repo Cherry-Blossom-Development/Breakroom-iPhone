@@ -1555,9 +1555,10 @@ struct SessionsView: View {
                     mimeType: old.mimeType, uploadedAt: old.uploadedAt, recordedAt: old.recordedAt,
                     sessionType: old.sessionType, bandId: old.bandId, bandName: old.bandName,
                     instrumentId: old.instrumentId, instrumentName: old.instrumentName,
-                    uploaderHandle: old.uploaderHandle, avgRating: response.avgRating,
-                    ratingCount: response.ratingCount, myRating: response.myRating,
-                    shortlistCount: old.shortlistCount, commentCount: old.commentCount
+                    uploaderHandle: old.uploaderHandle, durationMs: old.durationMs,
+                    avgRating: response.avgRating, ratingCount: response.ratingCount,
+                    myRating: response.myRating, shortlistCount: old.shortlistCount,
+                    commentCount: old.commentCount
                 )
             }
 
@@ -1569,9 +1570,10 @@ struct SessionsView: View {
                     mimeType: old.mimeType, uploadedAt: old.uploadedAt, recordedAt: old.recordedAt,
                     sessionType: old.sessionType, bandId: old.bandId, bandName: old.bandName,
                     instrumentId: old.instrumentId, instrumentName: old.instrumentName,
-                    uploaderHandle: old.uploaderHandle, avgRating: response.avgRating,
-                    ratingCount: response.ratingCount, myRating: response.myRating,
-                    shortlistCount: old.shortlistCount, commentCount: old.commentCount
+                    uploaderHandle: old.uploaderHandle, durationMs: old.durationMs,
+                    avgRating: response.avgRating, ratingCount: response.ratingCount,
+                    myRating: response.myRating, shortlistCount: old.shortlistCount,
+                    commentCount: old.commentCount
                 )
             }
         } catch {
@@ -1985,6 +1987,92 @@ struct SessionsView: View {
     }
 }
 
+// MARK: - Share Sheet (for use in Menu actions)
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Shortlist Menu Content (for inline menu usage)
+
+private struct ShortlistMenuContent: View {
+    let session: Session
+    let bands: [Band]
+
+    @State private var shortlists: [Shortlist] = []
+    @State private var sessionShortlistIds: [Int] = []
+
+    var body: some View {
+        Menu {
+            if shortlists.isEmpty {
+                Text("No shortlists yet")
+            } else {
+                ForEach(shortlists) { shortlist in
+                    let isInShortlist = sessionShortlistIds.contains(shortlist.id)
+                    Button {
+                        Task {
+                            if isInShortlist {
+                                await removeFromShortlist(shortlist.id)
+                            } else {
+                                await addToShortlist(shortlist.id)
+                            }
+                        }
+                    } label: {
+                        Label(
+                            shortlist.name,
+                            systemImage: isInShortlist ? "checkmark.circle.fill" : "circle"
+                        )
+                    }
+                }
+            }
+        } label: {
+            Label(
+                session.isShortlisted ? "On Shortlist" : "Add to Shortlist",
+                systemImage: session.isShortlisted ? "rectangle.stack.fill" : "rectangle.stack"
+            )
+        }
+        .task {
+            await loadData()
+        }
+    }
+
+    private func loadData() async {
+        do {
+            async let shortlistsTask = SessionsAPIService.getMyShortlists()
+            async let idsTask = SessionsAPIService.getSessionShortlistIds(sessionId: session.id)
+            let (loadedShortlists, loadedIds) = try await (shortlistsTask, idsTask)
+            shortlists = loadedShortlists
+            sessionShortlistIds = loadedIds
+        } catch {
+            // Silent failure - shortlists just won't show
+        }
+    }
+
+    private func addToShortlist(_ shortlistId: Int) async {
+        do {
+            try await SessionsAPIService.addSessionToShortlist(shortlistId: shortlistId, sessionId: session.id)
+            sessionShortlistIds.append(shortlistId)
+        } catch {
+            // Silent failure
+        }
+    }
+
+    private func removeFromShortlist(_ shortlistId: Int) async {
+        do {
+            try await SessionsAPIService.removeSessionFromShortlist(shortlistId: shortlistId, sessionId: session.id)
+            sessionShortlistIds.removeAll { $0 == shortlistId }
+        } catch {
+            // Silent failure
+        }
+    }
+}
+
 // MARK: - Session Row
 
 private struct SessionRow: View {
@@ -2032,6 +2120,8 @@ private struct SessionRow: View {
         self.onInstrumentChange = onInstrumentChange
     }
 
+    @State private var showShareSheet = false
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onPlay) {
@@ -2051,9 +2141,16 @@ private struct SessionRow: View {
                     .contentShape(Rectangle())
                     .onTapGesture(perform: onEdit)
 
-                Text(session.formattedDate)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(session.formattedDate)
+                    if let duration = session.formattedDuration {
+                        Text("•")
+                            .foregroundStyle(.tertiary)
+                        Text(duration)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
                 if showBandPicker || showInstrumentPicker {
                     HStack(spacing: 8) {
@@ -2096,12 +2193,7 @@ private struct SessionRow: View {
 
             Spacer()
 
-            if !session.formattedFileSize.isEmpty {
-                Text(session.formattedFileSize)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
+            // Rating chip (compact display of rating status)
             RatingChip(
                 avgRating: session.avgRating,
                 ratingCount: session.ratingCount,
@@ -2109,38 +2201,50 @@ private struct SessionRow: View {
                 onTap: onRate
             )
 
-            if showShortlistButton && !bands.isEmpty {
-                ShortlistButton(session: session, bands: bands)
-            }
+            // Three-dot menu for actions
+            Menu {
+                Button {
+                    onRate()
+                } label: {
+                    Label("Rate", systemImage: "star")
+                }
 
-            ShareLink(
-                item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
-                subject: Text(session.name),
-                message: Text("Check out my recording: \(session.name)")
-            ) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
-            }
-            .accessibilityLabel("Share \(session.name)")
-            .accessibilityIdentifier("sessionsShareButton_\(session.id)")
+                if showShortlistButton && !bands.isEmpty {
+                    ShortlistMenuContent(session: session, bands: bands)
+                }
 
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.caption)
+                Button {
+                    showShareSheet = true
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body)
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 32, height: 32)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Delete \(session.name)")
-            .accessibilityIdentifier("sessionsDeleteButton_\(session.id)")
+            .accessibilityLabel("More actions for \(session.name)")
+            .accessibilityIdentifier("sessionsMoreButton_\(session.id)")
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
         .accessibilityIdentifier("sessionsRow_\(session.id)")
         .accessibilityAction(named: "Edit name") {
             onEdit()
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [
+                URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!
+            ])
         }
     }
 
@@ -2157,10 +2261,6 @@ private struct SessionRow: View {
             parts.append("Instrument: \(instrument)")
         }
 
-        if !session.formattedFileSize.isEmpty {
-            parts.append(session.formattedFileSize)
-        }
-
         return parts.joined(separator: ". ")
     }
 }
@@ -2173,6 +2273,8 @@ private struct BandMemberSessionRow: View {
     let bands: [Band]
     let onPlay: () -> Void
     let onRate: () -> Void
+
+    @State private var showShareSheet = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -2191,10 +2293,28 @@ private struct BandMemberSessionRow: View {
                     .font(.body)
                     .lineLimit(1)
 
-                if let instrument = session.instrumentName {
-                    Text(instrument)
+                HStack(spacing: 8) {
+                    Text(session.formattedDate)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if let duration = session.formattedDuration {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text(duration)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let instrument = session.instrumentName {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text(instrument)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if let handle = session.uploaderHandle {
@@ -2206,16 +2326,7 @@ private struct BandMemberSessionRow: View {
 
             Spacer()
 
-            Text(session.formattedDate)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if !session.formattedFileSize.isEmpty {
-                Text(session.formattedFileSize)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
+            // Rating chip (compact display)
             RatingChip(
                 avgRating: session.avgRating,
                 ratingCount: session.ratingCount,
@@ -2223,24 +2334,39 @@ private struct BandMemberSessionRow: View {
                 onTap: onRate
             )
 
-            if !bands.isEmpty {
-                ShortlistButton(session: session, bands: bands)
-            }
+            // Three-dot menu for actions
+            Menu {
+                Button {
+                    onRate()
+                } label: {
+                    Label("Rate", systemImage: "star")
+                }
 
-            ShareLink(
-                item: URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!,
-                subject: Text(session.name),
-                message: Text("Check out this recording: \(session.name)")
-            ) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.caption)
+                if !bands.isEmpty {
+                    ShortlistMenuContent(session: session, bands: bands)
+                }
+
+                Button {
+                    showShareSheet = true
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.body)
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 32, height: 32)
             }
-            .accessibilityLabel("Share \(session.name)")
+            .accessibilityLabel("More actions for \(session.name)")
+            .accessibilityIdentifier("sessionsBandMemberMoreButton_\(session.id)")
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [
+                URL(string: "https://www.prosaurus.com/sessions/\(session.id)")!
+            ])
+        }
     }
 
     private var sessionInfoLabel: String {
@@ -2255,10 +2381,6 @@ private struct BandMemberSessionRow: View {
         }
 
         parts.append(session.formattedDate)
-
-        if !session.formattedFileSize.isEmpty {
-            parts.append(session.formattedFileSize)
-        }
 
         return parts.joined(separator: ". ")
     }
@@ -3195,12 +3317,24 @@ private struct ShortlistDetailSheet: View {
                     .font(.body)
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text(session.formattedDate)
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
+                    if let duration = session.formattedDuration {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text(duration)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
                     if let uploader = session.uploaderHandle {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                         Text("@\(uploader)")
                             .font(.caption)
                             .foregroundStyle(.tertiary)

@@ -32,6 +32,7 @@ struct Session: Codable, Identifiable, Hashable {
     let instrumentId: Int?
     let instrumentName: String?
     let uploaderHandle: String?
+    let durationMs: Int?
     let avgRating: Double?
     let ratingCount: Int
     let myRating: Int?
@@ -51,6 +52,7 @@ struct Session: Codable, Identifiable, Hashable {
         case instrumentId = "instrument_id"
         case instrumentName = "instrument_name"
         case uploaderHandle = "uploader_handle"
+        case durationMs = "duration_ms"
         case avgRating = "avg_rating"
         case ratingCount = "rating_count"
         case myRating = "my_rating"
@@ -102,6 +104,21 @@ struct Session: Codable, Identifiable, Hashable {
             return String(format: "%.1f KB", Double(size) / 1024.0)
         } else {
             return String(format: "%.1f MB", Double(size) / (1024.0 * 1024.0))
+        }
+    }
+
+    /// Format duration for display (e.g., "3:45" or "1:02:30")
+    var formattedDuration: String? {
+        guard let ms = durationMs, ms > 0 else { return nil }
+        let totalSeconds = ms / 1000
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
         }
     }
 
