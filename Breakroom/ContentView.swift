@@ -230,6 +230,7 @@ struct MainTabView: View {
     @State private var showBlogManagement = false
     @State private var showProfile = false
     @State private var showFriends = false
+    @State private var showDiscover = false
     @State private var showLegal = false
     @State private var showSettings = false
     @State private var showBilling = false
@@ -271,6 +272,9 @@ struct MainTabView: View {
                     }
                     .navigationDestination(isPresented: $showFriends) {
                         FriendsView()
+                    }
+                    .navigationDestination(isPresented: $showDiscover) {
+                        DiscoverView()
                     }
                     .navigationDestination(isPresented: $showLegal) {
                         LegalView()
@@ -338,6 +342,10 @@ struct MainTabView: View {
                                     }
                                 }
                                 .accessibilityIdentifier("menuBlog")
+                                Button("Discover", systemImage: "magnifyingglass") {
+                                    showDiscover = true
+                                }
+                                .accessibilityIdentifier("menuDiscover")
                                 Button("Legal", systemImage: "doc.text") {
                                     showLegal = true
                                 }
@@ -605,6 +613,8 @@ struct MainTabView: View {
             return "doc.richtext"
         case "/kanban":
             return "rectangle.split.3x1"
+        case "/discover":
+            return "magnifyingglass"
         default:
             if url.hasPrefix("/project/") {
                 return "rectangle.split.3x1"
@@ -626,6 +636,8 @@ struct MainTabView: View {
             CollectionsView()
         case "/blog":
             BlogManagementView()
+        case "/discover":
+            DiscoverView()
         default:
             // Handle project shortcuts like /project/123
             if shortcut.url.hasPrefix("/project/"),
