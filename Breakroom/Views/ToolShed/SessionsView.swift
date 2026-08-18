@@ -430,6 +430,7 @@ struct SessionsView: View {
                     }
                     .font(.subheadline.weight(.medium))
                     .accessibilityIdentifier("sessionsNewBandButton")
+                    .accessibilityInputLabels(showCreateBand ? ["cancel", "close"] : ["new band", "create band", "add band"])
                 }
                 .padding(.horizontal)
 
@@ -604,6 +605,7 @@ struct SessionsView: View {
                 }
                 .accessibilityIdentifier("sessionsUploadButton")
                 .accessibilityLabel("Upload a recording")
+                .accessibilityInputLabels(["upload", "upload recording", "import"])
             }
 
             recordButton(context: context)
@@ -630,6 +632,7 @@ struct SessionsView: View {
             .tint(.red)
             .fixedSize()
             .accessibilityIdentifier("sessionsRecordButton")
+            .accessibilityInputLabels(["record", "start recording", "begin recording"])
 
         case .recording where isThisContext:
             HStack(spacing: 8) {
@@ -651,6 +654,7 @@ struct SessionsView: View {
                 .tint(.red)
                 .fixedSize()
                 .accessibilityIdentifier("sessionsStopButton")
+                .accessibilityInputLabels(["stop", "stop recording", "finish recording"])
             }
 
         case .saving where isThisContext:
@@ -979,6 +983,7 @@ struct SessionsView: View {
             .buttonStyle(.borderedProminent)
             .disabled(newBandName.trimmingCharacters(in: .whitespaces).isEmpty)
             .accessibilityIdentifier("sessionsCreateBandButton")
+            .accessibilityInputLabels(["create", "create band", "submit"])
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -1000,12 +1005,14 @@ struct SessionsView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
+            .accessibilityInputLabels(["accept", "accept invite", "join"])
 
             Button("Decline") {
                 Task { await respondToInvite(band, action: "decline") }
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
+            .accessibilityInputLabels(["decline", "decline invite", "reject"])
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -1154,6 +1161,7 @@ struct SessionsView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(inviteHandle.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityIdentifier("sessionsInviteSendButton")
+                    .accessibilityInputLabels(["send", "send invite", "invite"])
                 }
                 .padding(.horizontal)
 
@@ -2133,6 +2141,7 @@ private struct SessionRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
             .accessibilityIdentifier("sessionsPlayButton_\(session.id)")
+            .accessibilityInputLabels(isPlaying ? ["stop", "stop playing"] : ["play", "play session"])
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.name)
@@ -2234,6 +2243,7 @@ private struct SessionRow: View {
             }
             .accessibilityLabel("More actions for \(session.name)")
             .accessibilityIdentifier("sessionsMoreButton_\(session.id)")
+            .accessibilityInputLabels(["more", "actions", "options"])
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -2287,6 +2297,7 @@ private struct BandMemberSessionRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
             .accessibilityIdentifier("sessionsBandMemberPlayButton_\(session.id)")
+            .accessibilityInputLabels(isPlaying ? ["stop", "stop playing"] : ["play", "play session"])
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.name)
@@ -2359,6 +2370,7 @@ private struct BandMemberSessionRow: View {
             }
             .accessibilityLabel("More actions for \(session.name)")
             .accessibilityIdentifier("sessionsBandMemberMoreButton_\(session.id)")
+            .accessibilityInputLabels(["more", "actions", "options"])
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -2406,6 +2418,7 @@ private struct RatingChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityDescription)
+        .accessibilityInputLabels(["rate", "rating", "stars"])
     }
 
     private var chipText: String {

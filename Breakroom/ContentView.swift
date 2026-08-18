@@ -117,6 +117,7 @@ struct ContentView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
+                        .accessibilityInputLabels(["send", "send it", "confirm"])
 
                         HStack(spacing: 8) {
                             Button {
@@ -128,6 +129,7 @@ struct ContentView: View {
                             }
                             .buttonStyle(.bordered)
                             .tint(.red)
+                            .accessibilityInputLabels(["don't send", "cancel", "delete"])
 
                             Button {
                                 Task { await editScheduledSend(warning.id) }
@@ -137,6 +139,7 @@ struct ContentView: View {
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
+                            .accessibilityInputLabels(["edit", "edit first", "modify"])
                         }
                     }
                 }
@@ -296,10 +299,12 @@ struct MainTabView: View {
                                     showProfile = true
                                 }
                                 .accessibilityIdentifier("menuProfile")
+                                .accessibilityInputLabels(["profile", "my profile", "view profile"])
                                 Button("Chat", systemImage: "bubble.left.and.bubble.right") {
                                     selectedTab = 1
                                 }
                                 .accessibilityIdentifier("menuChat")
+                                .accessibilityInputLabels(["chat", "messages", "go to chat"])
                                 Button {
                                     showFriends = true
                                 } label: {
@@ -321,6 +326,7 @@ struct MainTabView: View {
                                     }
                                 }
                                 .accessibilityIdentifier("menuFriends")
+                                .accessibilityInputLabels(["friends", "my friends", "view friends"])
                                 Button {
                                     showBlogManagement = true
                                 } label: {
@@ -342,14 +348,17 @@ struct MainTabView: View {
                                     }
                                 }
                                 .accessibilityIdentifier("menuBlog")
+                                .accessibilityInputLabels(["blog", "my blog", "view blog"])
                                 Button("Discover", systemImage: "magnifyingglass") {
                                     showDiscover = true
                                 }
                                 .accessibilityIdentifier("menuDiscover")
+                                .accessibilityInputLabels(["discover", "search", "explore"])
                                 Button("Legal", systemImage: "doc.text") {
                                     showLegal = true
                                 }
                                 .accessibilityIdentifier("menuLegal")
+                                .accessibilityInputLabels(["legal", "terms", "privacy"])
 
                                 if !shortcuts.isEmpty {
                                     Divider()
@@ -379,6 +388,7 @@ struct MainTabView: View {
                                             Label("Impersonate User", systemImage: "person.fill.viewfinder")
                                         }
                                         .accessibilityIdentifier("menuImpersonate")
+                                        .accessibilityInputLabels(["impersonate", "impersonate user"])
                                     }
                                 }
 
@@ -387,19 +397,23 @@ struct MainTabView: View {
                                     showBilling = true
                                 }
                                 .accessibilityIdentifier("menuBilling")
+                                .accessibilityInputLabels(["billing", "plans", "subscription"])
                                 Button("Settings", systemImage: "gear") {
                                     showSettings = true
                                 }
                                 .accessibilityIdentifier("menuSettings")
+                                .accessibilityInputLabels(["settings", "preferences"])
 
                                 Divider()
                                 Button("Logout", systemImage: "rectangle.portrait.and.arrow.right") {
                                     Task { await authViewModel.logout() }
                                 }
                                 .accessibilityIdentifier("menuLogoutButton")
+                                .accessibilityInputLabels(["logout", "log out", "sign out"])
                                 Button("Delete Account", systemImage: "trash", role: .destructive) {
                                     showDeleteAccountConfirmation = true
                                 }
+                                .accessibilityInputLabels(["delete account", "remove account"])
                             } label: {
                                 ZStack(alignment: .topTrailing) {
                                     Image(systemName: "line.3.horizontal")
@@ -413,6 +427,7 @@ struct MainTabView: View {
                             }
                             .accessibilityLabel(badgeStore.totalNonChat > 0 ? "Menu, \(badgeStore.totalNonChat) notifications" : "Menu")
                             .accessibilityIdentifier("menuButton")
+                            .accessibilityInputLabels(["menu", "hamburger menu", "main menu"])
                             .onTapGesture {
                                 badgeStore.onMenuOpen()
                             }
@@ -434,6 +449,7 @@ struct MainTabView: View {
             .tabItem { Label("Breakroom", systemImage: "square.grid.2x2") }
             .tag(0)
             .accessibilityIdentifier("tabBreakroom")
+            .accessibilityInputLabels(["breakroom", "home", "feed"])
 
             NavigationStack {
                 ChatListView()
@@ -442,6 +458,7 @@ struct MainTabView: View {
             .tag(1)
             .badge(badgeStore.totalChatUnread)
             .accessibilityIdentifier("tabChat")
+            .accessibilityInputLabels(["chat", "messages", "chat tab"])
 
             NavigationStack {
                 EmploymentView()
@@ -449,6 +466,7 @@ struct MainTabView: View {
             .tabItem { Label("Jobs", systemImage: "briefcase") }
             .tag(2)
             .accessibilityIdentifier("tabJobs")
+            .accessibilityInputLabels(["jobs", "employment", "jobs tab"])
 
             NavigationStack {
                 CompanyPortalView()
@@ -456,6 +474,7 @@ struct MainTabView: View {
             .tabItem { Label("Company", systemImage: "building.2") }
             .tag(3)
             .accessibilityIdentifier("tabCompany")
+            .accessibilityInputLabels(["company", "company tab", "work"])
 
             NavigationStack {
                 ToolShedView()
@@ -463,6 +482,7 @@ struct MainTabView: View {
             .tabItem { Label("Tool Shed", systemImage: "wrench.and.screwdriver") }
             .tag(4)
             .accessibilityIdentifier("tabToolShed")
+            .accessibilityInputLabels(["tool shed", "tools", "tool shed tab"])
         }
         .confirmationDialog(
             "Delete Account",
@@ -539,6 +559,7 @@ struct MainTabView: View {
                     Task { await stopImpersonation() }
                 }
                 .font(.subheadline.weight(.semibold))
+                .accessibilityInputLabels(["stop", "stop impersonating", "exit"])
             }
         }
         .padding(.horizontal)
