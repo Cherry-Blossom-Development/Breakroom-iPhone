@@ -65,6 +65,7 @@ struct CollectionsView: View {
                         Task { await loadCollections() }
                     }
                     .accessibilityIdentifier("collectionsRetryButton")
+                    .accessibilityInputLabels(["retry", "try again", "reload"])
                 }
                 .accessibilityIdentifier("collectionsError")
             } else if collections.isEmpty {
@@ -78,6 +79,7 @@ struct CollectionsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("collectionsCreateFirstButton")
+                    .accessibilityInputLabels(["create", "create showcase", "new showcase"])
                 }
                 .accessibilityIdentifier("collectionsEmpty")
             } else {
@@ -101,6 +103,7 @@ struct CollectionsView: View {
                             Text(isReordering ? "Done" : "Reorder")
                         }
                         .accessibilityIdentifier("collectionsReorderButton")
+                        .accessibilityInputLabels(isReordering ? ["done", "save", "finish"] : ["reorder", "rearrange"])
                     }
 
                     // Add button (hidden during reorder)
@@ -111,6 +114,7 @@ struct CollectionsView: View {
                             Image(systemName: "plus")
                         }
                         .accessibilityIdentifier("collectionsAddButton")
+                        .accessibilityInputLabels(["add", "add collection", "new", "create"])
                     }
                 }
             }
@@ -217,6 +221,7 @@ struct CollectionsView: View {
                     .disabled(index == 0)
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Move \(collection.name) up")
+                    .accessibilityInputLabels(["up", "move up"])
 
                     // Down button
                     Button {
@@ -228,6 +233,7 @@ struct CollectionsView: View {
                     .disabled(index == collections.count - 1)
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Move \(collection.name) down")
+                    .accessibilityInputLabels(["down", "move down"])
                 }
                 .padding()
                 .background(Color(.secondarySystemBackground))
@@ -382,6 +388,7 @@ struct CollectionsView: View {
                         collectionToEdit = nil
                     }
                     .accessibilityIdentifier("collectionCancelButton")
+                    .accessibilityInputLabels(["cancel", "close", "dismiss"])
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -389,6 +396,7 @@ struct CollectionsView: View {
                     }
                     .disabled(editName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                     .accessibilityIdentifier("collectionSaveButton")
+                    .accessibilityInputLabels(["save", "confirm", "done"])
                 }
             }
         }
@@ -654,6 +662,7 @@ private struct CollectionCard: View {
                     }
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Edit \(collection.name)")
+                    .accessibilityInputLabels(["edit", "edit collection"])
 
                     Button(role: .destructive) {
                         onDelete()
@@ -663,6 +672,7 @@ private struct CollectionCard: View {
                     }
                     .buttonStyle(.bordered)
                     .accessibilityLabel("Delete \(collection.name)")
+                    .accessibilityInputLabels(["delete", "remove", "delete collection"])
                 }
             }
             .padding()

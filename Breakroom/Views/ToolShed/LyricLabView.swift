@@ -88,6 +88,7 @@ struct LyricLabView: View {
                 }
                 .accessibilityLabel("Add song or idea")
                 .accessibilityIdentifier("lyricLabPlusButton")
+                .accessibilityInputLabels(["add", "new", "create"])
             }
         }
         .task {

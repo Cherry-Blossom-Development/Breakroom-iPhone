@@ -48,6 +48,7 @@ struct ChatListView: View {
                             Image(systemName: "clock.badge")
                         }
                         .accessibilityLabel("Scheduled messages")
+                        .accessibilityInputLabels(["scheduled", "scheduled messages", "schedule"])
 
                         Button {
                             Task {
@@ -58,6 +59,7 @@ struct ChatListView: View {
                             Image(systemName: "plus.circle")
                         }
                         .accessibilityLabel("Join a room")
+                        .accessibilityInputLabels(["join", "join room", "add room"])
 
                         if chatViewModel.canCreateRoomPermission {
                             Button {
@@ -66,6 +68,7 @@ struct ChatListView: View {
                                 Image(systemName: "plus.bubble")
                             }
                             .accessibilityLabel("Create new room")
+                            .accessibilityInputLabels(["create", "create room", "new room"])
                         }
                     }
                 }
@@ -200,6 +203,7 @@ struct ChatListView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 .accessibilityLabel("Accept invite to \(invite.roomName)")
+                .accessibilityInputLabels(["accept", "accept invite", "join"])
 
                 Button("Decline") {
                     Task { await chatViewModel.declineInvite(invite) }
@@ -207,6 +211,7 @@ struct ChatListView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .accessibilityLabel("Decline invite to \(invite.roomName)")
+                .accessibilityInputLabels(["decline", "decline invite", "reject"])
             }
             .padding(.top, 2)
         }
@@ -274,6 +279,7 @@ struct ChatListView: View {
                 .frame(width: 24, height: 24)
         }
         .accessibilityLabel("Room actions for \(room.name)")
+        .accessibilityInputLabels(["more", "actions", "room options"])
     }
 
     private func roomContent(_ room: ChatRoom) -> some View {
@@ -341,6 +347,7 @@ struct ChatListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .accessibilityLabel("Clear search")
+                .accessibilityInputLabels(["clear", "clear search", "reset"])
             }
         }
         .padding(.vertical, 4)

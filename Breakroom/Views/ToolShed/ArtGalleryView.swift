@@ -49,6 +49,7 @@ struct ArtGalleryView: View {
                 Button("Upload", systemImage: "plus") {
                     showUploadSheet = true
                 }
+                .accessibilityInputLabels(["upload", "add", "upload artwork"])
             }
         }
         .task {
