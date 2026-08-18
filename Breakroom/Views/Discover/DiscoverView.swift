@@ -44,6 +44,7 @@ struct DiscoverView: View {
                     Button("Retry") {
                         Task { await loadAll() }
                     }
+                    .accessibilityInputLabels(["retry", "try again", "reload"])
                 }
             } else {
                 discoverContent

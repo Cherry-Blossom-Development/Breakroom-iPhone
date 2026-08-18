@@ -109,6 +109,7 @@ struct ToolShedView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .accessibilityIdentifier("\(tool.name.lowercased().replacingOccurrences(of: " ", with: ""))OpenButton")
+                .accessibilityInputLabels(["open", "open \(tool.name.lowercased())", "go to \(tool.name.lowercased())"])
 
                 if shortcuts.contains(tool.shortcutUrl) {
                     Label("In Shortcuts", systemImage: "checkmark")
@@ -126,6 +127,7 @@ struct ToolShedView: View {
                             .foregroundStyle(.primary)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+                    .accessibilityInputLabels(["add shortcut", "add to shortcuts", "favorite"])
                 }
             }
         }

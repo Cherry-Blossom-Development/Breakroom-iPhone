@@ -61,12 +61,14 @@ struct LoginView: View {
                 .controlSize(.large)
                 .disabled(handle.isEmpty || password.isEmpty || authViewModel.isLoading)
                 .accessibilityIdentifier("loginButton")
+                .accessibilityInputLabels(["login", "log in", "sign in"])
 
                 Button("Forgot Password?") {
                     showForgotPassword = true
                 }
                 .font(.callout)
                 .accessibilityIdentifier("forgotPasswordButton")
+                .accessibilityInputLabels(["forgot password", "reset password"])
 
                 Spacer()
 
@@ -75,6 +77,7 @@ struct LoginView: View {
                 }
                 .font(.callout)
                 .accessibilityIdentifier("signupButton")
+                .accessibilityInputLabels(["sign up", "register", "create account"])
 
                 Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")")
                     .font(.caption2)

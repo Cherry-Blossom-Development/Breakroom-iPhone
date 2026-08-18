@@ -208,6 +208,7 @@ struct FriendsView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
                     .accessibilityLabel("Accept request from \(request.displayName)")
+                    .accessibilityInputLabels(["accept", "accept request", "add friend"])
 
                     Button(role: .destructive) {
                         Task { await declineRequest(request) }
@@ -217,6 +218,7 @@ struct FriendsView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .accessibilityLabel("Decline request from \(request.displayName)")
+                    .accessibilityInputLabels(["decline", "decline request", "reject"])
                 }
             }
         }
@@ -267,6 +269,7 @@ struct FriendsView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .accessibilityInputLabels(["cancel", "cancel request", "withdraw"])
             }
         }
         .padding(.vertical, 2)
