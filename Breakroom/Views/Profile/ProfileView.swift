@@ -31,6 +31,9 @@ struct ProfileView: View {
     @State private var editingJob: UserJob?
     @State private var expandedJobIds: Set<Int> = []
 
+    // Scale avatar size with Dynamic Type
+    @ScaledMetric(relativeTo: .title2) private var avatarSize: CGFloat = 80
+
     var body: some View {
         ZStack {
             Color.clear // Ensures accessibility identifier anchor is always present
@@ -140,7 +143,7 @@ struct ProfileView: View {
                             }
                     }
                 }
-                .frame(width: 80, height: 80)
+                .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Color.accentColor, lineWidth: 2))
 

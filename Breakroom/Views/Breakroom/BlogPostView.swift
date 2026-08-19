@@ -13,6 +13,9 @@ struct BlogPostView: View {
     @State private var isDeleting = false
     @State private var showFlagDialog = false
 
+    // Scale avatar size with Dynamic Type
+    @ScaledMetric(relativeTo: .subheadline) private var avatarSize: CGFloat = 40
+
     private var displayPost: BlogPost {
         fullPost ?? post
     }
@@ -108,12 +111,12 @@ struct BlogPostView: View {
                     maxHeight: 40,
                     cornerRadius: 20
                 )
-                .frame(width: 40, height: 40)
+                .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
             } else {
                 Circle()
                     .fill(Color.green.opacity(0.2))
-                    .frame(width: 40, height: 40)
+                    .frame(width: avatarSize, height: avatarSize)
                     .overlay(
                         Text(String(displayPost.authorDisplayName.prefix(1)).uppercased())
                             .font(.callout.weight(.semibold))

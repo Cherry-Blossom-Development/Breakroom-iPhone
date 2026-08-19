@@ -4,6 +4,9 @@ struct ToolShedView: View {
     @State private var shortcuts: Set<String> = []
     @State private var isLoadingShortcuts = true
 
+    // Scale icon sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var toolIconSize: CGFloat = 40
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -81,7 +84,7 @@ struct ToolShedView: View {
                 Image(systemName: tool.icon)
                     .font(.title2)
                     .foregroundStyle(category.color)
-                    .frame(width: 40, height: 40)
+                    .frame(width: toolIconSize, height: toolIconSize)
                     .background(category.color.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .accessibilityHidden(true)

@@ -196,6 +196,9 @@ private struct DiscoverCard: View {
     let artist: DiscoverArtist
     let coverImagePath: String?
 
+    // Scale avatar size with Dynamic Type
+    @ScaledMetric(relativeTo: .caption) private var avatarSize: CGFloat = 24
+
     private var coverImageURL: URL? {
         guard let path = coverImagePath else { return nil }
         return URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(path)")
@@ -222,7 +225,7 @@ private struct DiscoverCard: View {
                 // Artist row
                 HStack(spacing: 8) {
                     artistAvatar
-                        .frame(width: 24, height: 24)
+                        .frame(width: avatarSize, height: avatarSize)
                         .clipShape(Circle())
 
                     Text(artist.displayName)

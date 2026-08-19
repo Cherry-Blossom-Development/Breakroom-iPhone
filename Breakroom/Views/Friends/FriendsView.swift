@@ -35,6 +35,9 @@ struct FriendsView: View {
     // In-progress action tracking
     @State private var processingUserId: Int?
 
+    // Scale avatar sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 40
+
     var body: some View {
         VStack(spacing: 0) {
             // Tab picker
@@ -378,7 +381,7 @@ struct FriendsView: View {
         HStack(spacing: 12) {
             Circle()
                 .fill(Color(.systemGray4))
-                .frame(width: 40, height: 40)
+                .frame(width: avatarSize, height: avatarSize)
                 .overlay {
                     Text(user.handle.prefix(1).uppercased())
                         .font(.headline)
@@ -429,7 +432,7 @@ struct FriendsView: View {
                 initialsCircle(name: name, handle: handle)
             }
         }
-        .frame(width: 40, height: 40)
+        .frame(width: avatarSize, height: avatarSize)
         .clipShape(Circle())
     }
 

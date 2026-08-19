@@ -27,6 +27,9 @@ struct ChatListView: View {
     @State private var selectedDmNavigation: DmNavigation?
     @State private var showScheduledMessages = false
 
+    // Scale avatar sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36
+
     var body: some View {
         ZStack {
             Color.clear // Ensures accessibility identifier anchor is always present
@@ -381,7 +384,7 @@ struct ChatListView: View {
             HStack(spacing: 12) {
                 Circle()
                     .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 36, height: 36)
+                    .frame(width: avatarSize, height: avatarSize)
                     .overlay {
                         Text(String(user.handle.prefix(1)).uppercased())
                             .font(.headline)
@@ -426,7 +429,7 @@ struct ChatListView: View {
             HStack(spacing: 12) {
                 Circle()
                     .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 36, height: 36)
+                    .frame(width: avatarSize, height: avatarSize)
                     .overlay {
                         Text(String(dm.partnerHandle.prefix(1)).uppercased())
                             .font(.headline)
