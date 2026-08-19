@@ -12,7 +12,7 @@ struct PaywallView: View {
                 // Header
                 VStack(spacing: 8) {
                     Image(systemName: "star.circle.fill")
-                        .font(.system(size: 60))
+                        .font(.largeTitle)
                         .foregroundStyle(.purple)
 
                     Text("Upgrade to Premium")

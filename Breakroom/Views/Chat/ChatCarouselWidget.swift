@@ -233,7 +233,7 @@ struct ChatCarouselWidget: View {
             // Media picker button
             PhotosPicker(selection: $selectedPhoto, matching: .any(of: [.images, .videos])) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 24))
+                    .font(.title2)
                     .foregroundStyle(Color.accentColor)
             }
             .buttonStyle(.plain)
@@ -258,7 +258,7 @@ struct ChatCarouselWidget: View {
                             .controlSize(.small)
                     } else {
                         Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.title2)
                     }
                 }
                 .frame(width: 28, height: 28)

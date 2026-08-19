@@ -243,12 +243,12 @@ private struct LiveTimeDisplay: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(formattedTime)
-                .font(.system(size: 28, weight: .light))
+                .font(.title.weight(.light))
                 .foregroundStyle(.white)
                 .monospacedDigit()
 
             Text(formattedDate)
-                .font(.system(size: 11))
+                .font(.caption2)
                 .foregroundStyle(.white.opacity(0.9))
         }
         .task {
@@ -378,7 +378,7 @@ struct CalendarWidget: View {
             }
         } label: {
             Text(timezoneAbbr)
-                .font(.system(size: 11, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -394,7 +394,7 @@ struct CalendarWidget: View {
         VStack(spacing: 4) {
             // Month header
             Text(monthYearTitle)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 3)
@@ -422,7 +422,7 @@ struct CalendarWidget: View {
         HStack(spacing: 0) {
             ForEach(["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"], id: \.self) { day in
                 Text(day)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.8))
                     .frame(maxWidth: .infinity)
             }
@@ -433,7 +433,7 @@ struct CalendarWidget: View {
         HStack(spacing: 0) {
             ForEach(days) { day in
                 Text("\(day.day)")
-                    .font(.system(size: 11, weight: day.isToday ? .bold : .regular))
+                    .font(.caption2.weight(day.isToday ? .bold : .regular))
                     .foregroundStyle(day.isToday
                         ? Color(red: 0.463, green: 0.294, blue: 0.635)
                         : .white.opacity(day.currentMonth ? 1 : 0.4))
@@ -604,11 +604,11 @@ struct WeatherWidget: View {
             // Main weather display
             HStack(spacing: 16) {
                 Text(weatherEmoji(for: data.weatherCode))
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Int(data.temperature))\u{00B0}F")
-                        .font(.system(size: 36, weight: .light))
+                        .font(.title.weight(.light))
                         .foregroundStyle(.white)
                     Text("Feels like \(Int(data.feelsLike))\u{00B0}")
                         .font(.subheadline)

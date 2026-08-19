@@ -135,7 +135,7 @@ struct ProfileView: View {
                             .fill(Color.accentColor)
                             .overlay {
                                 Text(profile.firstName?.prefix(1).uppercased() ?? profile.handle.prefix(1).uppercased())
-                                    .font(.system(size: 32, weight: .bold))
+                                    .font(.title.weight(.bold))
                                     .foregroundStyle(.white)
                             }
                     }

@@ -116,7 +116,7 @@ struct BlogPostView: View {
                     .frame(width: 40, height: 40)
                     .overlay(
                         Text(String(displayPost.authorDisplayName.prefix(1)).uppercased())
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.callout.weight(.semibold))
                             .foregroundStyle(.green)
                     )
             }

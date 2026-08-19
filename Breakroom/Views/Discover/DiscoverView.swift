@@ -314,7 +314,7 @@ struct PublicStorefrontView: View {
         // For now, open in Safari
         VStack(spacing: 16) {
             Image(systemName: "storefront")
-                .font(.system(size: 48))
+                .font(.largeTitle)
                 .foregroundStyle(.secondary)
 
             Text("Opening storefront...")
@@ -344,7 +344,7 @@ struct PublicGalleryView: View {
         // For now, open in Safari
         VStack(spacing: 16) {
             Image(systemName: "photo.artframe")
-                .font(.system(size: 48))
+                .font(.largeTitle)
                 .foregroundStyle(.secondary)
 
             Text("Opening gallery...")

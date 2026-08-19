@@ -209,7 +209,7 @@ struct MashupView: View {
 
             // Recording timer
             Text(formatDuration(recordingSeconds))
-                .font(.system(size: 72, weight: .light, design: .monospaced))
+                .font(.largeTitle.weight(.light).monospacedDigit())
                 .foregroundStyle(mashupState == .recording ? .red : .primary)
 
             // Record/Stop button
@@ -343,7 +343,7 @@ struct MashupView: View {
             Spacer()
 
             Image(systemName: "waveform")
-                .font(.system(size: 64))
+                .font(.largeTitle)
                 .foregroundStyle(.purple)
 
             Text("Preview Ready")
@@ -438,7 +438,7 @@ struct MashupView: View {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 64))
+                .font(.largeTitle)
                 .foregroundStyle(.green)
 
             Text("Mashup Saved!")

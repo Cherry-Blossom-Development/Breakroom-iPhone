@@ -30,7 +30,7 @@ struct ForgotPasswordView: View {
                 if isSubmitted {
                     VStack(spacing: 16) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 48))
+                            .font(.largeTitle)
                             .foregroundStyle(.green)
                             .accessibilityIdentifier("forgotPasswordSuccessIcon")
 
