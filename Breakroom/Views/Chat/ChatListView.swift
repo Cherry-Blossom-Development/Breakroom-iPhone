@@ -29,6 +29,7 @@ struct ChatListView: View {
 
     // Scale avatar sizes with Dynamic Type
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ZStack {
@@ -302,7 +303,7 @@ struct ChatListView: View {
                     Text(description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 }
             }
             Spacer()
@@ -445,7 +446,7 @@ struct ChatListView: View {
                         Text(lastMessage)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                     }
                 }
 

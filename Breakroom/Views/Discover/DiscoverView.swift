@@ -198,6 +198,7 @@ private struct DiscoverCard: View {
 
     // Scale avatar size with Dynamic Type
     @ScaledMetric(relativeTo: .caption) private var avatarSize: CGFloat = 24
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var coverImageURL: URL? {
         guard let path = coverImagePath else { return nil }
@@ -220,18 +221,31 @@ private struct DiscoverCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
-                // Artist row
-                HStack(spacing: 8) {
-                    artistAvatar
-                        .frame(width: avatarSize, height: avatarSize)
-                        .clipShape(Circle())
+                // Artist row - stack vertically for accessibility sizes
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) {
+                        artistAvatar
+                            .frame(width: avatarSize, height: avatarSize)
+                            .clipShape(Circle())
 
-                    Text(artist.displayName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        Text(artist.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        artistAvatar
+                            .frame(width: avatarSize, height: avatarSize)
+                            .clipShape(Circle())
+
+                        Text(artist.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Text(subtitle)

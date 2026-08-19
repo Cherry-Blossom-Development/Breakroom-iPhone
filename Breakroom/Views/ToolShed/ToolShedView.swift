@@ -6,6 +6,7 @@ struct ToolShedView: View {
 
     // Scale icon sizes with Dynamic Type
     @ScaledMetric(relativeTo: .body) private var toolIconSize: CGFloat = 40
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
@@ -95,7 +96,7 @@ struct ToolShedView: View {
                     Text(tool.description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
                 }
 
                 Spacer()
