@@ -159,6 +159,9 @@ private struct PublishCard: View {
 private struct PageSettingsCard: View {
     @Bindable var viewModel: BandPageSetupViewModel
 
+    // Scale color preset size with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var colorPresetSize: CGFloat = 32
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Page Settings")
@@ -206,7 +209,7 @@ private struct PageSettingsCard: View {
                     ForEach(presetBackgroundColors, id: \.self) { hex in
                         Circle()
                             .fill(Color(hex: hex) ?? .black)
-                            .frame(width: 32, height: 32)
+                            .frame(width: colorPresetSize, height: colorPresetSize)
                             .overlay {
                                 if viewModel.backgroundColor == hex {
                                     Circle().stroke(Color.white, lineWidth: 2)
@@ -317,18 +320,21 @@ private struct MemberInstrumentsCard: View {
     @Bindable var viewModel: BandPageSetupViewModel
     let member: BandPageMember
 
+    // Scale avatar size with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 40
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 // Avatar
                 if let photoUrl = member.photoUrl {
                     AuthenticatedImage(path: photoUrl)
-                        .frame(width: 40, height: 40)
+                        .frame(width: avatarSize, height: avatarSize)
                         .clipShape(Circle())
                 } else {
                     Circle()
                         .fill(Color.accentColor)
-                        .frame(width: 40, height: 40)
+                        .frame(width: avatarSize, height: avatarSize)
                         .overlay {
                             Text(String(member.handle.prefix(1)).uppercased())
                                 .foregroundStyle(.white)
@@ -390,6 +396,9 @@ private struct SongRow: View {
     @Bindable var viewModel: BandPageSetupViewModel
     let song: BandPageSession
 
+    // Scale move button size with Dynamic Type
+    @ScaledMetric(relativeTo: .caption) private var moveButtonSize: CGFloat = 28
+
     var body: some View {
         HStack(spacing: 12) {
             Button {
@@ -423,14 +432,14 @@ private struct SongRow: View {
                     } label: {
                         Image(systemName: "chevron.up")
                             .font(.caption)
-                            .frame(width: 28, height: 28)
+                            .frame(width: moveButtonSize, height: moveButtonSize)
                     }
                     Button {
                         viewModel.moveSong(song, direction: 1)
                     } label: {
                         Image(systemName: "chevron.down")
                             .font(.caption)
-                            .frame(width: 28, height: 28)
+                            .frame(width: moveButtonSize, height: moveButtonSize)
                     }
                 }
                 .foregroundStyle(.secondary)

@@ -2,6 +2,10 @@ import SwiftUI
 
 struct PublicProfileView: View {
     let handle: String
+
+    // Scale avatar size with Dynamic Type
+    @ScaledMetric(relativeTo: .title) private var avatarSize: CGFloat = 100
+
     @State private var profile: UserProfile?
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -124,12 +128,12 @@ struct PublicProfileView: View {
                         ProgressView()
                     }
                 }
-                .frame(width: 100, height: 100)
+                .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
-                    .frame(width: 100, height: 100)
+                    .frame(width: avatarSize, height: avatarSize)
                     .foregroundStyle(.secondary)
             }
 

@@ -3,6 +3,10 @@ import SwiftUI
 struct SignupView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(\.dismiss) private var dismiss
+
+    // Scale logo size with Dynamic Type
+    @ScaledMetric(relativeTo: .title) private var logoSize: CGFloat = 80
+
     @State private var handle = ""
     @State private var firstName = ""
     @State private var lastName = ""
@@ -23,7 +27,7 @@ struct SignupView: View {
                 Image("LogoLarge")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 80, height: 80)
+                    .frame(width: logoSize, height: logoSize)
                     .padding(.top, 24)
                     .accessibilityLabel("Prosaurus logo")
 

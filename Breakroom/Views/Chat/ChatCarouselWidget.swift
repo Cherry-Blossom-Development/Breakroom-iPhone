@@ -10,6 +10,10 @@ private let logger = Logger(subsystem: "com.cherryblossomdev.Breakroom", categor
 struct ChatCarouselWidget: View {
     @Environment(ChatSocketManager.self) private var socketManager
 
+    // Scale button sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .caption) private var navButtonSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .body) private var sendButtonSize: CGFloat = 28
+
     // State
     @State private var rooms: [RecentRoomMessage] = []
     @State private var currentIndex: Int = 0
@@ -80,7 +84,7 @@ struct ChatCarouselWidget: View {
             Image(systemName: "chevron.left")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(canGoLeft ? Color.primary : Color.secondary.opacity(0.3))
-                .frame(width: 32, height: 32)
+                .frame(width: navButtonSize, height: navButtonSize)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     if canGoLeft {
@@ -116,7 +120,7 @@ struct ChatCarouselWidget: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(rightGlowing ? Color.yellow.opacity(0.4) : Color.clear)
                 )
-                .frame(width: 32, height: 32)
+                .frame(width: navButtonSize, height: navButtonSize)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     if canGoRight {
@@ -261,7 +265,7 @@ struct ChatCarouselWidget: View {
                             .font(.title2)
                     }
                 }
-                .frame(width: 28, height: 28)
+                .frame(width: sendButtonSize, height: sendButtonSize)
             }
             .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)

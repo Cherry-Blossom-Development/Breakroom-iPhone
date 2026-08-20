@@ -16,6 +16,10 @@ let collectionColorPresets: [(hex: String, name: String)] = [
 ]
 
 struct CollectionsView: View {
+    // Scale button/icon sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var colorPresetSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var itemThumbnailSize: CGFloat = 60
+
     @State private var collections: [Collection] = []
     @State private var isLoading = true
     @State private var error: String?
@@ -415,7 +419,7 @@ struct CollectionsView: View {
                 } label: {
                     Circle()
                         .fill(Color(hex: preset.hex) ?? .white)
-                        .frame(width: 44, height: 44)
+                        .frame(width: colorPresetSize, height: colorPresetSize)
                         .overlay {
                             if editBackgroundColor == preset.hex {
                                 Image(systemName: "checkmark")
@@ -484,7 +488,7 @@ struct CollectionsView: View {
                             selectedPhoto = nil
                         } label: {
                             CollectionItemImage(path: item.imagePath!)
-                                .frame(width: 60, height: 60)
+                                .frame(width: itemThumbnailSize, height: itemThumbnailSize)
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                                 .overlay {
                                     if editBackgroundImagePath == item.imagePath {

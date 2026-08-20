@@ -3,6 +3,9 @@ import SwiftUI
 struct ForgotPasswordView: View {
     @Environment(\.dismiss) private var dismiss
 
+    // Scale logo size with Dynamic Type
+    @ScaledMetric(relativeTo: .title) private var logoSize: CGFloat = 120
+
     @State private var email = ""
     @State private var isSubmitting = false
     @State private var isSubmitted = false
@@ -15,7 +18,7 @@ struct ForgotPasswordView: View {
                 Image("LogoLarge")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 120, height: 120)
+                    .frame(width: logoSize, height: logoSize)
 
                 Text("Forgot Password")
                     .font(.title2.bold())

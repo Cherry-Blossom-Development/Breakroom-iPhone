@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct PaymentSetupView: View {
+    // Scale icon sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var statusIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .caption) private var stepNumberSize: CGFloat = 28
+
     @State private var isLoading = true
     @State private var error: String?
 
@@ -116,7 +120,7 @@ struct PaymentSetupView: View {
             HStack(spacing: 14) {
                 Circle()
                     .fill(Color(.secondarySystemBackground))
-                    .frame(width: 48, height: 48)
+                    .frame(width: statusIconSize, height: statusIconSize)
                     .overlay {
                         Image(systemName: "creditcard")
                             .font(.title3)
@@ -159,7 +163,7 @@ struct PaymentSetupView: View {
             HStack(spacing: 14) {
                 Circle()
                     .fill(Color.orange.opacity(0.15))
-                    .frame(width: 48, height: 48)
+                    .frame(width: statusIconSize, height: statusIconSize)
                     .overlay {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.title3)
@@ -201,7 +205,7 @@ struct PaymentSetupView: View {
             HStack(spacing: 14) {
                 Circle()
                     .fill(Color.green.opacity(0.15))
-                    .frame(width: 48, height: 48)
+                    .frame(width: statusIconSize, height: statusIconSize)
                     .overlay {
                         Image(systemName: "checkmark.circle")
                             .font(.title3)
@@ -389,7 +393,7 @@ struct PaymentSetupView: View {
         HStack(alignment: .top, spacing: 12) {
             Circle()
                 .fill(Color.accentColor)
-                .frame(width: 28, height: 28)
+                .frame(width: stepNumberSize, height: stepNumberSize)
                 .overlay {
                     Text(number)
                         .font(.caption)

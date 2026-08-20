@@ -31,6 +31,11 @@ struct ChatWidget: View {
     @State private var showBlockConfirmation = false
     @State private var userToBlock: (id: Int, handle: String)?
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var buttonSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .caption) private var smallIconSize: CGFloat = 24
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 60
+
     private var roomId: Int? { block.contentId }
 
     var body: some View {
@@ -319,7 +324,7 @@ struct ChatWidget: View {
                             .font(.title2)
                     }
                 }
-                .frame(width: 28, height: 28)
+                .frame(width: buttonSize, height: buttonSize)
             }
             .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending)
@@ -510,6 +515,9 @@ struct ChatWidgetMessageRow: View {
     let onDelete: () -> Void
     let onBlock: () -> Void
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .caption) private var menuIconSize: CGFloat = 24
+
     private var isCurrentUser: Bool {
         guard let storedId = KeychainManager.get(.userId),
               let currentUserId = Int(storedId) else { return false }
@@ -614,7 +622,7 @@ struct ChatWidgetMessageRow: View {
                 Image(systemName: "ellipsis")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
+                    .frame(width: menuIconSize, height: menuIconSize)
             }
             .accessibilityLabel("Message options")
         }
@@ -717,6 +725,9 @@ struct AuthenticatedImage: View {
     @State private var image: UIImage?
     @State private var failed = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var placeholderSize: CGFloat = 60
+
     var body: some View {
         Group {
             if let image {
@@ -728,10 +739,10 @@ struct AuthenticatedImage: View {
             } else if failed {
                 Image(systemName: "photo")
                     .foregroundStyle(.secondary)
-                    .frame(width: 60, height: 60)
+                    .frame(width: placeholderSize, height: placeholderSize)
             } else {
                 ProgressView()
-                    .frame(width: 60, height: 60)
+                    .frame(width: placeholderSize, height: placeholderSize)
             }
         }
         .task(id: path) {
@@ -772,6 +783,9 @@ struct AuthenticatedVideoPlayer: View {
     @State private var localURL: URL?
     @State private var failed = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var placeholderSize: CGFloat = 60
+
     var body: some View {
         Group {
             if let localURL {
@@ -781,10 +795,10 @@ struct AuthenticatedVideoPlayer: View {
             } else if failed {
                 Image(systemName: "video.slash")
                     .foregroundStyle(.secondary)
-                    .frame(width: 60, height: 60)
+                    .frame(width: placeholderSize, height: placeholderSize)
             } else {
                 ProgressView()
-                    .frame(width: 60, height: 60)
+                    .frame(width: placeholderSize, height: placeholderSize)
             }
         }
         .task(id: path) {

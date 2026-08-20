@@ -162,6 +162,9 @@ private struct OrderCard: View {
     let onToggle: () -> Void
     let onShipped: (Order) -> Void
 
+    // Scale thumbnail size with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var thumbnailSize: CGFloat = 50
+
     @State private var trackingCarrier = ""
     @State private var trackingNumber = ""
     @State private var isShipping = false
@@ -191,12 +194,12 @@ private struct OrderCard: View {
                         } placeholder: {
                             Color.gray.opacity(0.2)
                         }
-                        .frame(width: 50, height: 50)
+                        .frame(width: thumbnailSize, height: thumbnailSize)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     } else {
                         RoundedRectangle(cornerRadius: 6)
                             .fill(Color.gray.opacity(0.2))
-                            .frame(width: 50, height: 50)
+                            .frame(width: thumbnailSize, height: thumbnailSize)
                             .overlay {
                                 Image(systemName: "photo")
                                     .foregroundStyle(.secondary)

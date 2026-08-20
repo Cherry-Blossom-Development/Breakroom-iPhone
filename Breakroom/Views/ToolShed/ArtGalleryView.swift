@@ -913,6 +913,9 @@ struct ArtworkLightbox: View {
     let artworks: [Artwork]
     let onNavigate: (Artwork?) -> Void
 
+    // Scale nav button size with Dynamic Type
+    @ScaledMetric(relativeTo: .title) private var navButtonSize: CGFloat = 60
+
     @Environment(\.dismiss) private var dismiss
 
     private var currentIndex: Int {
@@ -1006,7 +1009,7 @@ struct ArtworkLightbox: View {
                         Image(systemName: "chevron.left")
                             .font(.title)
                             .foregroundStyle(.white.opacity(hasPrevious ? 1 : 0.3))
-                            .frame(width: 60, height: 60)
+                            .frame(width: navButtonSize, height: navButtonSize)
                     }
                     .disabled(!hasPrevious)
                     .accessibilityLabel("Previous image")
@@ -1021,7 +1024,7 @@ struct ArtworkLightbox: View {
                         Image(systemName: "chevron.right")
                             .font(.title)
                             .foregroundStyle(.white.opacity(hasNext ? 1 : 0.3))
-                            .frame(width: 60, height: 60)
+                            .frame(width: navButtonSize, height: navButtonSize)
                     }
                     .disabled(!hasNext)
                     .accessibilityLabel("Next image")

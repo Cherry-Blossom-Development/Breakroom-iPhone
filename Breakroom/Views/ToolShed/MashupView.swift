@@ -18,6 +18,13 @@ struct MashupView: View {
     // MARK: - Input Data
 
     let ownSessions: [Session]
+
+    // Scale button/icon sizes with Dynamic Type
+    @ScaledMetric(relativeTo: .body) private var sessionIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .title) private var recordButtonSize: CGFloat = 80
+    @ScaledMetric(relativeTo: .body) private var recordStopSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .body) private var recordInnerSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .title) private var playbackButtonSize: CGFloat = 60
     let bandMemberSessions: [Session]
     let bands: [Band]
     let instruments: [Instrument]
@@ -149,7 +156,7 @@ struct MashupView: View {
                 Image(systemName: "music.note")
                     .font(.title2)
                     .foregroundStyle(.purple)
-                    .frame(width: 44, height: 44)
+                    .frame(width: sessionIconSize, height: sessionIconSize)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(session.name)
@@ -223,16 +230,16 @@ struct MashupView: View {
                 ZStack {
                     Circle()
                         .fill(mashupState == .recording ? Color.red : Color.purple)
-                        .frame(width: 80, height: 80)
+                        .frame(width: recordButtonSize, height: recordButtonSize)
 
                     if mashupState == .recording {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.white)
-                            .frame(width: 28, height: 28)
+                            .frame(width: recordStopSize, height: recordStopSize)
                     } else {
                         Circle()
                             .fill(Color.white)
-                            .frame(width: 32, height: 32)
+                            .frame(width: recordInnerSize, height: recordInnerSize)
                     }
                 }
             }
@@ -356,7 +363,7 @@ struct MashupView: View {
                 } label: {
                     Image(systemName: "play.fill")
                         .font(.title)
-                        .frame(width: 60, height: 60)
+                        .frame(width: playbackButtonSize, height: playbackButtonSize)
                         .background(Color.purple)
                         .foregroundStyle(.white)
                         .clipShape(Circle())
@@ -367,7 +374,7 @@ struct MashupView: View {
                 } label: {
                     Image(systemName: "stop.fill")
                         .font(.title)
-                        .frame(width: 60, height: 60)
+                        .frame(width: playbackButtonSize, height: playbackButtonSize)
                         .background(Color(.secondarySystemBackground))
                         .foregroundStyle(.primary)
                         .clipShape(Circle())
@@ -377,7 +384,7 @@ struct MashupView: View {
                     ShareLink(item: url) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.title)
-                            .frame(width: 60, height: 60)
+                            .frame(width: playbackButtonSize, height: playbackButtonSize)
                             .background(Color(.secondarySystemBackground))
                             .foregroundStyle(.primary)
                             .clipShape(Circle())
