@@ -97,6 +97,14 @@ struct SessionsView: View {
     @State private var practiceDefaultBandId: Int?
     @State private var practiceCommonNames: [Int: [String]] = [:]
 
+    // MARK: - Dynamic Type Support
+
+    @ScaledMetric(relativeTo: .body) private var playButtonSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var menuButtonSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .caption) private var smallIconSize: CGFloat = 24
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 40
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     // MARK: - Computed Properties
 
     private var bandSessions: [Session] {
@@ -659,7 +667,7 @@ struct SessionsView: View {
 
         case .saving where isThisContext:
             ProgressView()
-                .frame(width: 32, height: 32)
+                .frame(width: menuButtonSize, height: menuButtonSize)
 
         default:
             // Recording in different context
@@ -926,7 +934,7 @@ struct SessionsView: View {
         HStack {
             if nowPlayingURL == nil {
                 ProgressView()
-                    .frame(width: 24, height: 24)
+                    .frame(width: smallIconSize, height: smallIconSize)
             } else {
                 Image(systemName: "music.note")
                     .font(.title2)
@@ -2130,13 +2138,17 @@ private struct SessionRow: View {
 
     @State private var showShareSheet = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var playButtonSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var menuButtonSize: CGFloat = 32
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onPlay) {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                     .font(.title3)
                     .foregroundStyle(isPlaying ? .red : .purple)
-                    .frame(width: 44, height: 44)
+                    .frame(width: playButtonSize, height: playButtonSize)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
@@ -2239,7 +2251,7 @@ private struct SessionRow: View {
                 Image(systemName: "ellipsis")
                     .font(.body)
                     .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: menuButtonSize, height: menuButtonSize)
             }
             .accessibilityLabel("More actions for \(session.name)")
             .accessibilityIdentifier("sessionsMoreButton_\(session.id)")
@@ -2286,13 +2298,17 @@ private struct BandMemberSessionRow: View {
 
     @State private var showShareSheet = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var playButtonSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var menuButtonSize: CGFloat = 32
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onPlay) {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                     .font(.title3)
                     .foregroundStyle(isPlaying ? .red : .purple)
-                    .frame(width: 44, height: 44)
+                    .frame(width: playButtonSize, height: playButtonSize)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isPlaying ? "Stop playing \(session.name)" : "Play \(session.name)")
@@ -2366,7 +2382,7 @@ private struct BandMemberSessionRow: View {
                 Image(systemName: "ellipsis")
                     .font(.body)
                     .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: menuButtonSize, height: menuButtonSize)
             }
             .accessibilityLabel("More actions for \(session.name)")
             .accessibilityIdentifier("sessionsBandMemberMoreButton_\(session.id)")
@@ -2684,6 +2700,9 @@ private struct RatingPopupView: View {
     let onClear: () -> Void
     let onDismiss: () -> Void
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var ratingButtonSize: CGFloat = 40
+
     var body: some View {
         VStack(spacing: 20) {
             Text("Rate this session")
@@ -2722,7 +2741,7 @@ private struct RatingPopupView: View {
         } label: {
             Text("\(value)")
                 .font(.body.weight(currentRating == value ? .bold : .regular))
-                .frame(width: 40, height: 40)
+                .frame(width: ratingButtonSize, height: ratingButtonSize)
                 .background(currentRating == value ? Color.purple : Color(.tertiarySystemFill))
                 .foregroundStyle(currentRating == value ? .white : .primary)
                 .clipShape(Circle())
@@ -3279,6 +3298,10 @@ private struct ShortlistDetailSheet: View {
     let onRemove: (Session) -> Void
     let onClose: () -> Void
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var playButtonSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .caption) private var removeButtonSize: CGFloat = 24
+
     var body: some View {
         NavigationStack {
             Group {
@@ -3321,7 +3344,7 @@ private struct ShortlistDetailSheet: View {
                 Image(systemName: nowPlayingId == session.id ? "stop.fill" : "play.fill")
                     .font(.title3)
                     .foregroundStyle(nowPlayingId == session.id ? .red : .purple)
-                    .frame(width: 44, height: 44)
+                    .frame(width: playButtonSize, height: playButtonSize)
             }
             .buttonStyle(.plain)
 
@@ -3370,7 +3393,7 @@ private struct ShortlistDetailSheet: View {
                 Image(systemName: "bookmark.slash")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
+                    .frame(width: removeButtonSize, height: removeButtonSize)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove from shortlist")

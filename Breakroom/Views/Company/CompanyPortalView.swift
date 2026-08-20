@@ -37,6 +37,11 @@ struct CompanyPortalView: View {
     // Detail navigation
     @State private var selectedCompanyId: Int?
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var smallAvatarSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 32
+
     private var isShowingDetail: Binding<Bool> {
         Binding(
             get: { selectedCompanyId != nil },
@@ -121,7 +126,7 @@ struct CompanyPortalView: View {
             // Company icon
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color.accentColor.opacity(0.15))
-                .frame(width: 44, height: 44)
+                .frame(width: avatarSize, height: avatarSize)
                 .overlay {
                     Text(company.name.prefix(1).uppercased())
                         .font(.title3.bold())
@@ -239,7 +244,7 @@ struct CompanyPortalView: View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color(.systemGray5))
-                .frame(width: 44, height: 44)
+                .frame(width: avatarSize, height: avatarSize)
                 .overlay {
                     Text(company.name.prefix(1).uppercased())
                         .font(.title3.bold())
@@ -483,6 +488,10 @@ struct CompanyDetailView: View {
 
     // Projects tab
     @State private var projects: [CompanyProject] = []
+
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .subheadline) private var employeeAvatarSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .subheadline) private var smallAvatarSize: CGFloat = 32
     @State private var isLoadingProjects = false
     @State private var showAddProjectSheet = false
     @State private var editingProject: CompanyProject?
@@ -1060,7 +1069,7 @@ struct CompanyDetailView: View {
                     initialsCircle(emp)
                 }
             }
-            .frame(width: 36, height: 36)
+            .frame(width: employeeAvatarSize, height: employeeAvatarSize)
             .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
@@ -1409,6 +1418,9 @@ struct AddEmployeeSheet: View {
     @State private var errorMessage: String?
     @State private var showError = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .subheadline) private var smallAvatarSize: CGFloat = 32
+
     var body: some View {
         NavigationStack {
             Form {
@@ -1520,7 +1532,7 @@ struct AddEmployeeSheet: View {
                     userInitialsCircle(user)
                 }
             }
-            .frame(width: 32, height: 32)
+            .frame(width: smallAvatarSize, height: smallAvatarSize)
             .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
@@ -1619,6 +1631,9 @@ struct EditEmployeeSheet: View {
     @State private var errorMessage: String?
     @State private var showError = false
 
+    // Dynamic Type scaling
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 40
+
     init(companyId: Int, employee: CompanyEmployee, onSave: @escaping (CompanyEmployee) -> Void) {
         self.companyId = companyId
         self.employee = employee
@@ -1645,7 +1660,7 @@ struct EditEmployeeSheet: View {
                     HStack(spacing: 10) {
                         Circle()
                             .fill(Color.accentColor.opacity(0.2))
-                            .frame(width: 40, height: 40)
+                            .frame(width: avatarSize, height: avatarSize)
                             .overlay {
                                 Text((employee.displayName.first ?? Character("?")).uppercased())
                                     .font(.subheadline.bold())
