@@ -167,9 +167,10 @@ struct ChatRoomView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(socketManager.connectionState == .connected ? .green : .red)
-                        .frame(width: 8, height: 8)
+                    // Use icon + color to differentiate connection state (accessibility: color alone)
+                    Image(systemName: socketManager.connectionState == .connected ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(socketManager.connectionState == .connected ? .green : .red)
                         .accessibilityLabel(socketManager.connectionState == .connected ? "Connected" : "Disconnected")
                     VStack(spacing: 0) {
                         Text("# \(room.name)")

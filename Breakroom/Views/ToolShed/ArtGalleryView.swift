@@ -249,10 +249,10 @@ struct ArtGalleryView: View {
                     .font(.caption.weight(.medium))
                     .lineLimit(1)
                 Spacer()
-                Circle()
-                    .fill(artwork.isPublishedBool ? Color.green : Color.gray)
-                    .frame(width: 8, height: 8)
-                    .accessibilityHidden(true)
+                // Use text + color to differentiate status (accessibility: color alone)
+                Text(artwork.isPublishedBool ? "Live" : "Draft")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(artwork.isPublishedBool ? .green : .secondary)
             }
 
             // Actions

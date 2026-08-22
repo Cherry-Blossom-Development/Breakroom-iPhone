@@ -417,10 +417,19 @@ struct MainTabView: View {
                             } label: {
                                 ZStack(alignment: .topTrailing) {
                                     Image(systemName: "line.3.horizontal")
-                                    if badgeStore.hasUnseenBadges || badgeStore.totalNonChat > 0 {
-                                        Circle()
-                                            .fill(.red)
-                                            .frame(width: 8, height: 8)
+                                    // Use icon/number + color for badge (accessibility: color alone)
+                                    if badgeStore.totalNonChat > 0 {
+                                        Text("\(badgeStore.totalNonChat)")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .frame(minWidth: 14, minHeight: 14)
+                                            .background(Circle().fill(.red))
+                                            .offset(x: 6, y: -6)
+                                    } else if badgeStore.hasUnseenBadges {
+                                        Image(systemName: "exclamationmark.circle.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.red)
+                                            .background(Circle().fill(.white).frame(width: 8, height: 8))
                                             .offset(x: 4, y: -4)
                                     }
                                 }
