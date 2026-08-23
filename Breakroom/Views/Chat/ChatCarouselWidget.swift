@@ -10,6 +10,9 @@ private let logger = Logger(subsystem: "com.cherryblossomdev.Breakroom", categor
 struct ChatCarouselWidget: View {
     @Environment(ChatSocketManager.self) private var socketManager
 
+    // Accessibility settings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Scale button sizes with Dynamic Type
     @ScaledMetric(relativeTo: .caption) private var navButtonSize: CGFloat = 32
     @ScaledMetric(relativeTo: .body) private var sendButtonSize: CGFloat = 28
@@ -439,6 +442,9 @@ struct ChatCarouselWidget: View {
     }
 
     private func triggerGlow() {
+        // Skip animation when Reduce Motion is enabled
+        guard !reduceMotion else { return }
+
         withAnimation(.easeIn(duration: 0.2)) { rightGlowing = true }
         Task {
             try? await Task.sleep(for: .seconds(2))
