@@ -5,6 +5,9 @@ struct HelpDeskView: View {
     let companyName: String
 
     @Environment(AuthViewModel.self) private var authViewModel
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     @State private var tickets: [Ticket] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -180,8 +183,8 @@ struct HelpDeskView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
+            .background(color.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15))
+            .foregroundStyle(colorSchemeContrast == .increased ? .primary : color)
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
@@ -197,8 +200,8 @@ struct HelpDeskView: View {
             .font(.caption2.weight(.medium))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(color.opacity(0.1))
-            .foregroundStyle(color)
+            .background(color.opacity(colorSchemeContrast == .increased ? 0.2 : 0.1))
+            .foregroundStyle(colorSchemeContrast == .increased ? .primary : color)
             .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 

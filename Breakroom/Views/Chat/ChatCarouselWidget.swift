@@ -83,7 +83,7 @@ struct ChatCarouselWidget: View {
             // Left navigation - using onTapGesture instead of Button
             Image(systemName: "chevron.left")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(canGoLeft ? Color.primary : Color.secondary.opacity(0.3))
+                .foregroundStyle(canGoLeft ? Color.primary : Color(.tertiaryLabel))
                 .frame(width: navButtonSize, height: navButtonSize)
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -113,7 +113,7 @@ struct ChatCarouselWidget: View {
             // Right navigation - using onTapGesture instead of Button
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(canGoRight ? Color.primary : Color.secondary.opacity(0.3))
+                .foregroundStyle(canGoRight ? Color.primary : Color(.tertiaryLabel))
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)
                 .background(

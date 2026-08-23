@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct EmploymentView: View {
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     @State private var positions: [Position] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -282,8 +285,8 @@ struct EmploymentView: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Color.green.opacity(0.15))
-                        .foregroundStyle(.green)
+                        .background(Color.green.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15))
+                        .foregroundStyle(colorSchemeContrast == .increased ? Color.primary : Color.green)
                         .clipShape(Capsule())
                 }
 
@@ -292,8 +295,8 @@ struct EmploymentView: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Color.blue.opacity(0.15))
-                        .foregroundStyle(.blue)
+                        .background(Color.blue.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15))
+                        .foregroundStyle(colorSchemeContrast == .increased ? Color.primary : Color.blue)
                         .clipShape(Capsule())
                 }
 

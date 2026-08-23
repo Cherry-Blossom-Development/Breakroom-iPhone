@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct BlogManagementView: View {
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     @State private var posts: [BlogPost] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -147,11 +150,13 @@ struct BlogManagementView: View {
                         .padding(.vertical, 3)
                         .background(
                             (post.isPublished ?? 0) != 0
-                                ? Color.green.opacity(0.15)
-                                : Color.secondary.opacity(0.15)
+                                ? Color.green.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15)
+                                : Color.secondary.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15)
                         )
                         .foregroundStyle(
-                            (post.isPublished ?? 0) != 0 ? .green : .secondary
+                            colorSchemeContrast == .increased
+                                ? Color.primary
+                                : ((post.isPublished ?? 0) != 0 ? Color.green : Color.secondary)
                         )
                         .clipShape(Capsule())
                 }

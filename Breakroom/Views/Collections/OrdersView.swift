@@ -372,28 +372,28 @@ private struct StatusBadge: View {
     let status: String
     let label: String
 
-    private var backgroundColor: Color {
-        switch status {
-        case "pending_payment": return .orange.opacity(0.15)
-        case "paid": return .green.opacity(0.15)
-        case "processing": return .blue.opacity(0.15)
-        case "shipped": return .purple.opacity(0.15)
-        case "delivered": return .green.opacity(0.15)
-        case "cancelled", "refunded": return .red.opacity(0.15)
-        default: return .gray.opacity(0.15)
-        }
-    }
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
-    private var foregroundColor: Color {
+    private var statusColor: Color {
         switch status {
         case "pending_payment": return .orange
-        case "paid": return .green
+        case "paid", "delivered": return .green
         case "processing": return .blue
         case "shipped": return .purple
-        case "delivered": return .green
         case "cancelled", "refunded": return .red
         default: return .gray
         }
+    }
+
+    private var backgroundColor: Color {
+        // Use stronger background when Increase Contrast is enabled
+        statusColor.opacity(colorSchemeContrast == .increased ? 0.25 : 0.15)
+    }
+
+    private var foregroundColor: Color {
+        // Use primary color for better contrast when Increase Contrast is enabled
+        colorSchemeContrast == .increased ? .primary : statusColor
     }
 
     var body: some View {

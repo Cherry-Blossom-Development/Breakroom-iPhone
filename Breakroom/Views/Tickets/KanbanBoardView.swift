@@ -4,6 +4,9 @@ struct KanbanBoardView: View {
     let projectId: Int
     let projectTitle: String
 
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     @State private var project: ProjectDetail?
     @State private var tickets: [Ticket] = []
     @State private var isLoading = true
@@ -196,8 +199,8 @@ struct KanbanBoardView: View {
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 4)
-                    .background(statusColor(target).opacity(0.15))
-                    .foregroundStyle(statusColor(target))
+                    .background(statusColor(target).opacity(colorSchemeContrast == .increased ? 0.25 : 0.15))
+                    .foregroundStyle(colorSchemeContrast == .increased ? .primary : statusColor(target))
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .buttonStyle(.plain)

@@ -197,6 +197,9 @@ private struct ItemCard: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    // Respond to Increase Contrast accessibility setting
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     var body: some View {
         Button {
             onEdit()
@@ -233,8 +236,10 @@ private struct ItemCard: View {
                             .font(.caption2)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(item.isListed ? Color.green.opacity(0.2) : Color.gray.opacity(0.2))
-                            .foregroundStyle(item.isListed ? .green : .secondary)
+                            .background(item.isListed
+                                ? Color.green.opacity(colorSchemeContrast == .increased ? 0.3 : 0.2)
+                                : Color.gray.opacity(colorSchemeContrast == .increased ? 0.3 : 0.2))
+                            .foregroundStyle(colorSchemeContrast == .increased ? Color.primary : (item.isListed ? Color.green : Color.secondary))
                             .clipShape(Capsule())
                     }
 
