@@ -22,7 +22,7 @@ struct ToolShedView: View {
                 .padding(.horizontal)
 
                 // Tool Categories
-                ForEach(ToolCategory.allCases, id: \.self) { category in
+                ForEach(ToolCategory.visibleCases, id: \.self) { category in
                     toolCategorySection(category)
                 }
 
@@ -156,6 +156,8 @@ struct ToolShedView: View {
             BlogManagementView()
         case .kanban:
             KanbanRedirectView()
+        case .games:
+            GamesView()
         }
     }
 
@@ -188,6 +190,7 @@ enum ToolDestination: Hashable {
     case collections
     case blog
     case kanban
+    case games
 }
 
 struct Tool {
@@ -203,6 +206,17 @@ enum ToolCategory: CaseIterable {
     case artist
     case writer
     case developer
+    case games
+
+    /// Categories visible to the current user (games requires feature flag).
+    @MainActor
+    static var visibleCases: [ToolCategory] {
+        var cases: [ToolCategory] = [.musician, .artist, .writer, .developer]
+        if FeaturesStore.shared.has("games") {
+            cases.append(.games)
+        }
+        return cases
+    }
 
     var title: String {
         switch self {
@@ -210,6 +224,7 @@ enum ToolCategory: CaseIterable {
         case .artist: return "Artist Tools"
         case .writer: return "Writer Tools"
         case .developer: return "Developer Tools"
+        case .games: return "Games"
         }
     }
 
@@ -219,6 +234,7 @@ enum ToolCategory: CaseIterable {
         case .artist: return "For visual artists"
         case .writer: return "For writers and bloggers"
         case .developer: return "For developers and project managers"
+        case .games: return "Text-based space exploration"
         }
     }
 
@@ -228,6 +244,7 @@ enum ToolCategory: CaseIterable {
         case .artist: return "paintpalette"
         case .writer: return "pencil.line"
         case .developer: return "chevron.left.forwardslash.chevron.right"
+        case .games: return "gamecontroller"
         }
     }
 
@@ -237,6 +254,7 @@ enum ToolCategory: CaseIterable {
         case .artist: return .pink
         case .writer: return .orange
         case .developer: return .blue
+        case .games: return .green
         }
     }
 
@@ -294,6 +312,16 @@ enum ToolCategory: CaseIterable {
                     icon: "rectangle.split.3x1",
                     destination: .kanban,
                     shortcutUrl: "/kanban"
+                )
+            ]
+        case .games:
+            return [
+                Tool(
+                    name: "Haulonaut",
+                    description: "A text-based space exploration game. Haul cargo across 1000-sector universes and make your fortune.",
+                    icon: "sparkles",
+                    destination: .games,
+                    shortcutUrl: "/games"
                 )
             ]
         }
