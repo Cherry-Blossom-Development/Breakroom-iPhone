@@ -27,6 +27,12 @@ struct HaulonautPlayView: View {
     let characterId: Int
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // Dynamic type support
+    @ScaledMetric(relativeTo: .body) private var planetSize: CGFloat = 72
+    @ScaledMetric(relativeTo: .body) private var outpostIconSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .caption) private var chipPadding: CGFloat = 12
 
     @State private var isLoading = true
     @State private var error: String?
@@ -81,8 +87,8 @@ struct HaulonautPlayView: View {
                     snackbar(message)
                         .padding(.bottom, 100)
                 }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(.easeInOut(duration: 0.3), value: snackbarMessage)
+                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: snackbarMessage)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -248,8 +254,9 @@ struct HaulonautPlayView: View {
                         endRadius: 50
                     )
                 )
-                .frame(width: 72, height: 72)
+                .frame(width: planetSize, height: planetSize)
                 .shadow(color: .white.opacity(0.15), radius: 8)
+                .accessibilityHidden(true)
 
             Text(planet.name)
                 .font(.caption2.monospaced())
@@ -260,13 +267,16 @@ struct HaulonautPlayView: View {
     private func outpostIcon(_ outpost: HaulonautSectorFeature) -> some View {
         VStack(spacing: 6) {
             Image(systemName: "building.2")
-                .font(.system(size: 32))
+                .font(.system(size: outpostIconSize))
                 .foregroundStyle(CRTColors.title)
+                .accessibilityHidden(true)
 
             Text(outpost.name)
                 .font(.caption2.monospaced())
                 .foregroundStyle(CRTColors.description)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Trading outpost: \(outpost.name)")
     }
 
     // Deterministic hue from name
@@ -424,7 +434,7 @@ struct HaulonautPlayView: View {
             }
             .font(.caption.monospaced())
             .foregroundStyle(CRTColors.tagline)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, chipPadding)
             .padding(.vertical, 8)
             .background(CRTColors.border.opacity(0.2))
             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -433,6 +443,7 @@ struct HaulonautPlayView: View {
                     .stroke(CRTColors.border, lineWidth: 1)
             }
         }
+        .accessibilityInputLabels([label.lowercased()])
     }
 
     private var backToSectorButton: some View {

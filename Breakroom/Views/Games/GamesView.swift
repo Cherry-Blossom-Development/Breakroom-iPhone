@@ -17,6 +17,10 @@ struct GamesView: View {
     // Navigation to play screen
     @State private var navigateToCharacterId: Int?
 
+    // Dynamic type support
+    @ScaledMetric(relativeTo: .body) private var adPadding: CGFloat = 24
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var mostRecentCharacter: HaulonautCharacter? {
         characters.first
     }
@@ -147,7 +151,7 @@ struct GamesView: View {
             .accessibilityIdentifier("gamesPlayNowButton")
             .padding(.top, 8)
         }
-        .padding(24)
+        .padding(adPadding)
         .background(Color(red: 0.02, green: 0.07, blue: 0.04))
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay {
@@ -155,6 +159,8 @@ struct GamesView: View {
                 .stroke(Color(red: 0.12, green: 0.54, blue: 0.30), lineWidth: 2)
         }
         .padding(.horizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Haulonaut. \(game.description ?? "Space trading game"). \(playButtonLabel)")
     }
 
     private var canPlay: Bool {
