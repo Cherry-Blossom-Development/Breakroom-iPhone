@@ -57,6 +57,9 @@ final class AuthViewModel {
 
             // Register FCM token for push notifications
             await PushNotificationManager.shared.registerTokenWithServer()
+
+            // Load user's enabled features
+            await FeaturesStore.shared.loadFeatures()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -84,6 +87,9 @@ final class AuthViewModel {
 
             // Register FCM token for push notifications
             await PushNotificationManager.shared.registerTokenWithServer()
+
+            // Load user's enabled features
+            await FeaturesStore.shared.loadFeatures()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -96,6 +102,9 @@ final class AuthViewModel {
     func logout() async {
         // Unregister FCM token before logging out
         await PushNotificationManager.shared.unregisterToken()
+
+        // Clear features
+        FeaturesStore.shared.clear()
 
         await AuthService.logout()
         isAuthenticated = false
@@ -123,6 +132,9 @@ final class AuthViewModel {
             currentUserId = me.userId
             currentUsername = me.username
             isAuthenticated = true
+
+            // Load user's enabled features
+            await FeaturesStore.shared.loadFeatures()
         } else {
             KeychainManager.clearAll()
         }
