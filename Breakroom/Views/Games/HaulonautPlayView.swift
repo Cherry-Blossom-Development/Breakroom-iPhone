@@ -6,6 +6,7 @@ enum HaulonautViewportMode {
     case space
     case outpost
     case cargo
+    case charts
 }
 
 // MARK: - CRT Colors
@@ -50,6 +51,12 @@ struct HaulonautPlayView: View {
     @State private var isNavigating = false
     @State private var isPurchasing = false
     @State private var snackbarMessage: String?
+
+    // Star Charts & Autopilot
+    @State private var knownLocations: [HaulonautKnownLocation] = []
+    @State private var traveling = false
+    @State private var travelPath: [HaulonautRouteWaypoint] = []
+    @State private var travelDestination: String?
 
     // Computed properties
     var planetFeature: HaulonautSectorFeature? {
@@ -186,6 +193,8 @@ struct HaulonautPlayView: View {
             outpostContent
         case .cargo:
             cargoContent
+        case .charts:
+            chartsContent
         }
     }
 
@@ -383,14 +392,96 @@ struct HaulonautPlayView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - Star Charts Content
+
+    private var chartsContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("STAR CHARTS")
+                .font(.headline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            Text("Known locations — tap to plot a course")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.muted)
+
+            if knownLocations.isEmpty {
+                Text("No locations discovered yet.")
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+            } else {
+                ForEach(knownLocations) { location in
+                    knownLocationRow(location)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func knownLocationRow(_ location: HaulonautKnownLocation) -> some View {
+        let isCurrentSector = location.sectorId == currentSector?.id
+        let featureIcon = featureTypeIcon(location.featureType)
+
+        return Button {
+            Task { await setCourse(to: location) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: featureIcon)
+                    .font(.title3)
+                    .foregroundStyle(CRTColors.title)
+                    .frame(width: 32)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(location.name)
+                        .font(.subheadline.monospaced().weight(.medium))
+                        .foregroundStyle(CRTColors.tagline)
+
+                    Text("Sector \(location.sectorNumber) · \(location.distance) hop\(location.distance == 1 ? "" : "s") away")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+
+                Spacer()
+
+                if isCurrentSector {
+                    Text("HERE")
+                        .font(.caption2.monospaced().bold())
+                        .foregroundStyle(CRTColors.stat)
+                } else {
+                    Image(systemName: "arrow.right.circle")
+                        .foregroundStyle(CRTColors.border)
+                }
+            }
+            .padding()
+            .background(CRTColors.border.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .disabled(isCurrentSector || traveling)
+        .accessibilityIdentifier("haulonautLocation_\(location.id)")
+        .accessibilityLabel("\(location.name), \(location.distance) hops away. \(isCurrentSector ? "Current location" : "Tap to set course")")
+    }
+
+    private func featureTypeIcon(_ type: String) -> String {
+        switch type {
+        case "planet": return "globe"
+        case "trading_outpost": return "building.2"
+        default: return "star"
+        }
+    }
+
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
         VStack(spacing: 12) {
+            // Autopilot status
+            if traveling {
+                autopilotStatus
+            }
+
             // Action chips (context-sensitive)
-            if viewportMode == .space {
+            if viewportMode == .space && !traveling {
                 actionChips
-            } else {
+            } else if viewportMode != .space {
                 backToSectorButton
             }
 
@@ -399,6 +490,30 @@ struct HaulonautPlayView: View {
         }
         .padding()
         .background(CRTColors.background.opacity(0.95))
+    }
+
+    private var autopilotStatus: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .tint(CRTColors.title)
+                .scaleEffect(0.8)
+
+            Text("AUTOPILOT: \(travelDestination ?? "En route")")
+                .font(.caption.monospaced().bold())
+                .foregroundStyle(CRTColors.stat)
+
+            Text("(\(travelPath.count) hop\(travelPath.count == 1 ? "" : "s") remaining)")
+                .font(.caption2.monospaced())
+                .foregroundStyle(CRTColors.muted)
+
+            Spacer()
+
+            Button("Abort") {
+                abortAutopilot()
+            }
+            .font(.caption.monospaced().bold())
+            .foregroundStyle(CRTColors.error)
+        }
     }
 
     private var actionChips: some View {
@@ -422,6 +537,11 @@ struct HaulonautPlayView: View {
                     viewCargo()
                 }
                 .accessibilityIdentifier("haulonautViewCargoButton")
+
+                actionChip(icon: "star.circle", label: "Star Charts") {
+                    Task { await viewStarCharts() }
+                }
+                .accessibilityIdentifier("haulonautStarChartsButton")
             }
         }
     }
@@ -559,6 +679,12 @@ struct HaulonautPlayView: View {
 
     private func navigate(to sector: HaulonautConnectedSector) async {
         guard !isNavigating else { return }
+
+        // Abort autopilot if active
+        if traveling {
+            abortAutopilot()
+        }
+
         isNavigating = true
 
         do {
@@ -590,9 +716,21 @@ struct HaulonautPlayView: View {
     }
 
     private func exitViewportOverlay() {
-        let message = viewportMode == .outpost ? "Departing the outpost." : "Closing the cargo manifest."
+        let message: String
+        switch viewportMode {
+        case .outpost:
+            message = "Departing the outpost."
+        case .cargo:
+            message = "Closing the cargo manifest."
+        case .charts:
+            message = "Closing star charts."
+        case .space:
+            message = ""
+        }
         viewportMode = .space
-        showSnackbar(message)
+        if !message.isEmpty {
+            showSnackbar(message)
+        }
     }
 
     private func purchase(_ item: HaulonautItem) async {
@@ -614,6 +752,76 @@ struct HaulonautPlayView: View {
         }
 
         isPurchasing = false
+    }
+
+    // MARK: - Star Charts Actions
+
+    private func viewStarCharts() async {
+        do {
+            knownLocations = try await GamesAPIService.getKnownLocations(characterId: characterId)
+            viewportMode = .charts
+            showSnackbar("Opening star charts.")
+        } catch {
+            showSnackbar("Failed to load star charts: \(error.localizedDescription)")
+        }
+    }
+
+    private func setCourse(to location: HaulonautKnownLocation) async {
+        do {
+            let path = try await GamesAPIService.getRoute(characterId: characterId, toSectorId: location.sectorId)
+            guard !path.isEmpty else {
+                showSnackbar("No route found to \(location.name).")
+                return
+            }
+
+            travelPath = path
+            travelDestination = location.name
+            traveling = true
+            viewportMode = .space
+            showSnackbar("Autopilot engaged to \(location.name).")
+
+            await travelAlongPath()
+        } catch {
+            showSnackbar("Failed to plot course: \(error.localizedDescription)")
+        }
+    }
+
+    private func travelAlongPath() async {
+        while traveling && !travelPath.isEmpty {
+            let nextWaypoint = travelPath.removeFirst()
+
+            do {
+                let response = try await GamesAPIService.navigate(characterId: characterId, toSectorId: nextWaypoint.id)
+                currentSector = response.currentSector
+                connectedSectors = response.connectedSectors
+                features = response.features
+                playersHere = response.playersHere
+                credits = response.credits
+                rations = response.rations
+            } catch {
+                showSnackbar("Autopilot error: \(error.localizedDescription)")
+                traveling = false
+                travelPath = []
+                travelDestination = nil
+                return
+            }
+
+            if travelPath.isEmpty {
+                traveling = false
+                travelDestination = nil
+                showSnackbar("Arrived at destination.")
+            } else {
+                // Delay between hops (600ms like web)
+                try? await Task.sleep(for: .milliseconds(600))
+            }
+        }
+    }
+
+    private func abortAutopilot() {
+        traveling = false
+        travelPath = []
+        travelDestination = nil
+        showSnackbar("Autopilot disengaged.")
     }
 }
 

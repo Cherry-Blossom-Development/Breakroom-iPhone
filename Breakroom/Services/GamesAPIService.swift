@@ -49,4 +49,22 @@ enum GamesAPIService {
             body: body
         )
     }
+
+    // MARK: - Star Charts
+
+    /// GET /api/games/haulonaut/characters/:id/known-locations — returns discovered locations with distances.
+    static func getKnownLocations(characterId: Int) async throws -> [HaulonautKnownLocation] {
+        let response: HaulonautKnownLocationsResponse = try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/known-locations"
+        )
+        return response.locations
+    }
+
+    /// GET /api/games/haulonaut/characters/:id/route/:sectorId — returns shortest path to sector.
+    static func getRoute(characterId: Int, toSectorId: Int) async throws -> [HaulonautRouteWaypoint] {
+        let response: HaulonautRouteResponse = try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/route/\(toSectorId)"
+        )
+        return response.path
+    }
 }

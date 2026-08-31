@@ -279,3 +279,53 @@ struct HaulonautPurchaseRequest: Encodable {
         case quantity
     }
 }
+
+// MARK: - Star Charts Models
+
+/// A discovered location (planet, outpost, etc.) with distance from current sector.
+struct HaulonautKnownLocation: Codable, Identifiable {
+    let id: Int
+    let sectorId: Int
+    let sectorNumber: Int
+    let featureType: String
+    let name: String
+    let distance: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case sectorId = "sector_id"
+        case sectorNumber = "sector_number"
+        case featureType = "feature_type"
+        case name
+        case distance
+    }
+}
+
+struct HaulonautKnownLocationsResponse: Codable {
+    let locations: [HaulonautKnownLocation]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        locations = try container.decodeIfPresent([HaulonautKnownLocation].self, forKey: .locations) ?? []
+    }
+}
+
+/// A waypoint in an autopilot route.
+struct HaulonautRouteWaypoint: Codable, Identifiable {
+    let id: Int
+    let sectorNumber: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case sectorNumber = "sector_number"
+    }
+}
+
+struct HaulonautRouteResponse: Codable {
+    let path: [HaulonautRouteWaypoint]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        path = try container.decodeIfPresent([HaulonautRouteWaypoint].self, forKey: .path) ?? []
+    }
+}
