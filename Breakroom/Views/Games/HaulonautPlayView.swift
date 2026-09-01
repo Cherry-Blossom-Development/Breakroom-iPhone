@@ -44,6 +44,7 @@ struct HaulonautPlayView: View {
     @State private var playersHere: [HaulonautPlayerHere] = []
     @State private var credits: Int = 0
     @State private var rations: Int = 0
+    @State private var fuel: Int = 0
     @State private var inventory: [HaulonautInventoryItem] = []
     @State private var itemsCatalog: [HaulonautItem] = []
 
@@ -58,6 +59,12 @@ struct HaulonautPlayView: View {
     @State private var travelPath: [HaulonautRouteWaypoint] = []
     @State private var travelDestination: String?
 
+    // Drift (uncontrolled movement when fuel is 0)
+    @State private var driftVariance: Int = 0
+    @State private var drifting = false
+    @State private var driftTask: Task<Void, Never>?
+    @State private var previousFuel: Int = 0
+
     // Computed properties
     var planetFeature: HaulonautSectorFeature? {
         features.first { $0.featureType == "planet" }
@@ -65,6 +72,16 @@ struct HaulonautPlayView: View {
 
     var outpostFeature: HaulonautSectorFeature? {
         features.first { $0.featureType == "trading_outpost" }
+    }
+
+    /// Ship should drift: out of fuel and not at a planet (which would stabilize).
+    var driftEligible: Bool {
+        fuel <= 0 && planetFeature == nil
+    }
+
+    /// Can't warp if either rations or fuel is depleted.
+    var canWarp: Bool {
+        rations > 0 && fuel > 0
     }
 
     func inventoryQuantity(for itemKey: String) -> Int {
@@ -115,6 +132,10 @@ struct HaulonautPlayView: View {
         .task {
             await loadCharacter()
         }
+        .onDisappear {
+            driftTask?.cancel()
+            driftTask = nil
+        }
     }
 
     // MARK: - Resources Display
@@ -123,6 +144,10 @@ struct HaulonautPlayView: View {
         HStack(spacing: 12) {
             resourcePill(label: "Credits", value: credits)
             resourcePill(label: "Rations", value: rations)
+            resourcePill(label: "Fuel", value: fuel)
+            if driftEligible {
+                driftVariancePill
+            }
         }
     }
 
@@ -137,6 +162,20 @@ struct HaulonautPlayView: View {
                 .font(.caption2.monospaced())
                 .foregroundStyle(CRTColors.muted)
         }
+    }
+
+    private var driftVariancePill: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text("\(driftVariance)")
+                .font(.caption.monospaced().bold())
+                .foregroundStyle(CRTColors.error)
+                .accessibilityIdentifier("haulonautResourceDriftVariance")
+            Text("Drift")
+                .font(.caption2.monospaced())
+                .foregroundStyle(CRTColors.error)
+        }
+        .opacity(reduceMotion ? 1.0 : (driftVariance % 2 == 0 ? 1.0 : 0.5))
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.5).repeatForever(), value: driftVariance)
     }
 
     // MARK: - Error View
@@ -604,25 +643,26 @@ struct HaulonautPlayView: View {
 
     private func warpButton(_ sector: HaulonautConnectedSector) -> some View {
         let label = sector.visited ? "\(sector.sectorNumber) ✓" : "\(sector.sectorNumber)"
+        let isDisabled = isNavigating || !canWarp
 
         return Button {
             Task { await navigate(to: sector) }
         } label: {
             Text(label)
                 .font(.caption.monospaced().bold())
-                .foregroundStyle(CRTColors.tagline)
+                .foregroundStyle(isDisabled ? CRTColors.muted : CRTColors.tagline)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(sector.visited ? CRTColors.border.opacity(0.3) : CRTColors.border.opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .overlay {
                     RoundedRectangle(cornerRadius: 4)
-                        .stroke(CRTColors.border, lineWidth: 1)
+                        .stroke(isDisabled ? CRTColors.muted : CRTColors.border, lineWidth: 1)
                 }
         }
-        .disabled(isNavigating)
+        .disabled(isDisabled)
         .accessibilityIdentifier("haulonautWarpButton_\(sector.sectorNumber)")
-        .accessibilityLabel("Warp to Sector \(sector.sectorNumber)\(sector.visited ? ", visited" : ", unexplored")")
+        .accessibilityLabel("Warp to Sector \(sector.sectorNumber)\(sector.visited ? ", visited" : ", unexplored")\(!canWarp ? ", unavailable - resources depleted" : "")")
     }
 
     // MARK: - Snackbar
@@ -662,7 +702,12 @@ struct HaulonautPlayView: View {
             playersHere = response.playersHere
             credits = response.credits
             rations = response.rations
+            fuel = response.fuel
+            previousFuel = response.fuel
             inventory = response.inventory
+
+            // Start drift timer
+            startDriftTimer()
 
             // Load items catalog (non-fatal if fails)
             do {
@@ -695,6 +740,7 @@ struct HaulonautPlayView: View {
             playersHere = response.playersHere
             credits = response.credits
             rations = response.rations
+            updateFuel(response.fuel)
             viewportMode = .space
             showSnackbar("Arrived in Sector \(response.currentSector?.sectorNumber ?? 0).")
         } catch {
@@ -745,6 +791,7 @@ struct HaulonautPlayView: View {
             )
             credits = response.credits
             rations = response.rations
+            updateFuel(response.fuel)
             inventory = response.inventory
             showSnackbar("Purchased 1 \(item.name). (-\(item.basePrice) Credits)")
         } catch {
@@ -798,6 +845,7 @@ struct HaulonautPlayView: View {
                 playersHere = response.playersHere
                 credits = response.credits
                 rations = response.rations
+                updateFuel(response.fuel)
             } catch {
                 showSnackbar("Autopilot error: \(error.localizedDescription)")
                 traveling = false
@@ -822,6 +870,89 @@ struct HaulonautPlayView: View {
         travelPath = []
         travelDestination = nil
         showSnackbar("Autopilot disengaged.")
+    }
+
+    // MARK: - Drift Actions
+
+    /// Updates fuel and logs when it crosses 0.
+    private func updateFuel(_ newFuel: Int) {
+        let oldFuel = fuel
+        fuel = newFuel
+
+        // Log when fuel hits 0 or is restored
+        if newFuel <= 0 && oldFuel > 0 {
+            showSnackbar("WARNING: Fuel depleted. Hull drifting, uncontrolled.")
+        } else if newFuel > 0 && oldFuel <= 0 {
+            showSnackbar("Fuel restored. Drift variance stabilizing.")
+            driftVariance = 0
+        }
+    }
+
+    /// Starts the drift timer that ticks every second.
+    private func startDriftTimer() {
+        driftTask?.cancel()
+        driftTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { break }
+                await driftTick()
+            }
+        }
+    }
+
+    private static let driftThreshold = 30
+
+    /// Called every second. Increases drift variance if eligible, triggers drift when threshold reached.
+    @MainActor
+    private func driftTick() async {
+        // Only drift if eligible (out of fuel and not at a planet)
+        guard driftEligible else {
+            if driftVariance != 0 {
+                driftVariance = 0
+            }
+            return
+        }
+
+        // Don't tick while already drifting or traveling
+        guard !drifting && !traveling else { return }
+
+        // Increase variance by 1-3 per tick
+        driftVariance += 1 + Int.random(in: 0..<3)
+
+        // Trigger drift when threshold reached
+        if driftVariance >= Self.driftThreshold {
+            await performDrift()
+        }
+    }
+
+    /// One hop toward the nearest planet (server-computed).
+    private func performDrift() async {
+        guard !drifting else { return }
+        drifting = true
+
+        do {
+            let response = try await GamesAPIService.drift(characterId: characterId)
+            currentSector = response.currentSector
+            connectedSectors = response.connectedSectors
+            features = response.features
+            playersHere = response.playersHere
+            credits = response.credits
+            rations = response.rations
+            fuel = response.fuel
+            viewportMode = .space
+            driftVariance = 0
+
+            showSnackbar("DRIFT: Hull carried into Sector \(response.currentSector?.sectorNumber ?? 0).")
+
+            // If we arrived at a planet, log stabilization
+            if planetFeature != nil {
+                showSnackbar("A planetary body is in range. Drift variance stabilizing.")
+            }
+        } catch {
+            // Non-fatal - fuel may have been restored or planet reached between ticks
+        }
+
+        drifting = false
     }
 }
 

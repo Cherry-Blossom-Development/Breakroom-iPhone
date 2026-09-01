@@ -67,4 +67,14 @@ enum GamesAPIService {
         )
         return response.path
     }
+
+    // MARK: - Drift
+
+    /// POST /api/games/haulonaut/characters/:id/drift — uncontrolled movement toward nearest planet when fuel is 0.
+    static func drift(characterId: Int) async throws -> HaulonautDriftResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/drift",
+            method: "POST"
+        )
+    }
 }

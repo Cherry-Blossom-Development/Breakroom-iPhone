@@ -192,6 +192,7 @@ struct HaulonautCharacterSnapshotResponse: Codable {
     let playersHere: [HaulonautPlayerHere]
     let credits: Int
     let rations: Int
+    let fuel: Int
     let inventory: [HaulonautInventoryItem]
 
     init(from decoder: Decoder) throws {
@@ -203,6 +204,7 @@ struct HaulonautCharacterSnapshotResponse: Codable {
         playersHere = try container.decodeIfPresent([HaulonautPlayerHere].self, forKey: .playersHere) ?? []
         credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
         rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
+        fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
         inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
     }
 }
@@ -214,6 +216,7 @@ struct HaulonautNavigateResponse: Codable {
     let playersHere: [HaulonautPlayerHere]
     let credits: Int
     let rations: Int
+    let fuel: Int
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -223,6 +226,7 @@ struct HaulonautNavigateResponse: Codable {
         playersHere = try container.decodeIfPresent([HaulonautPlayerHere].self, forKey: .playersHere) ?? []
         credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
         rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
+        fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
     }
 }
 
@@ -239,6 +243,7 @@ struct HaulonautPurchaseResponse: Codable {
     let message: String
     let credits: Int
     let rations: Int
+    let fuel: Int
     let inventory: [HaulonautInventoryItem]
 
     init(from decoder: Decoder) throws {
@@ -246,6 +251,7 @@ struct HaulonautPurchaseResponse: Codable {
         message = try container.decode(String.self, forKey: .message)
         credits = try container.decode(Int.self, forKey: .credits)
         rations = try container.decode(Int.self, forKey: .rations)
+        fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
         inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
     }
 }
@@ -327,5 +333,29 @@ struct HaulonautRouteResponse: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         path = try container.decodeIfPresent([HaulonautRouteWaypoint].self, forKey: .path) ?? []
+    }
+}
+
+// MARK: - Drift Response
+
+/// Response from POST /drift — uncontrolled movement toward nearest planet when fuel is 0.
+struct HaulonautDriftResponse: Codable {
+    let currentSector: HaulonautSector?
+    let connectedSectors: [HaulonautConnectedSector]
+    let features: [HaulonautSectorFeature]
+    let playersHere: [HaulonautPlayerHere]
+    let credits: Int
+    let rations: Int
+    let fuel: Int
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        currentSector = try container.decodeIfPresent(HaulonautSector.self, forKey: .currentSector)
+        connectedSectors = try container.decodeIfPresent([HaulonautConnectedSector].self, forKey: .connectedSectors) ?? []
+        features = try container.decodeIfPresent([HaulonautSectorFeature].self, forKey: .features) ?? []
+        playersHere = try container.decodeIfPresent([HaulonautPlayerHere].self, forKey: .playersHere) ?? []
+        credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
+        rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
+        fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
     }
 }
