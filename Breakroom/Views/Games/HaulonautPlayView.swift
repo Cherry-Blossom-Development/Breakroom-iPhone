@@ -7,6 +7,8 @@ enum HaulonautViewportMode {
     case outpost
     case cargo
     case charts
+    case docked   // Inside ship while landed on a planet
+    case surface  // On planet surface exploring
 }
 
 // MARK: - CRT Colors
@@ -45,8 +47,18 @@ struct HaulonautPlayView: View {
     @State private var credits: Int = 0
     @State private var rations: Int = 0
     @State private var fuel: Int = 0
+    @State private var health: Int = 100
+    @State private var cycles: Int = 0
+    @State private var cyclesUpdatedAt: Int = 0
     @State private var inventory: [HaulonautInventoryItem] = []
     @State private var itemsCatalog: [HaulonautItem] = []
+
+    // Docking state
+    @State private var dockedFeatureId: Int?
+    @State private var onSurface: Bool = false
+    @State private var surfaceMap: HaulonautSurfaceMap?
+    @State private var isDead: Bool = false
+    @State private var surfaceNarration: String?
 
     @State private var viewportMode: HaulonautViewportMode = .space
     @State private var isNavigating = false
@@ -79,9 +91,24 @@ struct HaulonautPlayView: View {
         fuel <= 0 && planetFeature == nil
     }
 
-    /// Can't warp if either rations or fuel is depleted.
+    /// Can't warp if fuel is depleted (rations no longer block, just cause damage).
     var canWarp: Bool {
-        rations > 0 && fuel > 0
+        fuel > 0
+    }
+
+    /// Docked planet feature (if docked).
+    var dockedPlanet: HaulonautSectorFeature? {
+        guard let dockedId = dockedFeatureId else { return nil }
+        return features.first { $0.id == dockedId }
+    }
+
+    /// Current cycles computed from wall-clock time (1 cycle per hour, cap 24).
+    var currentCycles: Int {
+        guard cyclesUpdatedAt > 0 else { return cycles }
+        let now = Int(Date().timeIntervalSince1970)
+        let elapsed = max(0, now - cyclesUpdatedAt)
+        let accrued = elapsed / 3600  // 1 cycle per hour
+        return min(24, cycles + accrued)
     }
 
     func inventoryQuantity(for itemKey: String) -> Int {
@@ -141,7 +168,9 @@ struct HaulonautPlayView: View {
     // MARK: - Resources Display
 
     private var resourcesDisplay: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
+            resourcePill(label: "HP", value: health, warnAt: 30)
+            resourcePill(label: "Cycles", value: currentCycles)
             resourcePill(label: "Credits", value: credits)
             resourcePill(label: "Rations", value: rations)
             resourcePill(label: "Fuel", value: fuel)
@@ -151,8 +180,9 @@ struct HaulonautPlayView: View {
         }
     }
 
-    private func resourcePill(label: String, value: Int) -> some View {
-        let color = value <= 0 ? CRTColors.error : CRTColors.tagline
+    private func resourcePill(label: String, value: Int, warnAt: Int = 0) -> some View {
+        let isWarning = value <= warnAt
+        let color = isWarning ? CRTColors.error : CRTColors.tagline
         return VStack(alignment: .trailing, spacing: 0) {
             Text("\(value)")
                 .font(.caption.monospaced().bold())
@@ -160,7 +190,7 @@ struct HaulonautPlayView: View {
                 .accessibilityIdentifier("haulonautResource\(label)")
             Text(label)
                 .font(.caption2.monospaced())
-                .foregroundStyle(CRTColors.muted)
+                .foregroundStyle(isWarning ? CRTColors.error : CRTColors.muted)
         }
     }
 
@@ -225,15 +255,23 @@ struct HaulonautPlayView: View {
 
     @ViewBuilder
     private var viewportContent: some View {
-        switch viewportMode {
-        case .space:
-            spaceSceneContent
-        case .outpost:
-            outpostContent
-        case .cargo:
-            cargoContent
-        case .charts:
-            chartsContent
+        if isDead {
+            deathContent
+        } else {
+            switch viewportMode {
+            case .space:
+                spaceSceneContent
+            case .outpost:
+                outpostContent
+            case .cargo:
+                cargoContent
+            case .charts:
+                chartsContent
+            case .docked:
+                dockedContent
+            case .surface:
+                surfaceContent
+            }
         }
     }
 
@@ -566,10 +604,10 @@ struct HaulonautPlayView: View {
                 }
 
                 if planetFeature != nil {
-                    actionChip(icon: "globe", label: "Planet Overview") {
-                        showSnackbar("Planetary survey systems are not available yet.")
+                    actionChip(icon: "globe", label: "Land on Planet") {
+                        Task { await dockAtPlanet() }
                     }
-                    .accessibilityIdentifier("haulonautPlanetOverviewButton")
+                    .accessibilityIdentifier("haulonautLandOnPlanetButton")
                 }
 
                 actionChip(icon: "shippingbox", label: "Cargo") {
@@ -704,7 +742,25 @@ struct HaulonautPlayView: View {
             rations = response.rations
             fuel = response.fuel
             previousFuel = response.fuel
+            health = response.health
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
             inventory = response.inventory
+            dockedFeatureId = response.dockedFeatureId
+            onSurface = response.onSurface
+            surfaceMap = response.surfaceMap
+            isDead = response.character.status == "dead"
+
+            // Set initial viewport based on state
+            if isDead {
+                viewportMode = .space
+            } else if onSurface {
+                viewportMode = .surface
+            } else if dockedFeatureId != nil {
+                viewportMode = .docked
+            } else {
+                viewportMode = .space
+            }
 
             // Start drift timer
             startDriftTimer()
@@ -741,8 +797,20 @@ struct HaulonautPlayView: View {
             credits = response.credits
             rations = response.rations
             updateFuel(response.fuel)
+            health = response.health
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
+            dockedFeatureId = response.dockedFeatureId
+            onSurface = response.onSurface
+            surfaceMap = response.surfaceMap
             viewportMode = .space
-            showSnackbar("Arrived in Sector \(response.currentSector?.sectorNumber ?? 0).")
+
+            if response.died {
+                isDead = true
+                showSnackbar("CRITICAL: Crew health depleted. Your voyage has ended.")
+            } else {
+                showSnackbar("Arrived in Sector \(response.currentSector?.sectorNumber ?? 0).")
+            }
         } catch {
             showSnackbar(error.localizedDescription)
         }
@@ -770,10 +838,17 @@ struct HaulonautPlayView: View {
             message = "Closing the cargo manifest."
         case .charts:
             message = "Closing star charts."
+        case .docked:
+            message = ""  // Handled by launch action
+        case .surface:
+            message = ""  // Handled by return to ship action
         case .space:
             message = ""
         }
-        viewportMode = .space
+        // For docked/surface, don't just switch to space - need proper actions
+        if viewportMode != .docked && viewportMode != .surface {
+            viewportMode = .space
+        }
         if !message.isEmpty {
             showSnackbar(message)
         }
@@ -792,6 +867,9 @@ struct HaulonautPlayView: View {
             credits = response.credits
             rations = response.rations
             updateFuel(response.fuel)
+            health = response.health
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
             inventory = response.inventory
             showSnackbar("Purchased 1 \(item.name). (-\(item.basePrice) Credits)")
         } catch {
@@ -846,6 +924,22 @@ struct HaulonautPlayView: View {
                 credits = response.credits
                 rations = response.rations
                 updateFuel(response.fuel)
+                health = response.health
+                cycles = response.cycles
+                cyclesUpdatedAt = response.cyclesUpdatedAt
+                dockedFeatureId = response.dockedFeatureId
+                onSurface = response.onSurface
+                surfaceMap = response.surfaceMap
+
+                // Check for death during travel
+                if response.died {
+                    isDead = true
+                    traveling = false
+                    travelPath = []
+                    travelDestination = nil
+                    showSnackbar("CRITICAL: Crew health depleted. Your voyage has ended.")
+                    return
+                }
             } catch {
                 showSnackbar("Autopilot error: \(error.localizedDescription)")
                 traveling = false
@@ -939,6 +1033,9 @@ struct HaulonautPlayView: View {
             credits = response.credits
             rations = response.rations
             fuel = response.fuel
+            health = response.health
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
             viewportMode = .space
             driftVariance = 0
 
@@ -953,6 +1050,351 @@ struct HaulonautPlayView: View {
         }
 
         drifting = false
+    }
+
+    // MARK: - Death Content
+
+    private var deathContent: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "xmark.octagon")
+                .font(.system(size: 64))
+                .foregroundStyle(CRTColors.error)
+
+            Text("VOYAGE ENDED")
+                .font(.title.monospaced().bold())
+                .foregroundStyle(CRTColors.error)
+
+            Text("Your crew's health has been depleted. This character can no longer continue.")
+                .font(.body.monospaced())
+                .foregroundStyle(CRTColors.muted)
+                .multilineTextAlignment(.center)
+
+            Button("Return to Games") {
+                dismiss()
+            }
+            .font(.body.monospaced().bold())
+            .foregroundStyle(CRTColors.background)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(CRTColors.error)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+        }
+        .padding()
+    }
+
+    // MARK: - Docked Content
+
+    private var dockedContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("DOCKED")
+                .font(.headline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            if let planet = dockedPlanet {
+                Text("Landed at \(planet.name)")
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+
+                if let description = planet.description, !description.isEmpty {
+                    Text(description)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.description)
+                }
+            }
+
+            HStack(spacing: 16) {
+                Button {
+                    Task { await exitCraft() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "figure.walk")
+                        Text("Exit Craft")
+                    }
+                    .font(.subheadline.monospaced().bold())
+                    .foregroundStyle(CRTColors.background)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(CRTColors.title)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .accessibilityIdentifier("haulonautExitCraftButton")
+
+                Button {
+                    Task { await launchShip() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.up.circle")
+                        Text("Launch")
+                    }
+                    .font(.subheadline.monospaced().bold())
+                    .foregroundStyle(CRTColors.tagline)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(CRTColors.border.opacity(0.3))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(CRTColors.border, lineWidth: 1)
+                    }
+                }
+                .accessibilityIdentifier("haulonautLaunchButton")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Surface Content
+
+    private var surfaceContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("SURFACE EXPLORATION")
+                .font(.headline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            if let planet = dockedPlanet {
+                Text(planet.name)
+                    .font(.subheadline.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+            }
+
+            // Surface narration
+            if let narration = surfaceNarration {
+                Text(narration)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(CRTColors.description)
+                    .padding()
+                    .background(CRTColors.border.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+
+            // Surface grid
+            if let map = surfaceMap {
+                surfaceGridView(map)
+            }
+
+            // D-pad controls
+            dpadControls
+
+            // Return to ship button (only when at ship location)
+            if let map = surfaceMap, map.buggyX == map.shipX && map.buggyY == map.shipY {
+                Button {
+                    Task { await returnToShip() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "airplane")
+                        Text("Return to Ship")
+                    }
+                    .font(.subheadline.monospaced().bold())
+                    .foregroundStyle(CRTColors.background)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(CRTColors.title)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .accessibilityIdentifier("haulonautReturnToShipButton")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func surfaceGridView(_ map: HaulonautSurfaceMap) -> some View {
+        let cellSize: CGFloat = 24
+
+        return VStack(spacing: 2) {
+            ForEach(0..<map.gridHeight, id: \.self) { y in
+                HStack(spacing: 2) {
+                    ForEach(0..<map.gridWidth, id: \.self) { x in
+                        let cellIndex = y * map.gridWidth + x
+                        let isRevealed = map.revealed.contains(cellIndex)
+                        let isShip = x == map.shipX && y == map.shipY
+                        let isBuggy = x == map.buggyX && y == map.buggyY
+
+                        ZStack {
+                            Rectangle()
+                                .fill(isRevealed ? CRTColors.border.opacity(0.3) : CRTColors.border.opacity(0.1))
+
+                            if isShip {
+                                Image(systemName: "airplane")
+                                    .font(.caption2)
+                                    .foregroundStyle(CRTColors.stat)
+                            }
+                            if isBuggy {
+                                Image(systemName: "car.side")
+                                    .font(.caption2)
+                                    .foregroundStyle(CRTColors.title)
+                            }
+                        }
+                        .frame(width: cellSize, height: cellSize)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                    }
+                }
+            }
+        }
+    }
+
+    private var dpadControls: some View {
+        VStack(spacing: 4) {
+            Button { Task { await driveBuggy("up") } } label: {
+                Image(systemName: "chevron.up")
+                    .font(.title2)
+                    .foregroundStyle(CRTColors.tagline)
+                    .frame(width: 44, height: 44)
+                    .background(CRTColors.border.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .accessibilityIdentifier("haulonautDpadUp")
+
+            HStack(spacing: 4) {
+                Button { Task { await driveBuggy("left") } } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundStyle(CRTColors.tagline)
+                        .frame(width: 44, height: 44)
+                        .background(CRTColors.border.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .accessibilityIdentifier("haulonautDpadLeft")
+
+                Color.clear
+                    .frame(width: 44, height: 44)
+
+                Button { Task { await driveBuggy("right") } } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.title2)
+                        .foregroundStyle(CRTColors.tagline)
+                        .frame(width: 44, height: 44)
+                        .background(CRTColors.border.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .accessibilityIdentifier("haulonautDpadRight")
+            }
+
+            Button { Task { await driveBuggy("down") } } label: {
+                Image(systemName: "chevron.down")
+                    .font(.title2)
+                    .foregroundStyle(CRTColors.tagline)
+                    .frame(width: 44, height: 44)
+                    .background(CRTColors.border.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .accessibilityIdentifier("haulonautDpadDown")
+        }
+    }
+
+    // MARK: - Planet Docking Actions
+
+    private func dockAtPlanet() async {
+        guard planetFeature != nil else { return }
+
+        do {
+            let response = try await GamesAPIService.dock(characterId: characterId)
+            dockedFeatureId = response.dockedFeatureId
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
+            viewportMode = .docked
+            showSnackbar("Landed on \(planetFeature?.name ?? "planet").")
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func launchShip() async {
+        do {
+            let response = try await GamesAPIService.launch(characterId: characterId)
+            if response.success {
+                dockedFeatureId = nil
+                onSurface = false
+                surfaceMap = nil
+                viewportMode = .space
+                showSnackbar("Launched back into space.")
+            } else {
+                showSnackbar(response.message ?? "Failed to launch.")
+            }
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func exitCraft() async {
+        do {
+            let response = try await GamesAPIService.exitCraft(characterId: characterId)
+            dockedFeatureId = response.dockedFeatureId
+            surfaceMap = response.surfaceMap
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
+            onSurface = true
+            viewportMode = .surface
+            surfaceNarration = nil
+            showSnackbar("Stepped onto the surface.")
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func returnToShip() async {
+        do {
+            let response = try await GamesAPIService.returnToShip(characterId: characterId)
+            if response.success {
+                onSurface = false
+                viewportMode = .docked
+                surfaceNarration = nil
+                showSnackbar("Returned to ship.")
+            } else {
+                showSnackbar(response.message ?? "Failed to return to ship.")
+            }
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func driveBuggy(_ direction: String) async {
+        guard currentCycles > 0 else {
+            showSnackbar("No cycles remaining. Wait for replenishment.")
+            return
+        }
+
+        do {
+            let response = try await GamesAPIService.driveBuggy(characterId: characterId, direction: direction)
+
+            // Update surface map
+            if let map = surfaceMap {
+                surfaceMap = HaulonautSurfaceMap(
+                    gridWidth: map.gridWidth,
+                    gridHeight: map.gridHeight,
+                    shipX: map.shipX,
+                    shipY: map.shipY,
+                    buggyX: response.buggyX,
+                    buggyY: response.buggyY,
+                    revealed: response.revealed
+                )
+            }
+
+            cycles = response.cycles
+            cyclesUpdatedAt = response.cyclesUpdatedAt
+
+            // Update resources if effects were applied
+            if let newCredits = response.credits {
+                credits = newCredits
+            }
+            if let newRations = response.rations {
+                rations = newRations
+            }
+            if let newFuel = response.fuel {
+                fuel = newFuel
+            }
+
+            // Show narration if present
+            if let narration = response.narration {
+                surfaceNarration = narration
+            }
+
+            // Check if at ship
+            if response.atShip {
+                showSnackbar("You're back at the ship.")
+            }
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
     }
 }
 

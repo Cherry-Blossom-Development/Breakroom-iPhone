@@ -77,4 +77,59 @@ enum GamesAPIService {
             method: "POST"
         )
     }
+
+    // MARK: - Cycles
+
+    /// GET /api/games/haulonaut/characters/:id/cycles — lightweight re-sync for cycle balance.
+    static func getCycles(characterId: Int) async throws -> HaulonautCyclesResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/cycles"
+        )
+    }
+
+    // MARK: - Planet Docking
+
+    /// POST /api/games/haulonaut/characters/:id/dock — land on a planet.
+    static func dock(characterId: Int) async throws -> HaulonautDockResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/dock",
+            method: "POST"
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/launch — return to space from a docked state.
+    static func launch(characterId: Int) async throws -> HaulonautActionAck {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/launch",
+            method: "POST"
+        )
+    }
+
+    // MARK: - Surface Exploration
+
+    /// POST /api/games/haulonaut/characters/:id/exit-craft — step onto the planet surface.
+    static func exitCraft(characterId: Int) async throws -> HaulonautExitCraftResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/exit-craft",
+            method: "POST"
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/return-to-ship — return to the ship from surface.
+    static func returnToShip(characterId: Int) async throws -> HaulonautActionAck {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/return-to-ship",
+            method: "POST"
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/drive-buggy — move the buggy one cell on the surface.
+    static func driveBuggy(characterId: Int, direction: String) async throws -> HaulonautDriveBuggyResponse {
+        let body = HaulonautDriveBuggyRequest(direction: direction)
+        return try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/drive-buggy",
+            method: "POST",
+            body: body
+        )
+    }
 }

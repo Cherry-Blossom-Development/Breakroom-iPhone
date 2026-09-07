@@ -163,6 +163,50 @@ struct HaulonautItem: Codable, Identifiable {
     }
 }
 
+// MARK: - Surface Exploration Models
+
+/// A planet's low-res exploration grid. `revealed` is a flat list of row-major cell indices
+/// (index = y * gridWidth + x) uncovered so far; everything else is fog. The ship sits at
+/// (shipX, shipY); the buggy at (buggyX, buggyY).
+struct HaulonautSurfaceMap: Codable {
+    let gridWidth: Int
+    let gridHeight: Int
+    let shipX: Int
+    let shipY: Int
+    let buggyX: Int
+    let buggyY: Int
+    let revealed: [Int]
+
+    init(gridWidth: Int = 12, gridHeight: Int = 8, shipX: Int = 0, shipY: Int = 0,
+         buggyX: Int = 0, buggyY: Int = 0, revealed: [Int] = []) {
+        self.gridWidth = gridWidth
+        self.gridHeight = gridHeight
+        self.shipX = shipX
+        self.shipY = shipY
+        self.buggyX = buggyX
+        self.buggyY = buggyY
+        self.revealed = revealed
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        gridWidth = try container.decodeIfPresent(Int.self, forKey: .gridWidth) ?? 12
+        gridHeight = try container.decodeIfPresent(Int.self, forKey: .gridHeight) ?? 8
+        shipX = try container.decodeIfPresent(Int.self, forKey: .shipX) ?? 0
+        shipY = try container.decodeIfPresent(Int.self, forKey: .shipY) ?? 0
+        buggyX = try container.decodeIfPresent(Int.self, forKey: .buggyX) ?? 0
+        buggyY = try container.decodeIfPresent(Int.self, forKey: .buggyY) ?? 0
+        revealed = try container.decodeIfPresent([Int].self, forKey: .revealed) ?? []
+    }
+}
+
+/// Resource deltas from a landing event (first-visit discovery).
+struct HaulonautLandingEffects: Codable {
+    let credits: Int?
+    let rations: Int?
+    let fuel: Int?
+}
+
 // MARK: - API Response Envelopes
 
 struct HaulonautGameInfoResponse: Codable {
@@ -193,7 +237,16 @@ struct HaulonautCharacterSnapshotResponse: Codable {
     let credits: Int
     let rations: Int
     let fuel: Int
+    let health: Int
+    let cycles: Int
+    let cyclesUpdatedAt: Int
     let inventory: [HaulonautInventoryItem]
+    // Which planet feature the ship is landed at (null = in open space)
+    let dockedFeatureId: Int?
+    // True once the pilot has exited the craft onto the surface
+    let onSurface: Bool
+    // Populated only when onSurface is true
+    let surfaceMap: HaulonautSurfaceMap?
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -205,7 +258,13 @@ struct HaulonautCharacterSnapshotResponse: Codable {
         credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
         rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
         fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
+        health = try container.decodeIfPresent(Int.self, forKey: .health) ?? 100
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
         inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
+        dockedFeatureId = try container.decodeIfPresent(Int.self, forKey: .dockedFeatureId)
+        onSurface = try container.decodeIfPresent(Bool.self, forKey: .onSurface) ?? false
+        surfaceMap = try container.decodeIfPresent(HaulonautSurfaceMap.self, forKey: .surfaceMap)
     }
 }
 
@@ -217,6 +276,15 @@ struct HaulonautNavigateResponse: Codable {
     let credits: Int
     let rations: Int
     let fuel: Int
+    let health: Int
+    let cycles: Int
+    let cyclesUpdatedAt: Int
+    // True only when this warp's starvation damage just dropped crew health to 0
+    let died: Bool
+    // Warping always undocks server-side
+    let dockedFeatureId: Int?
+    let onSurface: Bool
+    let surfaceMap: HaulonautSurfaceMap?
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -227,6 +295,13 @@ struct HaulonautNavigateResponse: Codable {
         credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
         rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
         fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
+        health = try container.decodeIfPresent(Int.self, forKey: .health) ?? 100
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+        died = try container.decodeIfPresent(Bool.self, forKey: .died) ?? false
+        dockedFeatureId = try container.decodeIfPresent(Int.self, forKey: .dockedFeatureId)
+        onSurface = try container.decodeIfPresent(Bool.self, forKey: .onSurface) ?? false
+        surfaceMap = try container.decodeIfPresent(HaulonautSurfaceMap.self, forKey: .surfaceMap)
     }
 }
 
@@ -244,6 +319,9 @@ struct HaulonautPurchaseResponse: Codable {
     let credits: Int
     let rations: Int
     let fuel: Int
+    let health: Int
+    let cycles: Int
+    let cyclesUpdatedAt: Int
     let inventory: [HaulonautInventoryItem]
 
     init(from decoder: Decoder) throws {
@@ -252,6 +330,9 @@ struct HaulonautPurchaseResponse: Codable {
         credits = try container.decode(Int.self, forKey: .credits)
         rations = try container.decode(Int.self, forKey: .rations)
         fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
+        health = try container.decodeIfPresent(Int.self, forKey: .health) ?? 100
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
         inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
     }
 }
@@ -284,6 +365,10 @@ struct HaulonautPurchaseRequest: Encodable {
         case itemKey = "item_key"
         case quantity
     }
+}
+
+struct HaulonautDriveBuggyRequest: Encodable {
+    let direction: String
 }
 
 // MARK: - Star Charts Models
@@ -347,6 +432,9 @@ struct HaulonautDriftResponse: Codable {
     let credits: Int
     let rations: Int
     let fuel: Int
+    let health: Int
+    let cycles: Int
+    let cyclesUpdatedAt: Int
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -357,5 +445,102 @@ struct HaulonautDriftResponse: Codable {
         credits = try container.decodeIfPresent(Int.self, forKey: .credits) ?? 0
         rations = try container.decodeIfPresent(Int.self, forKey: .rations) ?? 0
         fuel = try container.decodeIfPresent(Int.self, forKey: .fuel) ?? 0
+        health = try container.decodeIfPresent(Int.self, forKey: .health) ?? 100
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+    }
+}
+
+// MARK: - Cycles Response
+
+/// GET /cycles — lightweight re-sync for cycle balance after backgrounding.
+struct HaulonautCyclesResponse: Codable {
+    let cycles: Int
+    let cyclesUpdatedAt: Int
+    let maxCycles: Int
+    let replenishSeconds: Int
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+        maxCycles = try container.decodeIfPresent(Int.self, forKey: .maxCycles) ?? 24
+        replenishSeconds = try container.decodeIfPresent(Int.self, forKey: .replenishSeconds) ?? 3600
+    }
+}
+
+// MARK: - Docking Responses
+
+/// POST /dock — returned when landing on a planet. Only carries cycle fields.
+struct HaulonautDockResponse: Codable {
+    let dockedFeatureId: Int?
+    let cycles: Int
+    let cyclesUpdatedAt: Int
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dockedFeatureId = try container.decodeIfPresent(Int.self, forKey: .dockedFeatureId)
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+    }
+}
+
+/// POST /launch and POST /return-to-ship both acknowledge with success/message.
+struct HaulonautActionAck: Codable {
+    let success: Bool
+    let message: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        success = try container.decodeIfPresent(Bool.self, forKey: .success) ?? false
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+    }
+}
+
+/// POST /exit-craft — steps onto the surface, returns the surface map.
+struct HaulonautExitCraftResponse: Codable {
+    let dockedFeatureId: Int?
+    let surfaceMap: HaulonautSurfaceMap?
+    let cycles: Int
+    let cyclesUpdatedAt: Int
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dockedFeatureId = try container.decodeIfPresent(Int.self, forKey: .dockedFeatureId)
+        surfaceMap = try container.decodeIfPresent(HaulonautSurfaceMap.self, forKey: .surfaceMap)
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+    }
+}
+
+/// POST /drive-buggy — one cell of movement on the surface.
+struct HaulonautDriveBuggyResponse: Codable {
+    let buggyX: Int
+    let buggyY: Int
+    let revealed: [Int]
+    let atShip: Bool
+    // Present only when the move reached a cell for the first time
+    let narration: String?
+    let effects: HaulonautLandingEffects?
+    let cycles: Int
+    let cyclesUpdatedAt: Int
+    // Post-event resource totals (present only when effects are applied)
+    let credits: Int?
+    let rations: Int?
+    let fuel: Int?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        buggyX = try container.decodeIfPresent(Int.self, forKey: .buggyX) ?? 0
+        buggyY = try container.decodeIfPresent(Int.self, forKey: .buggyY) ?? 0
+        revealed = try container.decodeIfPresent([Int].self, forKey: .revealed) ?? []
+        atShip = try container.decodeIfPresent(Bool.self, forKey: .atShip) ?? false
+        narration = try container.decodeIfPresent(String.self, forKey: .narration)
+        effects = try container.decodeIfPresent(HaulonautLandingEffects.self, forKey: .effects)
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles) ?? 0
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt) ?? 0
+        credits = try container.decodeIfPresent(Int.self, forKey: .credits)
+        rations = try container.decodeIfPresent(Int.self, forKey: .rations)
+        fuel = try container.decodeIfPresent(Int.self, forKey: .fuel)
     }
 }
