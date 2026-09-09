@@ -208,14 +208,9 @@ enum ToolCategory: CaseIterable {
     case developer
     case games
 
-    /// Categories visible to the current user (games requires feature flag).
-    @MainActor
+    /// Categories visible to the current user.
     static var visibleCases: [ToolCategory] {
-        var cases: [ToolCategory] = [.musician, .artist, .writer, .developer]
-        if FeaturesStore.shared.has("games") {
-            cases.append(.games)
-        }
-        return cases
+        [.musician, .artist, .writer, .developer, .games]
     }
 
     var title: String {

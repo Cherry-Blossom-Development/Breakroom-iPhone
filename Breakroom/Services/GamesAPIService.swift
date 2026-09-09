@@ -132,4 +132,62 @@ enum GamesAPIService {
             body: body
         )
     }
+
+    // MARK: - Gifting & Trading
+
+    /// POST /api/games/haulonaut/characters/:id/give — give credits to another player in the sector.
+    static func giveCredits(characterId: Int, toCharacterId: Int, credits: Int) async throws -> HaulonautGiveResponse {
+        let body = HaulonautGiveRequest(toCharacterId: toCharacterId, credits: credits)
+        return try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/give",
+            method: "POST",
+            body: body
+        )
+    }
+
+    /// GET /api/games/haulonaut/characters/:id/trade-offers — get pending trade offers.
+    static func getTradeOffers(characterId: Int) async throws -> [HaulonautTradeOfferSummary] {
+        let response: HaulonautTradeOffersResponse = try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/trade-offers"
+        )
+        return response.offers
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/trade-offers — create a trade offer.
+    static func createTradeOffer(characterId: Int, toCharacterId: Int, itemKey: String, quantity: Int, credits: Int) async throws -> HaulonautCreateTradeOfferResponse {
+        let body = HaulonautTradeOfferRequest(toCharacterId: toCharacterId, itemKey: itemKey, quantity: quantity, credits: credits)
+        return try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/trade-offers",
+            method: "POST",
+            body: body
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/trade-offers/:offerId/accept — accept a trade offer.
+    static func acceptTradeOffer(characterId: Int, offerId: Int) async throws -> HaulonautTradeAcceptResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/trade-offers/\(offerId)/accept",
+            method: "POST"
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/trade-offers/:offerId/decline — decline a trade offer.
+    static func declineTradeOffer(characterId: Int, offerId: Int) async throws -> HaulonautActionAck {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/trade-offers/\(offerId)/decline",
+            method: "POST"
+        )
+    }
+
+    // MARK: - Combat
+
+    /// POST /api/games/haulonaut/characters/:id/attack — attack another player in the sector.
+    static func attack(characterId: Int, toCharacterId: Int) async throws -> HaulonautAttackResponse {
+        let body = HaulonautAttackRequest(toCharacterId: toCharacterId)
+        return try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/attack",
+            method: "POST",
+            body: body
+        )
+    }
 }

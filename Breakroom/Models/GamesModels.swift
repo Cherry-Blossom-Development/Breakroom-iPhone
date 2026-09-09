@@ -119,10 +119,21 @@ struct HaulonautSectorFeature: Codable, Identifiable {
 struct HaulonautPlayerHere: Codable, Identifiable {
     let id: Int
     let displayName: String
+    let isNpc: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
         case displayName = "display_name"
+        case isNpc = "is_npc"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        // Backend sends 0/1 tinyint for booleans
+        let npcValue = try container.decodeIfPresent(Int.self, forKey: .isNpc) ?? 0
+        isNpc = npcValue == 1
     }
 }
 
@@ -542,5 +553,140 @@ struct HaulonautDriveBuggyResponse: Codable {
         credits = try container.decodeIfPresent(Int.self, forKey: .credits)
         rations = try container.decodeIfPresent(Int.self, forKey: .rations)
         fuel = try container.decodeIfPresent(Int.self, forKey: .fuel)
+    }
+}
+
+// MARK: - Shared-Sector: Gifting, Trading, Combat
+
+struct HaulonautGiveRequest: Encodable {
+    let toCharacterId: Int
+    let credits: Int
+
+    enum CodingKeys: String, CodingKey {
+        case toCharacterId = "to_character_id"
+        case credits
+    }
+}
+
+/// POST /give — { message, credits } (the giver's new balance).
+struct HaulonautGiveResponse: Codable {
+    let message: String?
+    let credits: Int?
+}
+
+struct HaulonautTradeOfferRequest: Encodable {
+    let toCharacterId: Int
+    let itemKey: String
+    let quantity: Int
+    let credits: Int
+
+    enum CodingKeys: String, CodingKey {
+        case toCharacterId = "to_character_id"
+        case itemKey = "item_key"
+        case quantity
+        case credits
+    }
+}
+
+/// POST /trade-offers — 201 { message, offerId }.
+struct HaulonautCreateTradeOfferResponse: Codable {
+    let message: String?
+    let offerId: Int?
+}
+
+/// One pending offer from GET /trade-offers.
+struct HaulonautTradeOfferSummary: Codable, Identifiable {
+    let id: Int
+    let fromGameUserId: Int
+    let toGameUserId: Int
+    let quantity: Int
+    let credits: Int
+    let createdAt: String?
+    let itemKey: String
+    let itemName: String
+    let fromDisplayName: String
+    let toDisplayName: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fromGameUserId = "from_game_user_id"
+        case toGameUserId = "to_game_user_id"
+        case quantity
+        case credits
+        case createdAt = "created_at"
+        case itemKey = "item_key"
+        case itemName = "item_name"
+        case fromDisplayName = "from_display_name"
+        case toDisplayName = "to_display_name"
+    }
+}
+
+struct HaulonautTradeOffersResponse: Codable {
+    let offers: [HaulonautTradeOfferSummary]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        offers = try container.decodeIfPresent([HaulonautTradeOfferSummary].self, forKey: .offers) ?? []
+    }
+}
+
+/// POST /trade-offers/:id/accept — { message, credits (accepter's new balance), inventory }.
+struct HaulonautTradeAcceptResponse: Codable {
+    let message: String?
+    let credits: Int?
+    let inventory: [HaulonautInventoryItem]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        credits = try container.decodeIfPresent(Int.self, forKey: .credits)
+        inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
+    }
+}
+
+struct HaulonautAttackRequest: Encodable {
+    let toCharacterId: Int
+
+    enum CodingKeys: String, CodingKey {
+        case toCharacterId = "to_character_id"
+    }
+}
+
+/// POST /attack — { message, damage, targetHealth, died }.
+struct HaulonautAttackResponse: Codable {
+    let message: String?
+    let damage: Int?
+    let targetHealth: Int?
+    let died: Bool
+    let cycles: Int?
+    let cyclesUpdatedAt: Int?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        damage = try container.decodeIfPresent(Int.self, forKey: .damage)
+        targetHealth = try container.decodeIfPresent(Int.self, forKey: .targetHealth)
+        died = try container.decodeIfPresent(Bool.self, forKey: .died) ?? false
+        cycles = try container.decodeIfPresent(Int.self, forKey: .cycles)
+        cyclesUpdatedAt = try container.decodeIfPresent(Int.self, forKey: .cyclesUpdatedAt)
+    }
+}
+
+// MARK: - Sector Chat Message
+
+/// A chat message in the sector (via Socket.IO haulonaut_sector_message).
+struct HaulonautSectorMessage: Identifiable {
+    let id: UUID
+    let characterId: Int
+    let displayName: String
+    let message: String
+    let timestamp: Date
+
+    init(characterId: Int, displayName: String, message: String, timestamp: Date = Date()) {
+        self.id = UUID()
+        self.characterId = characterId
+        self.displayName = displayName
+        self.message = message
+        self.timestamp = timestamp
     }
 }

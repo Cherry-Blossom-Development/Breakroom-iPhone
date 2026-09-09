@@ -7,8 +7,9 @@ enum HaulonautViewportMode {
     case outpost
     case cargo
     case charts
-    case docked   // Inside ship while landed on a planet
-    case surface  // On planet surface exploring
+    case docked    // Inside ship while landed on a planet
+    case surface   // On planet surface exploring
+    case terminal  // Sector comms terminal
 }
 
 // MARK: - CRT Colors
@@ -71,6 +72,13 @@ struct HaulonautPlayView: View {
     @State private var travelPath: [HaulonautRouteWaypoint] = []
     @State private var travelDestination: String?
 
+    // Sector chat & interactions
+    @State private var sectorMessages: [HaulonautSectorMessage] = []
+    @State private var chatInput: String = ""
+    @State private var selectedPlayer: HaulonautPlayerHere?
+    @State private var showPlayerActions = false
+    @State private var tradeOffers: [HaulonautTradeOfferSummary] = []
+
     // Drift (uncontrolled movement when fuel is 0)
     @State private var driftVariance: Int = 0
     @State private var drifting = false
@@ -102,13 +110,13 @@ struct HaulonautPlayView: View {
         return features.first { $0.id == dockedId }
     }
 
-    /// Current cycles computed from wall-clock time (1 cycle per hour, cap 24).
+    /// Current cycles computed from wall-clock time (1 cycle per 12 min, cap 120 — migration 068 rebalance).
     var currentCycles: Int {
         guard cyclesUpdatedAt > 0 else { return cycles }
         let now = Int(Date().timeIntervalSince1970)
         let elapsed = max(0, now - cyclesUpdatedAt)
-        let accrued = elapsed / 3600  // 1 cycle per hour
-        return min(24, cycles + accrued)
+        let accrued = elapsed / 720  // 1 cycle per 12 minutes (720 seconds)
+        return min(120, cycles + accrued)
     }
 
     func inventoryQuantity(for itemKey: String) -> Int {
@@ -171,7 +179,7 @@ struct HaulonautPlayView: View {
         HStack(spacing: 8) {
             resourcePill(label: "HP", value: health, warnAt: 30)
             resourcePill(label: "Cycles", value: currentCycles)
-            resourcePill(label: "Credits", value: credits)
+            resourcePill(label: "Tokens", value: credits)
             resourcePill(label: "Rations", value: rations)
             resourcePill(label: "Fuel", value: fuel)
             if driftEligible {
@@ -271,6 +279,8 @@ struct HaulonautPlayView: View {
                 dockedContent
             case .surface:
                 surfaceContent
+            case .terminal:
+                terminalContent
             }
         }
     }
@@ -312,15 +322,135 @@ struct HaulonautPlayView: View {
                         .foregroundStyle(CRTColors.muted)
 
                     ForEach(playersHere) { player in
-                        Text(player.displayName)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(CRTColors.tagline)
+                        playerRow(player)
                     }
                 }
                 .padding(.top, 8)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(isPresented: $showPlayerActions) {
+            if let player = selectedPlayer {
+                playerActionsSheet(player)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    // MARK: - Player Row
+
+    private func playerRow(_ player: HaulonautPlayerHere) -> some View {
+        Button {
+            selectedPlayer = player
+            showPlayerActions = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "person.fill")
+                    .font(.caption)
+                    .foregroundStyle(player.isNpc ? CRTColors.muted : CRTColors.stat)
+
+                Text(player.displayName)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+
+                if player.isNpc {
+                    Text("[NPC]")
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(CRTColors.muted)
+            }
+            .padding(.vertical, 4)
+        }
+        .accessibilityIdentifier("haulonautPlayer_\(player.id)")
+        .accessibilityLabel("\(player.displayName)\(player.isNpc ? ", NPC" : ""). Tap for actions.")
+    }
+
+    private func playerActionsSheet(_ player: HaulonautPlayerHere) -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // Player info
+                VStack(spacing: 8) {
+                    Image(systemName: player.isNpc ? "cpu" : "person.fill")
+                        .font(.largeTitle)
+                        .foregroundStyle(player.isNpc ? CRTColors.muted : CRTColors.title)
+
+                    Text(player.displayName)
+                        .font(.title2.monospaced().bold())
+                        .foregroundStyle(CRTColors.tagline)
+
+                    if player.isNpc {
+                        Text("NPC Pilot")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(CRTColors.muted)
+                    }
+                }
+                .padding(.top, 16)
+
+                // Actions
+                VStack(spacing: 12) {
+                    if !player.isNpc {
+                        // Give tokens
+                        Button {
+                            showPlayerActions = false
+                            Task { await giveTokens(to: player) }
+                        } label: {
+                            HStack {
+                                Image(systemName: "gift")
+                                Text("Give Tokens")
+                            }
+                            .font(.body.monospaced())
+                            .foregroundStyle(CRTColors.background)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(CRTColors.stat)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .accessibilityIdentifier("haulonautGiveTokensButton")
+                    }
+
+                    // Attack
+                    Button {
+                        showPlayerActions = false
+                        Task { await attackPlayer(player) }
+                    } label: {
+                        HStack {
+                            Image(systemName: "flame")
+                            Text("Attack")
+                        }
+                        .font(.body.monospaced())
+                        .foregroundStyle(CRTColors.background)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(CRTColors.error)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .accessibilityIdentifier("haulonautAttackButton")
+                }
+                .padding(.horizontal, 24)
+
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .background(CRTColors.background)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showPlayerActions = false
+                    }
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+                }
+            }
+            .toolbarBackground(CRTColors.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
     }
 
     // MARK: - Planet View
@@ -619,6 +749,12 @@ struct HaulonautPlayView: View {
                     Task { await viewStarCharts() }
                 }
                 .accessibilityIdentifier("haulonautStarChartsButton")
+
+                actionChip(icon: "terminal", label: "Terminal") {
+                    viewportMode = .terminal
+                    showSnackbar("Opening sector comms terminal.")
+                }
+                .accessibilityIdentifier("haulonautTerminalButton")
             }
         }
     }
@@ -838,6 +974,8 @@ struct HaulonautPlayView: View {
             message = "Closing the cargo manifest."
         case .charts:
             message = "Closing star charts."
+        case .terminal:
+            message = "Closing terminal."
         case .docked:
             message = ""  // Handled by launch action
         case .surface:
@@ -1281,6 +1419,176 @@ struct HaulonautPlayView: View {
         }
     }
 
+    // MARK: - Terminal Content (Sector Chat)
+
+    private var terminalContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SECTOR COMMS TERMINAL")
+                .font(.headline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            Text("Sector \(currentSector?.sectorNumber ?? 0) — \(playersHere.count) pilot\(playersHere.count == 1 ? "" : "s") online")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.muted)
+
+            // Chat messages
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        if sectorMessages.isEmpty {
+                            Text("No messages yet. Say something!")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(CRTColors.muted)
+                                .padding(.vertical, 20)
+                        } else {
+                            ForEach(sectorMessages) { message in
+                                sectorMessageRow(message)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                .frame(maxHeight: 300)
+                .background(CRTColors.border.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .onChange(of: sectorMessages.count) {
+                    if let lastMessage = sectorMessages.last {
+                        withAnimation {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+            }
+
+            // Chat input
+            HStack(spacing: 8) {
+                TextField("Message...", text: $chatInput)
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(CRTColors.border.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .accessibilityIdentifier("haulonautChatInput")
+
+                Button {
+                    sendChatMessage()
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .font(.body)
+                        .foregroundStyle(chatInput.isEmpty ? CRTColors.muted : CRTColors.title)
+                        .padding(10)
+                        .background(chatInput.isEmpty ? CRTColors.border.opacity(0.1) : CRTColors.border.opacity(0.3))
+                        .clipShape(Circle())
+                }
+                .disabled(chatInput.isEmpty)
+                .accessibilityIdentifier("haulonautSendChatButton")
+            }
+
+            // Trade offers section
+            if !tradeOffers.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("PENDING TRADE OFFERS")
+                        .font(.caption.monospaced().bold())
+                        .foregroundStyle(CRTColors.title)
+                        .padding(.top, 8)
+
+                    ForEach(tradeOffers) { offer in
+                        tradeOfferRow(offer)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .task {
+            await loadTradeOffers()
+        }
+    }
+
+    private func sectorMessageRow(_ message: HaulonautSectorMessage) -> some View {
+        let isOwnMessage = message.characterId == characterId
+
+        return HStack(alignment: .top, spacing: 8) {
+            if !isOwnMessage {
+                Text(message.displayName)
+                    .font(.caption.monospaced().bold())
+                    .foregroundStyle(CRTColors.stat)
+            }
+
+            Text(message.message)
+                .font(.caption.monospaced())
+                .foregroundStyle(isOwnMessage ? CRTColors.tagline : CRTColors.description)
+
+            Spacer()
+
+            Text(formatMessageTime(message.timestamp))
+                .font(.caption2.monospaced())
+                .foregroundStyle(CRTColors.muted)
+        }
+        .padding(.horizontal, 8)
+    }
+
+    private func formatMessageTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private func tradeOfferRow(_ offer: HaulonautTradeOfferSummary) -> some View {
+        let isIncoming = offer.toGameUserId == characterId
+
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Image(systemName: isIncoming ? "arrow.down.circle" : "arrow.up.circle")
+                    .foregroundStyle(isIncoming ? CRTColors.stat : CRTColors.muted)
+
+                Text(isIncoming ? "From \(offer.fromDisplayName)" : "To \(offer.toDisplayName)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+
+                Spacer()
+            }
+
+            Text("\(offer.quantity)x \(offer.itemName) for \(offer.credits) tokens")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.description)
+
+            if isIncoming {
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await acceptTradeOffer(offer) }
+                    } label: {
+                        Text("Accept")
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.background)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(CRTColors.stat)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    .accessibilityIdentifier("haulonautAcceptTrade_\(offer.id)")
+
+                    Button {
+                        Task { await declineTradeOffer(offer) }
+                    } label: {
+                        Text("Decline")
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.error)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(CRTColors.border.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    .accessibilityIdentifier("haulonautDeclineTrade_\(offer.id)")
+                }
+            }
+        }
+        .padding()
+        .background(CRTColors.border.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
     // MARK: - Planet Docking Actions
 
     private func dockAtPlanet() async {
@@ -1392,6 +1700,122 @@ struct HaulonautPlayView: View {
             if response.atShip {
                 showSnackbar("You're back at the ship.")
             }
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    // MARK: - Player Interaction Actions
+
+    private func giveTokens(to player: HaulonautPlayerHere) async {
+        // For now, give a fixed amount (10 tokens). A full implementation would show an input sheet.
+        let amount = 10
+
+        guard credits >= amount else {
+            showSnackbar("Not enough tokens to give.")
+            return
+        }
+
+        do {
+            let response = try await GamesAPIService.giveCredits(
+                characterId: characterId,
+                toCharacterId: player.id,
+                credits: amount
+            )
+            if let newCredits = response.credits {
+                credits = newCredits
+            }
+            showSnackbar(response.message ?? "Gave \(amount) tokens to \(player.displayName).")
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func attackPlayer(_ player: HaulonautPlayerHere) async {
+        guard currentCycles > 0 else {
+            showSnackbar("No cycles remaining. Wait for replenishment.")
+            return
+        }
+
+        do {
+            let response = try await GamesAPIService.attack(
+                characterId: characterId,
+                toCharacterId: player.id
+            )
+
+            // Update cycles if returned
+            if let newCycles = response.cycles, let newUpdatedAt = response.cyclesUpdatedAt {
+                cycles = newCycles
+                cyclesUpdatedAt = newUpdatedAt
+            }
+
+            if let damage = response.damage {
+                if response.died {
+                    showSnackbar("DESTROYED: \(player.displayName) dealt \(damage) damage!")
+                } else {
+                    showSnackbar("Hit \(player.displayName) for \(damage) damage. Target HP: \(response.targetHealth ?? 0)")
+                }
+            } else {
+                showSnackbar(response.message ?? "Attack failed.")
+            }
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    // MARK: - Chat Actions
+
+    private func sendChatMessage() {
+        guard !chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let message = chatInput
+        chatInput = ""
+
+        // Add local echo immediately
+        let localMessage = HaulonautSectorMessage(
+            characterId: characterId,
+            displayName: character?.displayName ?? "You",
+            message: message
+        )
+        sectorMessages.append(localMessage)
+
+        // TODO: Send via Socket.IO when implemented
+        // SocketManager.shared.sendSectorMessage(characterId: characterId, message: message)
+        showSnackbar("Message sent.")
+    }
+
+    // MARK: - Trade Actions
+
+    private func loadTradeOffers() async {
+        do {
+            tradeOffers = try await GamesAPIService.getTradeOffers(characterId: characterId)
+        } catch {
+            // Non-fatal - just don't show trade offers
+        }
+    }
+
+    private func acceptTradeOffer(_ offer: HaulonautTradeOfferSummary) async {
+        do {
+            let response = try await GamesAPIService.acceptTradeOffer(
+                characterId: characterId,
+                offerId: offer.id
+            )
+            if let newCredits = response.credits {
+                credits = newCredits
+            }
+            inventory = response.inventory
+            tradeOffers.removeAll { $0.id == offer.id }
+            showSnackbar(response.message ?? "Trade accepted.")
+        } catch {
+            showSnackbar(error.localizedDescription)
+        }
+    }
+
+    private func declineTradeOffer(_ offer: HaulonautTradeOfferSummary) async {
+        do {
+            _ = try await GamesAPIService.declineTradeOffer(characterId: characterId, offerId: offer.id)
+            tradeOffers.removeAll { $0.id == offer.id }
+            showSnackbar("Trade offer declined.")
         } catch {
             showSnackbar(error.localizedDescription)
         }
