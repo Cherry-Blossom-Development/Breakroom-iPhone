@@ -24,8 +24,8 @@ targets:
     platform: iOS
     sources:
       - Breakroom
-      - path: Breakroom/Resources
-        type: folder
+      - path: Breakroom/Resources/Sounds
+        buildPhase: resources
     dependencies:
       - package: SocketIO
         product: SocketIO

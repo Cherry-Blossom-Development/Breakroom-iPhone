@@ -1,6 +1,7 @@
 import AVFoundation
 
 /// Sound service for Haulonaut game - plays SFX and ambient audio.
+@MainActor
 enum HaulonautSoundService {
     // MARK: - Sound Keys
 
