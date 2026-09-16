@@ -24,6 +24,8 @@ targets:
     platform: iOS
     sources:
       - Breakroom
+      - path: Breakroom/Resources
+        type: folder
     dependencies:
       - package: SocketIO
         product: SocketIO

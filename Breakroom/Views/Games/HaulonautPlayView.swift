@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 // MARK: - Viewport Mode
 
@@ -165,11 +166,16 @@ struct HaulonautPlayView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .accessibilityIdentifier("screenHaulonautPlay")
         .task {
+            HaulonautSoundService.configureAudioSession()
             await loadCharacter()
         }
         .onDisappear {
             driftTask?.cancel()
             driftTask = nil
+            HaulonautSoundService.stopAmbient()
+        }
+        .onChange(of: viewportMode) { _, newMode in
+            updateAmbientSound(for: newMode)
         }
     }
 
@@ -177,6 +183,7 @@ struct HaulonautPlayView: View {
 
     private var resourcesDisplay: some View {
         HStack(spacing: 8) {
+            soundToggleButton
             resourcePill(label: "HP", value: health, warnAt: 30)
             resourcePill(label: "Cycles", value: currentCycles)
             resourcePill(label: "Tokens", value: credits)
@@ -186,6 +193,22 @@ struct HaulonautPlayView: View {
                 driftVariancePill
             }
         }
+    }
+
+    private var soundToggleButton: some View {
+        Button {
+            HaulonautSoundService.isMuted.toggle()
+            if !HaulonautSoundService.isMuted {
+                HaulonautSoundService.play(.click)
+                updateAmbientSound(for: viewportMode)
+            }
+        } label: {
+            Image(systemName: HaulonautSoundService.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .font(.caption)
+                .foregroundStyle(HaulonautSoundService.isMuted ? CRTColors.muted : CRTColors.tagline)
+        }
+        .accessibilityIdentifier("haulonautSoundToggle")
+        .accessibilityLabel(HaulonautSoundService.isMuted ? "Unmute sounds" : "Mute sounds")
     }
 
     private func resourcePill(label: String, value: Int, warnAt: Int = 0) -> some View {
@@ -342,6 +365,7 @@ struct HaulonautPlayView: View {
 
     private func playerRow(_ player: HaulonautPlayerHere) -> some View {
         Button {
+            HaulonautSoundService.play(.click)
             selectedPlayer = player
             showPlayerActions = true
         } label: {
@@ -751,6 +775,7 @@ struct HaulonautPlayView: View {
                 .accessibilityIdentifier("haulonautStarChartsButton")
 
                 actionChip(icon: "terminal", label: "Terminal") {
+                    HaulonautSoundService.play(.open)
                     viewportMode = .terminal
                     showSnackbar("Opening sector comms terminal.")
                 }
@@ -861,6 +886,17 @@ struct HaulonautPlayView: View {
         snackbarMessage = message
     }
 
+    private func updateAmbientSound(for mode: HaulonautViewportMode) {
+        switch mode {
+        case .space, .charts, .cargo, .terminal:
+            HaulonautSoundService.playAmbient(.space)
+        case .outpost:
+            HaulonautSoundService.playAmbient(.outpost)
+        case .docked, .surface:
+            HaulonautSoundService.playAmbient(.surface)
+        }
+    }
+
     // MARK: - Actions
 
     private func loadCharacter() async {
@@ -898,6 +934,20 @@ struct HaulonautPlayView: View {
                 viewportMode = .space
             }
 
+            // Play presence sound if other pilots are in sector
+            if !playersHere.isEmpty {
+                let hasNpc = playersHere.contains { $0.isNpc }
+                let hasHuman = playersHere.contains { !$0.isNpc }
+                if hasNpc {
+                    HaulonautSoundService.play(.npcPresence)
+                } else if hasHuman {
+                    HaulonautSoundService.play(.presence)
+                }
+            }
+
+            // Start ambient sound
+            updateAmbientSound(for: viewportMode)
+
             // Start drift timer
             startDriftTimer()
 
@@ -923,6 +973,7 @@ struct HaulonautPlayView: View {
         }
 
         isNavigating = true
+        HaulonautSoundService.play(.warp)
 
         do {
             let response = try await GamesAPIService.navigate(characterId: characterId, toSectorId: sector.id)
@@ -943,11 +994,14 @@ struct HaulonautPlayView: View {
 
             if response.died {
                 isDead = true
+                HaulonautSoundService.play(.death)
                 showSnackbar("CRITICAL: Crew health depleted. Your voyage has ended.")
             } else {
+                HaulonautSoundService.play(.arrival)
                 showSnackbar("Arrived in Sector \(response.currentSector?.sectorNumber ?? 0).")
             }
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
 
@@ -956,11 +1010,13 @@ struct HaulonautPlayView: View {
 
     private func visitOutpost() {
         let outpostName = outpostFeature?.name ?? "the outpost"
+        HaulonautSoundService.play(.open)
         viewportMode = .outpost
         showSnackbar("Docking at \(outpostName).")
     }
 
     private func viewCargo() {
+        HaulonautSoundService.play(.open)
         viewportMode = .cargo
         showSnackbar("Pulling up the cargo manifest.")
     }
@@ -995,6 +1051,7 @@ struct HaulonautPlayView: View {
     private func purchase(_ item: HaulonautItem) async {
         guard !isPurchasing else { return }
         isPurchasing = true
+        HaulonautSoundService.play(.click)
 
         do {
             let response = try await GamesAPIService.purchase(
@@ -1009,8 +1066,10 @@ struct HaulonautPlayView: View {
             cycles = response.cycles
             cyclesUpdatedAt = response.cyclesUpdatedAt
             inventory = response.inventory
+            HaulonautSoundService.play(.success)
             showSnackbar("Purchased 1 \(item.name). (-\(item.basePrice) Credits)")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
 
@@ -1020,11 +1079,13 @@ struct HaulonautPlayView: View {
     // MARK: - Star Charts Actions
 
     private func viewStarCharts() async {
+        HaulonautSoundService.play(.open)
         do {
             knownLocations = try await GamesAPIService.getKnownLocations(characterId: characterId)
             viewportMode = .charts
             showSnackbar("Opening star charts.")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar("Failed to load star charts: \(error.localizedDescription)")
         }
     }
@@ -1161,6 +1222,8 @@ struct HaulonautPlayView: View {
     private func performDrift() async {
         guard !drifting else { return }
         drifting = true
+
+        HaulonautSoundService.play(.drift)
 
         do {
             let response = try await GamesAPIService.drift(characterId: characterId)
@@ -1594,14 +1657,18 @@ struct HaulonautPlayView: View {
     private func dockAtPlanet() async {
         guard planetFeature != nil else { return }
 
+        HaulonautSoundService.play(.descent)
+
         do {
             let response = try await GamesAPIService.dock(characterId: characterId)
             dockedFeatureId = response.dockedFeatureId
             cycles = response.cycles
             cyclesUpdatedAt = response.cyclesUpdatedAt
             viewportMode = .docked
+            HaulonautSoundService.play(.dock)
             showSnackbar("Landed on \(planetFeature?.name ?? "planet").")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1614,11 +1681,14 @@ struct HaulonautPlayView: View {
                 onSurface = false
                 surfaceMap = nil
                 viewportMode = .space
+                HaulonautSoundService.play(.launch)
                 showSnackbar("Launched back into space.")
             } else {
+                HaulonautSoundService.play(.error)
                 showSnackbar(response.message ?? "Failed to launch.")
             }
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1633,8 +1703,10 @@ struct HaulonautPlayView: View {
             onSurface = true
             viewportMode = .surface
             surfaceNarration = nil
+            HaulonautSoundService.play(.entry)
             showSnackbar("Stepped onto the surface.")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1646,20 +1718,26 @@ struct HaulonautPlayView: View {
                 onSurface = false
                 viewportMode = .docked
                 surfaceNarration = nil
+                HaulonautSoundService.play(.entry)
                 showSnackbar("Returned to ship.")
             } else {
+                HaulonautSoundService.play(.error)
                 showSnackbar(response.message ?? "Failed to return to ship.")
             }
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
 
     private func driveBuggy(_ direction: String) async {
         guard currentCycles > 0 else {
+            HaulonautSoundService.play(.error)
             showSnackbar("No cycles remaining. Wait for replenishment.")
             return
         }
+
+        HaulonautSoundService.play(.buggyMove)
 
         do {
             let response = try await GamesAPIService.driveBuggy(characterId: characterId, direction: direction)
@@ -1694,6 +1772,7 @@ struct HaulonautPlayView: View {
             // Show narration if present
             if let narration = response.narration {
                 surfaceNarration = narration
+                HaulonautSoundService.play(.landingEvent)
             }
 
             // Check if at ship
@@ -1701,6 +1780,7 @@ struct HaulonautPlayView: View {
                 showSnackbar("You're back at the ship.")
             }
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1733,9 +1813,12 @@ struct HaulonautPlayView: View {
 
     private func attackPlayer(_ player: HaulonautPlayerHere) async {
         guard currentCycles > 0 else {
+            HaulonautSoundService.play(.error)
             showSnackbar("No cycles remaining. Wait for replenishment.")
             return
         }
+
+        HaulonautSoundService.play(.danger)
 
         do {
             let response = try await GamesAPIService.attack(
@@ -1750,15 +1833,20 @@ struct HaulonautPlayView: View {
             }
 
             if let damage = response.damage {
+                HaulonautSoundService.play(.hit)
                 if response.died {
+                    HaulonautSoundService.play(.death)
                     showSnackbar("DESTROYED: \(player.displayName) dealt \(damage) damage!")
                 } else {
+                    HaulonautSoundService.play(.damage)
                     showSnackbar("Hit \(player.displayName) for \(damage) damage. Target HP: \(response.targetHealth ?? 0)")
                 }
             } else {
+                HaulonautSoundService.play(.error)
                 showSnackbar(response.message ?? "Attack failed.")
             }
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1805,8 +1893,10 @@ struct HaulonautPlayView: View {
             }
             inventory = response.inventory
             tradeOffers.removeAll { $0.id == offer.id }
+            HaulonautSoundService.play(.tradeSuccess)
             showSnackbar(response.message ?? "Trade accepted.")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
@@ -1815,8 +1905,10 @@ struct HaulonautPlayView: View {
         do {
             _ = try await GamesAPIService.declineTradeOffer(characterId: characterId, offerId: offer.id)
             tradeOffers.removeAll { $0.id == offer.id }
+            HaulonautSoundService.play(.tradeDecline)
             showSnackbar("Trade offer declined.")
         } catch {
+            HaulonautSoundService.play(.error)
             showSnackbar(error.localizedDescription)
         }
     }
