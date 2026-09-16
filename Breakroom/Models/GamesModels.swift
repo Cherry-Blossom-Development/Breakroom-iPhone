@@ -672,6 +672,33 @@ struct HaulonautAttackResponse: Codable {
     }
 }
 
+// MARK: - Target Info (for NPC trading and cargo preview)
+
+/// GET /characters/:id/target-info/:targetId — returns target's display info and cargo.
+struct HaulonautTargetInfoResponse: Codable {
+    let displayName: String
+    let isNpc: Bool
+    let credits: Int?
+    let inventory: [HaulonautInventoryItem]
+
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case isNpc = "is_npc"
+        case credits
+        case inventory
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        // Backend sends 0/1 tinyint for booleans
+        let npcValue = try container.decodeIfPresent(Int.self, forKey: .isNpc) ?? 0
+        isNpc = npcValue == 1
+        credits = try container.decodeIfPresent(Int.self, forKey: .credits)
+        inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
+    }
+}
+
 // MARK: - Sector Chat Message
 
 /// A chat message in the sector (via Socket.IO haulonaut_sector_message).

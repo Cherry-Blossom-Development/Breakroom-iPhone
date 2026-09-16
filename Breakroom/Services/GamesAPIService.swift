@@ -190,4 +190,13 @@ enum GamesAPIService {
             body: body
         )
     }
+
+    // MARK: - Target Info
+
+    /// GET /api/games/haulonaut/characters/:id/target-info/:targetId — get target's cargo and info.
+    static func getTargetInfo(characterId: Int, targetId: Int) async throws -> HaulonautTargetInfoResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/target-info/\(targetId)"
+        )
+    }
 }

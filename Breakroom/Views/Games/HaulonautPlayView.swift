@@ -79,6 +79,16 @@ struct HaulonautPlayView: View {
     @State private var selectedPlayer: HaulonautPlayerHere?
     @State private var showPlayerActions = false
     @State private var tradeOffers: [HaulonautTradeOfferSummary] = []
+    @State private var targetInfo: HaulonautTargetInfoResponse?
+    @State private var isLoadingTargetInfo = false
+
+    // Trade offer sheet state
+    @State private var showTradeSheet = false
+    @State private var tradeTargetPlayer: HaulonautPlayerHere?
+    @State private var tradeTargetInfo: HaulonautTargetInfoResponse?
+    @State private var tradeItemKey: String = ""
+    @State private var tradeQuantity: Int = 1
+    @State private var tradeCredits: Int = 0
 
     // Drift (uncontrolled movement when fuel is 0)
     @State private var driftVariance: Int = 0
@@ -355,6 +365,13 @@ struct HaulonautPlayView: View {
         .sheet(isPresented: $showPlayerActions) {
             if let player = selectedPlayer {
                 playerActionsSheet(player)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+        .sheet(isPresented: $showTradeSheet) {
+            if let player = tradeTargetPlayer {
+                tradeOfferSheet(player)
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
             }
@@ -398,75 +415,104 @@ struct HaulonautPlayView: View {
 
     private func playerActionsSheet(_ player: HaulonautPlayerHere) -> some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                // Player info
-                VStack(spacing: 8) {
-                    Image(systemName: player.isNpc ? "cpu" : "person.fill")
-                        .font(.largeTitle)
-                        .foregroundStyle(player.isNpc ? CRTColors.muted : CRTColors.title)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Player info
+                    VStack(spacing: 8) {
+                        Image(systemName: player.isNpc ? "cpu" : "person.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(player.isNpc ? CRTColors.muted : CRTColors.title)
 
-                    Text(player.displayName)
-                        .font(.title2.monospaced().bold())
-                        .foregroundStyle(CRTColors.tagline)
+                        Text(player.displayName)
+                            .font(.title2.monospaced().bold())
+                            .foregroundStyle(CRTColors.tagline)
 
-                    if player.isNpc {
-                        Text("NPC Pilot")
-                            .font(.caption.monospaced())
-                            .foregroundStyle(CRTColors.muted)
+                        if player.isNpc {
+                            Text("NPC Pilot")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(CRTColors.muted)
+                        }
                     }
-                }
-                .padding(.top, 16)
+                    .padding(.top, 16)
 
-                // Actions
-                VStack(spacing: 12) {
-                    if !player.isNpc {
-                        // Give tokens
+                    // Cargo preview
+                    targetCargoPreview
+
+                    // Actions
+                    VStack(spacing: 12) {
+                        // Propose Trade (both NPCs and humans)
                         Button {
                             showPlayerActions = false
-                            Task { await giveTokens(to: player) }
+                            tradeTargetPlayer = player
+                            tradeTargetInfo = targetInfo
+                            showTradeSheet = true
                         } label: {
                             HStack {
-                                Image(systemName: "gift")
-                                Text("Give Tokens")
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Text("Propose Trade")
                             }
                             .font(.body.monospaced())
                             .foregroundStyle(CRTColors.background)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(CRTColors.stat)
+                            .background(CRTColors.title)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
-                        .accessibilityIdentifier("haulonautGiveTokensButton")
-                    }
+                        .accessibilityIdentifier("haulonautProposeTradeButton")
 
-                    // Attack
-                    Button {
-                        showPlayerActions = false
-                        Task { await attackPlayer(player) }
-                    } label: {
-                        HStack {
-                            Image(systemName: "flame")
-                            Text("Attack")
+                        if !player.isNpc {
+                            // Give tokens
+                            Button {
+                                showPlayerActions = false
+                                Task { await giveTokens(to: player) }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "gift")
+                                    Text("Give Tokens")
+                                }
+                                .font(.body.monospaced())
+                                .foregroundStyle(CRTColors.background)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(CRTColors.stat)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                            }
+                            .accessibilityIdentifier("haulonautGiveTokensButton")
                         }
-                        .font(.body.monospaced())
-                        .foregroundStyle(CRTColors.background)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(CRTColors.error)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .accessibilityIdentifier("haulonautAttackButton")
-                }
-                .padding(.horizontal, 24)
 
-                Spacer()
+                        // Attack
+                        Button {
+                            showPlayerActions = false
+                            Task { await attackPlayer(player) }
+                        } label: {
+                            HStack {
+                                Image(systemName: "flame")
+                                Text("Attack")
+                            }
+                            .font(.body.monospaced())
+                            .foregroundStyle(CRTColors.background)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(CRTColors.error)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .accessibilityIdentifier("haulonautAttackButton")
+                    }
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+                }
             }
             .frame(maxWidth: .infinity)
             .background(CRTColors.background)
+            .task {
+                await loadTargetInfo(for: player)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
                         showPlayerActions = false
+                        targetInfo = nil
                     }
                     .font(.body.monospaced())
                     .foregroundStyle(CRTColors.tagline)
@@ -474,6 +520,205 @@ struct HaulonautPlayView: View {
             }
             .toolbarBackground(CRTColors.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+    }
+
+    @ViewBuilder
+    private var targetCargoPreview: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("THEIR CARGO")
+                .font(.caption.monospaced().bold())
+                .foregroundStyle(CRTColors.muted)
+
+            if isLoadingTargetInfo {
+                HStack {
+                    ProgressView()
+                        .tint(CRTColors.title)
+                        .scaleEffect(0.8)
+                    Text("Loading...")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+            } else if let info = targetInfo {
+                if info.inventory.isEmpty {
+                    Text("Empty cargo hold")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                } else {
+                    ForEach(info.inventory) { item in
+                        HStack {
+                            Text(item.name)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(CRTColors.description)
+                            Spacer()
+                            Text("x\(item.quantity)")
+                                .font(.caption.monospaced().bold())
+                                .foregroundStyle(CRTColors.tagline)
+                        }
+                    }
+                }
+            } else {
+                Text("Unable to scan cargo")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CRTColors.border.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 24)
+    }
+
+    private func loadTargetInfo(for player: HaulonautPlayerHere) async {
+        isLoadingTargetInfo = true
+        targetInfo = nil
+
+        do {
+            targetInfo = try await GamesAPIService.getTargetInfo(
+                characterId: characterId,
+                targetId: player.id
+            )
+        } catch {
+            // Non-fatal - just show "unable to scan"
+        }
+
+        isLoadingTargetInfo = false
+    }
+
+    // MARK: - Trade Offer Sheet
+
+    private func tradeOfferSheet(_ player: HaulonautPlayerHere) -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Trade with \(player.displayName)")
+                    .font(.headline.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+                    .padding(.top, 16)
+
+                // Item selector
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("OFFER ITEM")
+                        .font(.caption.monospaced().bold())
+                        .foregroundStyle(CRTColors.muted)
+
+                    if inventory.isEmpty {
+                        Text("No items in cargo")
+                            .font(.body.monospaced())
+                            .foregroundStyle(CRTColors.muted)
+                    } else {
+                        Picker("Item", selection: $tradeItemKey) {
+                            Text("Select item...").tag("")
+                            ForEach(inventory) { item in
+                                Text("\(item.name) (x\(item.quantity))")
+                                    .tag(item.itemKey)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(CRTColors.title)
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                // Quantity stepper
+                if !tradeItemKey.isEmpty {
+                    let maxQty = inventory.first { $0.itemKey == tradeItemKey }?.quantity ?? 1
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("QUANTITY")
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.muted)
+
+                        Stepper(value: $tradeQuantity, in: 1...maxQty) {
+                            Text("\(tradeQuantity)")
+                                .font(.body.monospaced().bold())
+                                .foregroundStyle(CRTColors.tagline)
+                        }
+                        .tint(CRTColors.title)
+                    }
+                    .padding(.horizontal, 24)
+                }
+
+                // Credits input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("REQUEST TOKENS")
+                        .font(.caption.monospaced().bold())
+                        .foregroundStyle(CRTColors.muted)
+
+                    TextField("0", value: $tradeCredits, format: .number)
+                        .font(.body.monospaced())
+                        .foregroundStyle(CRTColors.tagline)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(CRTColors.border.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .padding(.horizontal, 24)
+
+                // Submit button
+                Button {
+                    Task { await submitTradeOffer(to: player) }
+                } label: {
+                    HStack {
+                        Image(systemName: "paperplane.fill")
+                        Text("Send Offer")
+                    }
+                    .font(.body.monospaced().bold())
+                    .foregroundStyle(CRTColors.background)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(tradeItemKey.isEmpty ? CRTColors.muted : CRTColors.title)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .disabled(tradeItemKey.isEmpty)
+                .padding(.horizontal, 24)
+                .accessibilityIdentifier("haulonautSubmitTradeButton")
+
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .background(CRTColors.background)
+            .onAppear {
+                // Reset form when sheet appears
+                tradeItemKey = ""
+                tradeQuantity = 1
+                tradeCredits = 0
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        showTradeSheet = false
+                    }
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+                }
+            }
+            .toolbarBackground(CRTColors.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+    }
+
+    private func submitTradeOffer(to player: HaulonautPlayerHere) async {
+        guard !tradeItemKey.isEmpty else { return }
+
+        HaulonautSoundService.play(.click)
+
+        do {
+            let response = try await GamesAPIService.createTradeOffer(
+                characterId: characterId,
+                toCharacterId: player.id,
+                itemKey: tradeItemKey,
+                quantity: tradeQuantity,
+                credits: tradeCredits
+            )
+            showTradeSheet = false
+            HaulonautSoundService.play(.success)
+            showSnackbar(response.message ?? "Trade offer sent to \(player.displayName).")
+        } catch {
+            HaulonautSoundService.play(.error)
+            showSnackbar("Error: \(error.localizedDescription)")
         }
     }
 
