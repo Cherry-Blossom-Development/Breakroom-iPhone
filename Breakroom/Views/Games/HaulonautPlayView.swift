@@ -1854,22 +1854,264 @@ struct HaulonautPlayView: View {
     // MARK: - Chat Actions
 
     private func sendChatMessage() {
-        guard !chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-
-        let message = chatInput
+        let text = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
         chatInput = ""
 
         // Add local echo immediately
         let localMessage = HaulonautSectorMessage(
             characterId: characterId,
             displayName: character?.displayName ?? "You",
-            message: message
+            message: text
         )
         sectorMessages.append(localMessage)
 
+        // Check for slash command
+        if text.hasPrefix("/") {
+            Task {
+                await handleSlashCommand(String(text.dropFirst()))
+            }
+            return
+        }
+
         // TODO: Send via Socket.IO when implemented
-        // SocketManager.shared.sendSectorMessage(characterId: characterId, message: message)
-        showSnackbar("Message sent.")
+        // SocketManager.shared.sendSectorMessage(characterId: characterId, message: text)
+        HaulonautSoundService.play(.click)
+    }
+
+    private func handleSlashCommand(_ command: String) async {
+        let parts = command.split(separator: " ", maxSplits: 1)
+        let cmd = parts.first.map { String($0).lowercased() } ?? ""
+        let args = parts.count > 1 ? String(parts[1]) : ""
+
+        switch cmd {
+        case "help":
+            showHelpMessage()
+        case "give":
+            await handleGiveCommand(args)
+        case "offer":
+            await handleOfferCommand(args)
+        case "accept":
+            await handleAcceptCommand(args)
+        case "decline":
+            await handleDeclineCommand(args)
+        case "attack":
+            await handleAttackCommand(args)
+        case "warp":
+            await handleWarpCommand(args)
+        default:
+            addSystemMessage("Unknown command: /\(cmd). Type /help for available commands.")
+            HaulonautSoundService.play(.error)
+        }
+    }
+
+    private func addSystemMessage(_ text: String) {
+        let systemMessage = HaulonautSectorMessage(
+            characterId: 0,
+            displayName: "SYSTEM",
+            message: text
+        )
+        sectorMessages.append(systemMessage)
+    }
+
+    private func showHelpMessage() {
+        HaulonautSoundService.play(.notify)
+        addSystemMessage("""
+            Available commands:
+            /help - Show this message
+            /give <pilot> <amount> - Give tokens to a pilot
+            /offer <pilot> <item> <qty> for <credits> - Propose trade
+            /accept <id> - Accept a trade offer
+            /decline <id> - Decline a trade offer
+            /attack <pilot> - Attack a pilot
+            /warp <sector#> - Warp to connected sector
+            """)
+    }
+
+    private func handleGiveCommand(_ args: String) async {
+        // Parse: <pilot_name> <amount>
+        let parts = args.split(separator: " ")
+        guard parts.count >= 2,
+              let amount = Int(parts.last!) else {
+            addSystemMessage("Usage: /give <pilot> <amount>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        let pilotName = parts.dropLast().joined(separator: " ")
+        guard let player = playersHere.first(where: {
+            $0.displayName.lowercased() == pilotName.lowercased()
+        }) else {
+            addSystemMessage("Pilot '\(pilotName)' not found in sector.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard !player.isNpc else {
+            addSystemMessage("Cannot give tokens to NPCs.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard credits >= amount else {
+            addSystemMessage("Not enough tokens. You have \(credits).")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        do {
+            let response = try await GamesAPIService.giveCredits(
+                characterId: characterId,
+                toCharacterId: player.id,
+                credits: amount
+            )
+            if let newCredits = response.credits {
+                credits = newCredits
+            }
+            addSystemMessage(response.message ?? "Gave \(amount) tokens to \(player.displayName).")
+            HaulonautSoundService.play(.success)
+        } catch {
+            addSystemMessage("Error: \(error.localizedDescription)")
+            HaulonautSoundService.play(.error)
+        }
+    }
+
+    private func handleOfferCommand(_ args: String) async {
+        // Parse: <pilot> <item_key> <qty> for <credits>
+        // Example: /offer Alice fuel_cell 5 for 100
+        guard let forRange = args.range(of: " for ", options: .caseInsensitive) else {
+            addSystemMessage("Usage: /offer <pilot> <item> <qty> for <credits>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        let beforeFor = String(args[..<forRange.lowerBound])
+        let afterFor = String(args[forRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+
+        guard let offerCredits = Int(afterFor) else {
+            addSystemMessage("Invalid credits amount: '\(afterFor)'")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        let beforeParts = beforeFor.split(separator: " ")
+        guard beforeParts.count >= 3,
+              let quantity = Int(beforeParts.last!) else {
+            addSystemMessage("Usage: /offer <pilot> <item> <qty> for <credits>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        let itemKey = String(beforeParts[beforeParts.count - 2])
+        let pilotName = beforeParts.dropLast(2).joined(separator: " ")
+
+        guard let player = playersHere.first(where: {
+            $0.displayName.lowercased() == pilotName.lowercased()
+        }) else {
+            addSystemMessage("Pilot '\(pilotName)' not found in sector.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        // Check we have the item
+        guard let item = inventory.first(where: { $0.itemKey == itemKey }),
+              item.quantity >= quantity else {
+            addSystemMessage("You don't have \(quantity)x \(itemKey).")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        do {
+            let response = try await GamesAPIService.createTradeOffer(
+                characterId: characterId,
+                toCharacterId: player.id,
+                itemKey: itemKey,
+                quantity: quantity,
+                credits: offerCredits
+            )
+            addSystemMessage(response.message ?? "Trade offer sent to \(player.displayName).")
+            HaulonautSoundService.play(.success)
+        } catch {
+            addSystemMessage("Error: \(error.localizedDescription)")
+            HaulonautSoundService.play(.error)
+        }
+    }
+
+    private func handleAcceptCommand(_ args: String) async {
+        guard let offerId = Int(args.trimmingCharacters(in: .whitespaces)) else {
+            addSystemMessage("Usage: /accept <offer_id>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard let offer = tradeOffers.first(where: { $0.id == offerId }) else {
+            addSystemMessage("Trade offer #\(offerId) not found.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        await acceptTradeOffer(offer)
+        addSystemMessage("Accepted trade offer #\(offerId).")
+    }
+
+    private func handleDeclineCommand(_ args: String) async {
+        guard let offerId = Int(args.trimmingCharacters(in: .whitespaces)) else {
+            addSystemMessage("Usage: /decline <offer_id>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard let offer = tradeOffers.first(where: { $0.id == offerId }) else {
+            addSystemMessage("Trade offer #\(offerId) not found.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        await declineTradeOffer(offer)
+        addSystemMessage("Declined trade offer #\(offerId).")
+    }
+
+    private func handleAttackCommand(_ args: String) async {
+        let pilotName = args.trimmingCharacters(in: .whitespaces)
+        guard !pilotName.isEmpty else {
+            addSystemMessage("Usage: /attack <pilot>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard let player = playersHere.first(where: {
+            $0.displayName.lowercased() == pilotName.lowercased()
+        }) else {
+            addSystemMessage("Pilot '\(pilotName)' not found in sector.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        await attackPlayer(player)
+    }
+
+    private func handleWarpCommand(_ args: String) async {
+        guard let sectorNumber = Int(args.trimmingCharacters(in: .whitespaces)) else {
+            addSystemMessage("Usage: /warp <sector_number>")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard let sector = connectedSectors.first(where: { $0.sectorNumber == sectorNumber }) else {
+            let available = connectedSectors.map { String($0.sectorNumber) }.joined(separator: ", ")
+            addSystemMessage("Sector \(sectorNumber) not connected. Available: \(available)")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        guard canWarp else {
+            addSystemMessage("Cannot warp - fuel depleted.")
+            HaulonautSoundService.play(.error)
+            return
+        }
+
+        addSystemMessage("Warping to Sector \(sectorNumber)...")
+        await navigate(to: sector)
     }
 
     // MARK: - Trade Actions
