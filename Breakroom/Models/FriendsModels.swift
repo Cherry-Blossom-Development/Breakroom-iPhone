@@ -1,12 +1,13 @@
 import Foundation
 
-struct Friend: Codable, Identifiable {
+struct Friend: Codable, Identifiable, PresenceHydratable {
     let id: Int
     let handle: String
     let firstName: String?
     let lastName: String?
     let photoPath: String?
     let friendsSince: String?
+    let isOnline: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, handle
@@ -14,6 +15,36 @@ struct Friend: Codable, Identifiable {
         case lastName = "last_name"
         case photoPath = "photo_path"
         case friendsSince = "friends_since"
+        case isOnline = "is_online"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        handle = try container.decode(String.self, forKey: .handle)
+        firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        photoPath = try container.decodeIfPresent(String.self, forKey: .photoPath)
+        friendsSince = try container.decodeIfPresent(String.self, forKey: .friendsSince)
+        // Backend may send 0/1 or true/false
+        if let boolValue = try? container.decodeIfPresent(Bool.self, forKey: .isOnline) {
+            isOnline = boolValue
+        } else if let intValue = try? container.decodeIfPresent(Int.self, forKey: .isOnline) {
+            isOnline = intValue == 1
+        } else {
+            isOnline = nil
+        }
+    }
+
+    // Memberwise init for manual construction
+    init(id: Int, handle: String, firstName: String?, lastName: String?, photoPath: String?, friendsSince: String?, isOnline: Bool? = nil) {
+        self.id = id
+        self.handle = handle
+        self.firstName = firstName
+        self.lastName = lastName
+        self.photoPath = photoPath
+        self.friendsSince = friendsSince
+        self.isOnline = isOnline
     }
 
     var displayName: String {

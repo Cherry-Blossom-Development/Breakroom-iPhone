@@ -135,6 +135,13 @@ struct HaulonautPlayerHere: Codable, Identifiable {
         let npcValue = try container.decodeIfPresent(Int.self, forKey: .isNpc) ?? 0
         isNpc = npcValue == 1
     }
+
+    // Memberwise init for constructing from socket data
+    init(id: Int, displayName: String, isNpc: Bool) {
+        self.id = id
+        self.displayName = displayName
+        self.isNpc = isNpc
+    }
 }
 
 // Owned quantity of an item — rations never appear here, they're a top-level pilot stat.
@@ -151,6 +158,22 @@ struct HaulonautInventoryItem: Codable, Identifiable {
         case name
         case category
         case quantity
+    }
+
+    // Memberwise init for manual construction
+    init(itemKey: String, name: String, category: String, quantity: Int) {
+        self.itemKey = itemKey
+        self.name = name
+        self.category = category
+        self.quantity = quantity
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        itemKey = try container.decode(String.self, forKey: .itemKey)
+        name = try container.decode(String.self, forKey: .name)
+        category = try container.decode(String.self, forKey: .category)
+        quantity = try container.decode(Int.self, forKey: .quantity)
     }
 }
 
@@ -619,6 +642,22 @@ struct HaulonautTradeOfferSummary: Codable, Identifiable {
         case fromDisplayName = "from_display_name"
         case toDisplayName = "to_display_name"
     }
+
+    // Memberwise init for constructing from socket data
+    init(id: Int, fromGameUserId: Int, toGameUserId: Int, quantity: Int, credits: Int,
+         createdAt: String?, itemKey: String, itemName: String,
+         fromDisplayName: String, toDisplayName: String) {
+        self.id = id
+        self.fromGameUserId = fromGameUserId
+        self.toGameUserId = toGameUserId
+        self.quantity = quantity
+        self.credits = credits
+        self.createdAt = createdAt
+        self.itemKey = itemKey
+        self.itemName = itemName
+        self.fromDisplayName = fromDisplayName
+        self.toDisplayName = toDisplayName
+    }
 }
 
 struct HaulonautTradeOffersResponse: Codable {
@@ -697,6 +736,103 @@ struct HaulonautTargetInfoResponse: Codable {
         credits = try container.decodeIfPresent(Int.self, forKey: .credits)
         inventory = try container.decodeIfPresent([HaulonautInventoryItem].self, forKey: .inventory) ?? []
     }
+}
+
+// MARK: - Probes (see migration 074)
+
+/// An active or completed probe mission.
+struct HaulonautProbeMission: Codable, Identifiable {
+    let id: Int
+    let missionType: String
+    let ticksElapsed: Int
+    let ticksToComplete: Int
+    let deployedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case missionType = "mission_type"
+        case ticksElapsed = "ticks_elapsed"
+        case ticksToComplete = "ticks_to_complete"
+        case deployedAt = "deployed_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        missionType = try container.decode(String.self, forKey: .missionType)
+        ticksElapsed = try container.decodeIfPresent(Int.self, forKey: .ticksElapsed) ?? 0
+        ticksToComplete = try container.decodeIfPresent(Int.self, forKey: .ticksToComplete) ?? 1
+        deployedAt = try container.decodeIfPresent(String.self, forKey: .deployedAt)
+    }
+
+    var progress: Double {
+        guard ticksToComplete > 0 else { return 1.0 }
+        return Double(ticksElapsed) / Double(ticksToComplete)
+    }
+}
+
+/// A completed probe mission report (from socket or API).
+struct HaulonautProbeReport: Codable, Identifiable {
+    let id: Int
+    let missionType: String
+    let status: String
+    let summary: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case missionType = "mission_type"
+        case status
+        case summary
+    }
+
+    init(id: Int, missionType: String, status: String, summary: String) {
+        self.id = id
+        self.missionType = missionType
+        self.status = status
+        self.summary = summary
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        missionType = try container.decode(String.self, forKey: .missionType)
+        status = try container.decode(String.self, forKey: .status)
+        summary = try container.decodeIfPresent(String.self, forKey: .summary) ?? ""
+    }
+}
+
+/// GET /probes response — active mission + pending report.
+struct HaulonautProbesResponse: Codable {
+    let activeMission: HaulonautProbeMission?
+    let pendingReport: HaulonautProbeReport?
+
+    enum CodingKeys: String, CodingKey {
+        case activeMission = "active_mission"
+        case pendingReport = "pending_report"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        activeMission = try container.decodeIfPresent(HaulonautProbeMission.self, forKey: .activeMission)
+        pendingReport = try container.decodeIfPresent(HaulonautProbeReport.self, forKey: .pendingReport)
+    }
+}
+
+/// POST /probes/deploy request body.
+struct HaulonautDeployProbeRequest: Encodable {
+    let missionType: String
+    let searchItemKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case missionType = "mission_type"
+        case searchItemKey = "search_item_key"
+    }
+}
+
+/// POST /probes/deploy response.
+struct HaulonautDeployProbeResponse: Codable {
+    let message: String?
+    let probe: HaulonautProbeMission?
 }
 
 // MARK: - Sector Chat Message

@@ -90,6 +90,19 @@ struct HaulonautPlayView: View {
     @State private var tradeQuantity: Int = 1
     @State private var tradeCredits: Int = 0
 
+    // Probe state
+    @State private var activeProbeMission: HaulonautProbeMission?
+    @State private var pendingProbeReport: HaulonautProbeReport?
+    @State private var showProbeDeploySheet = false
+    @State private var showProbeSearchSheet = false
+    @State private var isDeployingProbe = false
+
+    // Sector arrival alerts (brief banners)
+    @State private var sectorArrivalAlerts: [(id: UUID, displayName: String, isNpc: Bool)] = []
+
+    // Incoming trade offer banners
+    @State private var incomingTradeOfferBanner: HaulonautTradeOfferSummary?
+
     // Drift (uncontrolled movement when fuel is 0)
     @State private var driftVariance: Int = 0
     @State private var drifting = false
@@ -177,12 +190,16 @@ struct HaulonautPlayView: View {
         .accessibilityIdentifier("screenHaulonautPlay")
         .task {
             HaulonautSoundService.configureAudioSession()
+            setupSocketHandlers()
+            HaulonautSocketManager.shared.connect(characterId: characterId)
             await loadCharacter()
+            await loadProbeStatus()
         }
         .onDisappear {
             driftTask?.cancel()
             driftTask = nil
             HaulonautSoundService.stopAmbient()
+            HaulonautSocketManager.shared.disconnect()
         }
         .onChange(of: viewportMode) { _, newMode in
             updateAmbientSound(for: newMode)
@@ -280,16 +297,123 @@ struct HaulonautPlayView: View {
     // MARK: - Game Content
 
     private var gameContent: some View {
-        VStack(spacing: 0) {
-            // Main viewport
-            ScrollView {
-                viewportContent
-                    .padding()
+        ZStack {
+            VStack(spacing: 0) {
+                // Main viewport
+                ScrollView {
+                    viewportContent
+                        .padding()
+                }
+
+                // Bottom bar
+                bottomBar
             }
 
-            // Bottom bar
-            bottomBar
+            // Overlay banners
+            VStack {
+                // Sector arrival alerts
+                ForEach(sectorArrivalAlerts, id: \.id) { alert in
+                    sectorArrivalBanner(displayName: alert.displayName, isNpc: alert.isNpc)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                // Incoming trade offer banner
+                if let offer = incomingTradeOfferBanner {
+                    tradeOfferBanner(offer)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                Spacer()
+            }
+            .padding(.top, 8)
+            .animation(.easeInOut(duration: 0.3), value: sectorArrivalAlerts.count)
+            .animation(.easeInOut(duration: 0.3), value: incomingTradeOfferBanner?.id)
         }
+    }
+
+    // MARK: - Overlay Banners
+
+    private func sectorArrivalBanner(displayName: String, isNpc: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: isNpc ? "cpu" : "person.fill")
+                .font(.caption)
+                .foregroundStyle(isNpc ? CRTColors.muted : CRTColors.stat)
+
+            Text("\(displayName) entered the sector")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.tagline)
+
+            if isNpc {
+                Text("[NPC]")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(CRTColors.border.opacity(0.9))
+        .clipShape(Capsule())
+    }
+
+    private func tradeOfferBanner(_ offer: HaulonautTradeOfferSummary) -> some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .foregroundStyle(CRTColors.title)
+
+                Text("Trade offer from \(offer.fromDisplayName)")
+                    .font(.caption.monospaced().bold())
+                    .foregroundStyle(CRTColors.tagline)
+
+                Spacer()
+
+                Button {
+                    incomingTradeOfferBanner = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .foregroundStyle(CRTColors.muted)
+                }
+            }
+
+            Text("\(offer.quantity)× \(offer.itemName) for \(offer.credits) tokens")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.description)
+
+            HStack(spacing: 12) {
+                Button {
+                    Task { await acceptTradeOffer(offer) }
+                } label: {
+                    Text("Accept")
+                        .font(.caption.monospaced().bold())
+                        .foregroundStyle(CRTColors.background)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(CRTColors.stat)
+                        .clipShape(Capsule())
+                }
+
+                Button {
+                    Task { await declineTradeOffer(offer) }
+                } label: {
+                    Text("Decline")
+                        .font(.caption.monospaced().bold())
+                        .foregroundStyle(CRTColors.muted)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(CRTColors.border.opacity(0.3))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .padding()
+        .background(CRTColors.background.opacity(0.95))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(CRTColors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal)
     }
 
     // MARK: - Viewport Content
@@ -864,8 +988,181 @@ struct HaulonautPlayView: View {
                     }
                 }
             }
+
+            // Probe section
+            Divider()
+                .background(CRTColors.border)
+                .padding(.vertical, 8)
+
+            probeSection
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(isPresented: $showProbeDeploySheet) {
+            probeDeploySheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: - Probe Section
+
+    private var probeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PROBES")
+                .font(.subheadline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            let probeCount = inventoryQuantity(for: "probe")
+
+            if let mission = activeProbeMission {
+                // Active mission status
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .foregroundStyle(CRTColors.stat)
+                        Text("Mission: \(mission.missionType.replacingOccurrences(of: "_", with: " ").capitalized)")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(CRTColors.tagline)
+                    }
+
+                    ProgressView(value: mission.progress)
+                        .tint(CRTColors.stat)
+                        .accessibilityLabel("Probe progress \(Int(mission.progress * 100)) percent")
+
+                    Text("\(mission.ticksElapsed)/\(mission.ticksToComplete) ticks")
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+                .padding()
+                .background(CRTColors.border.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else if let report = pendingProbeReport {
+                // Pending report
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "doc.text.fill")
+                            .foregroundStyle(CRTColors.title)
+                        Text("PROBE REPORT READY")
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.title)
+                    }
+
+                    Text(report.summary)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.tagline)
+
+                    Button {
+                        Task { await acknowledgeProbeReport() }
+                    } label: {
+                        Text("Acknowledge")
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.background)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(CRTColors.stat)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding()
+                .background(CRTColors.border.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                // No active mission
+                HStack {
+                    Text("Probes: \(probeCount)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+
+                    Spacer()
+
+                    if probeCount > 0 {
+                        Button {
+                            HaulonautSoundService.play(.click)
+                            showProbeDeploySheet = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "paperplane.fill")
+                                Text("Deploy")
+                            }
+                            .font(.caption.monospaced().bold())
+                            .foregroundStyle(CRTColors.background)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(CRTColors.stat)
+                            .clipShape(Capsule())
+                        }
+                        .disabled(isDeployingProbe)
+                        .accessibilityIdentifier("haulonautDeployProbe")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Probe Deploy Sheet
+
+    private var probeDeploySheet: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Select Mission Type")
+                    .font(.headline.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+
+                VStack(spacing: 12) {
+                    probeMissionButton(type: "scout_sector", label: "Scout Sector", description: "Scan current sector for activity", icon: "eye.fill")
+                    probeMissionButton(type: "locate_item", label: "Locate Item", description: "Search for trade goods", icon: "magnifyingglass")
+                    probeMissionButton(type: "track_pilot", label: "Track Pilot", description: "Find another pilot's location", icon: "location.fill")
+                }
+
+                Spacer()
+            }
+            .padding()
+            .background(CRTColors.background)
+            .navigationTitle("Deploy Probe")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showProbeDeploySheet = false
+                    }
+                    .foregroundStyle(CRTColors.muted)
+                }
+            }
+        }
+        .presentationBackground(CRTColors.background)
+    }
+
+    private func probeMissionButton(type: String, label: String, description: String, icon: String) -> some View {
+        Button {
+            Task { await deployProbe(missionType: type) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(CRTColors.title)
+                    .frame(width: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.subheadline.monospaced().bold())
+                        .foregroundStyle(CRTColors.tagline)
+
+                    Text(description)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(CRTColors.border)
+            }
+            .padding()
+            .background(CRTColors.border.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .disabled(isDeployingProbe)
+        .accessibilityIdentifier("haulonautProbeMission_\(type)")
     }
 
     // MARK: - Star Charts Content
@@ -1196,17 +1493,183 @@ struct HaulonautPlayView: View {
             // Start drift timer
             startDriftTimer()
 
+            // Join sector socket room
+            if let sectorId = currentSector?.id {
+                HaulonautSocketManager.shared.joinSector(sectorId)
+            }
+
             // Load items catalog (non-fatal if fails)
             do {
                 itemsCatalog = try await GamesAPIService.getItems()
             } catch {
                 // Ignore - outpost just shows nothing
             }
+
+            // Load pending trade offers
+            await loadTradeOffers()
         } catch {
             self.error = error.localizedDescription
         }
 
         isLoading = false
+    }
+
+    private func setupSocketHandlers() {
+        let socketManager = HaulonautSocketManager.shared
+
+        // Sector chat message
+        socketManager.onSectorMessage = { [self] message in
+            // Don't add our own echoed messages
+            if message.characterId != characterId {
+                sectorMessages.append(message)
+                HaulonautSoundService.play(.notify)
+            }
+        }
+
+        // Pilot entered sector
+        socketManager.onSectorArrival = { [self] pilotId, displayName, isNpc in
+            // Add to playersHere if not already there
+            if !playersHere.contains(where: { $0.id == pilotId }) {
+                let player = HaulonautPlayerHere(id: pilotId, displayName: displayName, isNpc: isNpc)
+                playersHere.append(player)
+            }
+
+            // Show brief alert banner
+            let alert = (id: UUID(), displayName: displayName, isNpc: isNpc)
+            sectorArrivalAlerts.append(alert)
+            HaulonautSoundService.play(isNpc ? .npcPresence : .presence)
+
+            // Auto-dismiss after 3 seconds
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                sectorArrivalAlerts.removeAll { $0.id == alert.id }
+            }
+        }
+
+        // Gift received
+        socketManager.onGiftReceived = { [self] fromDisplayName, amount in
+            credits += amount
+            addSystemMessage("\(fromDisplayName) sent you \(amount) tokens!")
+            HaulonautSoundService.play(.success)
+        }
+
+        // Trade offer received
+        socketManager.onTradeOffer = { [self] offer in
+            // Only show if we're the target
+            if offer.toGameUserId == characterId {
+                tradeOffers.append(offer)
+                incomingTradeOfferBanner = offer
+                HaulonautSoundService.play(.notify)
+
+                // Auto-dismiss banner after 10 seconds
+                Task {
+                    try? await Task.sleep(for: .seconds(10))
+                    if incomingTradeOfferBanner?.id == offer.id {
+                        incomingTradeOfferBanner = nil
+                    }
+                }
+            }
+        }
+
+        // Trade resolved
+        socketManager.onTradeResolved = { [self] offerId, accepted in
+            tradeOffers.removeAll { $0.id == offerId }
+            if incomingTradeOfferBanner?.id == offerId {
+                incomingTradeOfferBanner = nil
+            }
+            HaulonautSoundService.play(accepted ? .tradeSuccess : .tradeDecline)
+        }
+
+        // Probe report
+        socketManager.onProbeReport = { [self] report in
+            pendingProbeReport = report
+            activeProbeMission = nil
+            HaulonautSoundService.play(.notify)
+            addSystemMessage("PROBE REPORT: \(report.summary)")
+        }
+
+        // Combat event
+        socketManager.onCombatEvent = { [self] attackerName, targetName, damage, targetDied in
+            let myName = character?.displayName ?? ""
+            if targetName == myName {
+                // We got hit
+                HaulonautSoundService.play(.damage)
+                if targetDied {
+                    addSystemMessage("CRITICAL: \(attackerName) destroyed your ship!")
+                } else {
+                    addSystemMessage("\(attackerName) hit you for \(damage) damage!")
+                }
+            } else if attackerName == myName {
+                // We attacked (already handled by attackPlayer)
+            } else {
+                // Someone else in sector
+                if targetDied {
+                    addSystemMessage("\(attackerName) destroyed \(targetName)!")
+                } else {
+                    addSystemMessage("\(attackerName) attacked \(targetName) for \(damage) damage.")
+                }
+            }
+        }
+    }
+
+    private func loadProbeStatus() async {
+        do {
+            let response = try await GamesAPIService.getProbes(characterId: characterId)
+            activeProbeMission = response.activeMission
+            pendingProbeReport = response.pendingReport
+        } catch {
+            // Non-fatal
+        }
+    }
+
+    private func deployProbe(missionType: String) async {
+        guard !isDeployingProbe else { return }
+        isDeployingProbe = true
+        showProbeDeploySheet = false
+
+        do {
+            let response = try await GamesAPIService.deployProbe(
+                characterId: characterId,
+                missionType: missionType,
+                searchItemKey: nil
+            )
+            if let probe = response.probe {
+                activeProbeMission = probe
+                // Update inventory (reduce probe count)
+                if let idx = inventory.firstIndex(where: { $0.itemKey == "probe" }) {
+                    let current = inventory[idx]
+                    if current.quantity > 1 {
+                        inventory[idx] = HaulonautInventoryItem(
+                            itemKey: current.itemKey,
+                            name: current.name,
+                            category: current.category,
+                            quantity: current.quantity - 1
+                        )
+                    } else {
+                        inventory.remove(at: idx)
+                    }
+                }
+                HaulonautSoundService.play(.success)
+                showSnackbar(response.message ?? "Probe deployed!")
+            }
+        } catch {
+            HaulonautSoundService.play(.error)
+            showSnackbar("Failed to deploy probe: \(error.localizedDescription)")
+        }
+
+        isDeployingProbe = false
+    }
+
+    private func acknowledgeProbeReport() async {
+        guard let report = pendingProbeReport else { return }
+
+        do {
+            _ = try await GamesAPIService.acknowledgeProbeReport(characterId: characterId, missionId: report.id)
+            pendingProbeReport = nil
+            HaulonautSoundService.play(.click)
+        } catch {
+            showSnackbar("Failed to acknowledge report: \(error.localizedDescription)")
+        }
     }
 
     private func navigate(to sector: HaulonautConnectedSector) async {

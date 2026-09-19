@@ -115,6 +115,18 @@ struct FriendsView: View {
 
     // MARK: - Friends Tab
 
+    /// Friends sorted by online status (online first), then alphabetically.
+    private var sortedFriends: [Friend] {
+        friends.sorted { a, b in
+            let aOnline = PresenceManager.shared.isOnline(a.id)
+            let bOnline = PresenceManager.shared.isOnline(b.id)
+            if aOnline != bOnline {
+                return aOnline && !bOnline
+            }
+            return a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
+        }
+    }
+
     private var friendsTab: some View {
         Group {
             if friends.isEmpty {
@@ -124,7 +136,7 @@ struct FriendsView: View {
                     description: Text("Use the Find tab to search for people.")
                 )
             } else {
-                List(friends) { friend in
+                List(sortedFriends) { friend in
                     friendRow(friend)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
@@ -145,18 +157,27 @@ struct FriendsView: View {
             userAvatar(url: friend.photoURL, name: friend.displayName, handle: friend.handle)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(friend.displayName)
-                    .font(.body.weight(.medium))
+                HStack(spacing: 6) {
+                    Text(friend.displayName)
+                        .font(.body.weight(.medium))
+                    OnlineStatusDot(userId: friend.id)
+                }
                 Text("@\(friend.handle)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
+
+            if PresenceManager.shared.isOnline(friend.id) {
+                Text("Online")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+            }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(friend.displayName), @\(friend.handle)")
+        .accessibilityLabel("\(friend.displayName), @\(friend.handle)\(PresenceManager.shared.isOnline(friend.id) ? ", online" : "")")
         .accessibilityAction(named: "Remove friend") {
             friendToRemove = friend
             showRemoveConfirmation = true
@@ -461,6 +482,9 @@ struct FriendsView: View {
             sent = try await s
             blocked = try await b
             allUsers = try await u
+
+            // Hydrate presence state from friends (they have is_online field)
+            PresenceManager.shared.hydrate(users: friends)
         } catch {
             errorMessage = error.localizedDescription
             if isLoading { showError = true }

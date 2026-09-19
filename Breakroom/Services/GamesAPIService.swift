@@ -199,4 +199,31 @@ enum GamesAPIService {
             "/api/games/\(gameKey)/characters/\(characterId)/target-info/\(targetId)"
         )
     }
+
+    // MARK: - Probes
+
+    /// GET /api/games/haulonaut/characters/:id/probes — get active mission + pending report.
+    static func getProbes(characterId: Int) async throws -> HaulonautProbesResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/probes"
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/probes/deploy — deploy a probe with mission type.
+    static func deployProbe(characterId: Int, missionType: String, searchItemKey: String? = nil) async throws -> HaulonautDeployProbeResponse {
+        let body = HaulonautDeployProbeRequest(missionType: missionType, searchItemKey: searchItemKey)
+        return try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/probes/deploy",
+            method: "POST",
+            body: body
+        )
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/probes/:missionId/acknowledge — dismiss a probe report.
+    static func acknowledgeProbeReport(characterId: Int, missionId: Int) async throws -> HaulonautActionAck {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/probes/\(missionId)/acknowledge",
+            method: "POST"
+        )
+    }
 }

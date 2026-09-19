@@ -27,6 +27,9 @@ final class ChatSocketManager {
     var onScheduledMessageWarning: ((ScheduledMessageWarning) -> Void)?
     var onScheduledMessageMissed: ((ScheduledMessageMissed) -> Void)?
 
+    // Presence update handler
+    var onPresenceUpdate: ((Int, Bool) -> Void)?
+
     private var manager: SocketIO.SocketManager?
     private var socket: SocketIOClient?
 
@@ -320,6 +323,18 @@ final class ChatSocketManager {
             let missed = ScheduledMessageMissed(id: id, messagePreview: messagePreview)
             Task { @MainActor in
                 self?.onScheduledMessageMissed?(missed)
+            }
+        }
+
+        // Presence update
+        socket?.on("presence_update") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let userId = dict["userId"] as? Int,
+                  let isOnline = dict["isOnline"] as? Bool else {
+                return
+            }
+            Task { @MainActor in
+                self?.onPresenceUpdate?(userId, isOnline)
             }
         }
     }

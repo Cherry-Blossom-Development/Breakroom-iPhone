@@ -150,4 +150,25 @@ enum ProfileAPIService {
             method: "POST"
         )
     }
+
+    // MARK: - Online Status
+
+    /// GET /api/user/online-ids — returns all currently online user IDs.
+    static func getOnlineUserIds() async throws -> [Int] {
+        let response: OnlineIdsResponse = try await APIClient.shared.request("/api/user/online-ids")
+        return response.onlineUserIds
+    }
+}
+
+struct OnlineIdsResponse: Codable {
+    let onlineUserIds: [Int]
+
+    enum CodingKeys: String, CodingKey {
+        case onlineUserIds = "onlineUserIds"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        onlineUserIds = try container.decodeIfPresent([Int].self, forKey: .onlineUserIds) ?? []
+    }
 }
