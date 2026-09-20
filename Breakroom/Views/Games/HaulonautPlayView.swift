@@ -8,6 +8,7 @@ enum HaulonautViewportMode {
     case outpost
     case cargo
     case charts
+    case buoys     // Tracking buoy telemetry
     case docked    // Inside ship while landed on a planet
     case surface   // On planet surface exploring
     case terminal  // Sector comms terminal
@@ -96,6 +97,11 @@ struct HaulonautPlayView: View {
     @State private var showProbeDeploySheet = false
     @State private var showProbeSearchSheet = false
     @State private var isDeployingProbe = false
+
+    // Tracking buoys state
+    @State private var buoys: [HaulonautBuoy] = []
+    @State private var isDroppingBuoy = false
+    @State private var buoyAttachedAlert: (buoyId: Int, targetDisplayName: String)?
 
     // Sector arrival alerts (brief banners)
     @State private var sectorArrivalAlerts: [(id: UUID, displayName: String, isNpc: Bool)] = []
@@ -323,11 +329,18 @@ struct HaulonautPlayView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
+                // Buoy attached alert
+                if let alert = buoyAttachedAlert {
+                    buoyAttachedBanner(targetDisplayName: alert.targetDisplayName)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 Spacer()
             }
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.3), value: sectorArrivalAlerts.count)
             .animation(.easeInOut(duration: 0.3), value: incomingTradeOfferBanner?.id)
+            .animation(.easeInOut(duration: 0.3), value: buoyAttachedAlert?.buoyId)
         }
     }
 
@@ -416,6 +429,37 @@ struct HaulonautPlayView: View {
         .padding(.horizontal)
     }
 
+    private func buoyAttachedBanner(targetDisplayName: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "location.fill")
+                .font(.caption)
+                .foregroundStyle(CRTColors.stat)
+
+            Text("Buoy attached to \(targetDisplayName)")
+                .font(.caption.monospaced().bold())
+                .foregroundStyle(CRTColors.tagline)
+
+            Spacer()
+
+            Button {
+                buoyAttachedAlert = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(CRTColors.muted)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(CRTColors.stat.opacity(0.2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(CRTColors.stat, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal)
+    }
+
     // MARK: - Viewport Content
 
     @ViewBuilder
@@ -432,6 +476,8 @@ struct HaulonautPlayView: View {
                 cargoContent
             case .charts:
                 chartsContent
+            case .buoys:
+                buoysContent
             case .docked:
                 dockedContent
             case .surface:
@@ -975,17 +1021,7 @@ struct HaulonautPlayView: View {
                     .foregroundStyle(CRTColors.muted)
             } else {
                 ForEach(inventory) { item in
-                    HStack {
-                        Text(item.name)
-                            .font(.body.monospaced())
-                            .foregroundStyle(CRTColors.tagline)
-
-                        Spacer()
-
-                        Text("×\(item.quantity)")
-                            .font(.body.monospaced().bold())
-                            .foregroundStyle(CRTColors.title)
-                    }
+                    cargoItemRow(item)
                 }
             }
 
@@ -1001,6 +1037,46 @@ struct HaulonautPlayView: View {
             probeDeploySheet
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+    }
+
+    @ViewBuilder
+    private func cargoItemRow(_ item: HaulonautInventoryItem) -> some View {
+        if item.itemKey == "tracking_buoy" {
+            Button {
+                HaulonautSoundService.play(.click)
+                Task { await dropBuoy() }
+            } label: {
+                HStack {
+                    Text(item.name)
+                        .font(.body.monospaced())
+                        .foregroundStyle(CRTColors.tagline)
+
+                    Spacer()
+
+                    Text("×\(item.quantity)")
+                        .font(.body.monospaced().bold())
+                        .foregroundStyle(CRTColors.title)
+
+                    Image(systemName: "arrow.down.circle")
+                        .font(.caption)
+                        .foregroundStyle(CRTColors.stat)
+                }
+            }
+            .disabled(isDroppingBuoy)
+            .accessibilityLabel("Drop \(item.name) in current sector")
+        } else {
+            HStack {
+                Text(item.name)
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.tagline)
+
+                Spacer()
+
+                Text("×\(item.quantity)")
+                    .font(.body.monospaced().bold())
+                    .foregroundStyle(CRTColors.title)
+            }
         }
     }
 
@@ -1242,6 +1318,73 @@ struct HaulonautPlayView: View {
         }
     }
 
+    // MARK: - Buoys Content
+
+    private var buoysContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TRACKING BUOYS")
+                .font(.headline.monospaced().bold())
+                .foregroundStyle(CRTColors.title)
+
+            Text("Deployed buoys and their targets")
+                .font(.caption.monospaced())
+                .foregroundStyle(CRTColors.muted)
+
+            if buoys.isEmpty {
+                Text("No buoys deployed yet.")
+                    .font(.body.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+
+                Text("Purchase Magnetic Tracking Buoys from an outpost, then drop them from your Cargo.")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(CRTColors.muted)
+                    .padding(.top, 4)
+            } else {
+                ForEach(buoys) { buoy in
+                    buoyRow(buoy)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func buoyRow(_ buoy: HaulonautBuoy) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: buoy.status == "attached" ? "location.fill" : "circle.dotted")
+                .font(.title3)
+                .foregroundStyle(buoy.status == "attached" ? CRTColors.stat : CRTColors.muted)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if buoy.status == "attached", let target = buoy.targetDisplayName {
+                    Text("Tracking \(target)")
+                        .font(.subheadline.monospaced().weight(.medium))
+                        .foregroundStyle(CRTColors.tagline)
+
+                    Text("Currently in Sector \(buoy.sectorNumber)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.stat)
+                } else {
+                    Text("Waiting in Sector \(buoy.sectorNumber)")
+                        .font(.subheadline.monospaced().weight(.medium))
+                        .foregroundStyle(CRTColors.muted)
+
+                    Text("Not yet attached")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(CRTColors.muted)
+                }
+            }
+
+            Spacer()
+        }
+        .padding()
+        .background(CRTColors.border.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .accessibilityLabel(buoy.status == "attached"
+            ? "Tracking \(buoy.targetDisplayName ?? "unknown") in Sector \(buoy.sectorNumber)"
+            : "Buoy waiting in Sector \(buoy.sectorNumber)")
+    }
+
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
@@ -1315,6 +1458,11 @@ struct HaulonautPlayView: View {
                     Task { await viewStarCharts() }
                 }
                 .accessibilityIdentifier("haulonautStarChartsButton")
+
+                actionChip(icon: "antenna.radiowaves.left.and.right", label: "Buoys") {
+                    Task { await viewBuoys() }
+                }
+                .accessibilityIdentifier("haulonautBuoysButton")
 
                 actionChip(icon: "terminal", label: "Terminal") {
                     HaulonautSoundService.play(.open)
@@ -1430,7 +1578,7 @@ struct HaulonautPlayView: View {
 
     private func updateAmbientSound(for mode: HaulonautViewportMode) {
         switch mode {
-        case .space, .charts, .cargo, .terminal:
+        case .space, .charts, .buoys, .cargo, .terminal:
             HaulonautSoundService.playAmbient(.space)
         case .outpost:
             HaulonautSoundService.playAmbient(.outpost)
@@ -1610,6 +1758,26 @@ struct HaulonautPlayView: View {
                 }
             }
         }
+
+        // Buoy attached event
+        socketManager.onBuoyAttached = { [self] buoyId, targetDisplayName in
+            buoyAttachedAlert = (buoyId: buoyId, targetDisplayName: targetDisplayName)
+            addSystemMessage("[BUOY] Your tracking buoy just attached to \(targetDisplayName)'s ship.")
+            HaulonautSoundService.play(.notify)
+
+            // Auto-dismiss after 5 seconds
+            Task {
+                try? await Task.sleep(for: .seconds(5))
+                if buoyAttachedAlert?.buoyId == buoyId {
+                    buoyAttachedAlert = nil
+                }
+            }
+
+            // Refresh buoys if on buoys screen
+            if viewportMode == .buoys {
+                Task { buoys = try await GamesAPIService.getBuoys(characterId: characterId) }
+            }
+        }
     }
 
     private func loadProbeStatus() async {
@@ -1738,6 +1906,8 @@ struct HaulonautPlayView: View {
             message = "Closing the cargo manifest."
         case .charts:
             message = "Closing star charts."
+        case .buoys:
+            message = "Closing buoy telemetry."
         case .terminal:
             message = "Closing terminal."
         case .docked:
@@ -1796,6 +1966,39 @@ struct HaulonautPlayView: View {
             HaulonautSoundService.play(.error)
             showSnackbar("Failed to load star charts: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Buoys Actions
+
+    private func viewBuoys() async {
+        HaulonautSoundService.play(.open)
+        do {
+            buoys = try await GamesAPIService.getBuoys(characterId: characterId)
+            viewportMode = .buoys
+            showSnackbar("Checking tracking buoy telemetry.")
+        } catch {
+            HaulonautSoundService.play(.error)
+            showSnackbar("Failed to load buoys: \(error.localizedDescription)")
+        }
+    }
+
+    private func dropBuoy() async {
+        guard !isDroppingBuoy else { return }
+        isDroppingBuoy = true
+
+        do {
+            let response = try await GamesAPIService.dropBuoy(characterId: characterId)
+            inventory = response.inventory
+            buoys = response.buoys
+            HaulonautSoundService.play(.success)
+            showSnackbar(response.message)
+            viewportMode = .space
+        } catch {
+            HaulonautSoundService.play(.error)
+            showSnackbar("Failed to drop buoy: \(error.localizedDescription)")
+        }
+
+        isDroppingBuoy = false
     }
 
     private func setCourse(to location: HaulonautKnownLocation) async {

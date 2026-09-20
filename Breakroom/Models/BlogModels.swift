@@ -165,13 +165,31 @@ struct BlogSettings: Codable, Identifiable {
     let id: Int
     let blogUrl: String
     let blogName: String
+    let isPublic: Bool
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case blogUrl = "blog_url"
         case blogName = "blog_name"
+        case isPublic = "is_public"
         case createdAt = "created_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        blogUrl = try container.decode(String.self, forKey: .blogUrl)
+        blogName = try container.decode(String.self, forKey: .blogName)
+        // Backend may send 0/1 or true/false, default to true if missing
+        if let boolValue = try? container.decodeIfPresent(Bool.self, forKey: .isPublic) {
+            isPublic = boolValue ?? true
+        } else if let intValue = try? container.decodeIfPresent(Int.self, forKey: .isPublic) {
+            isPublic = intValue == 1
+        } else {
+            isPublic = true  // Default to discoverable
+        }
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
     }
 }
 
@@ -200,9 +218,11 @@ struct UpdateBlogPostRequest: Encodable {
 struct SaveBlogSettingsRequest: Encodable {
     let blogUrl: String
     let blogName: String
+    let isPublic: Bool
 
     enum CodingKeys: String, CodingKey {
         case blogUrl = "blog_url"
         case blogName = "blog_name"
+        case isPublic = "is_public"
     }
 }

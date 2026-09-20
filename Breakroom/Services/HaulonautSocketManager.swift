@@ -44,6 +44,9 @@ final class HaulonautSocketManager {
     /// Called when combat occurs in sector (attackerName, targetName, damage, targetDied)
     var onCombatEvent: ((String, String, Int, Bool) -> Void)?
 
+    /// Called when a tracking buoy attaches to a target (buoyId, targetDisplayName)
+    var onBuoyAttached: ((Int, String) -> Void)?
+
     // MARK: - Lifecycle
 
     private init() {}
@@ -294,6 +297,19 @@ final class HaulonautSocketManager {
 
             Task { @MainActor in
                 self?.onCombatEvent?(attackerName, targetName, damage, targetDied)
+            }
+        }
+
+        // Buoy attached event
+        socket?.on("haulonaut_buoy_attached") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let buoyId = dict["buoyId"] as? Int,
+                  let targetDisplayName = dict["targetDisplayName"] as? String else {
+                return
+            }
+
+            Task { @MainActor in
+                self?.onBuoyAttached?(buoyId, targetDisplayName)
             }
         }
     }

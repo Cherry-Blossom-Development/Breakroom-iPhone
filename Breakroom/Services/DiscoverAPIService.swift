@@ -16,4 +16,12 @@ enum DiscoverAPIService {
         )
         return response.storefronts
     }
+
+    /// Fetch public blogs that authors have opted to make discoverable
+    static func getPublicBlogs() async throws -> [DiscoverBlog] {
+        let response: DiscoverBlogsResponse = try await APIClient.shared.request(
+            "/api/blog/public"
+        )
+        return response.blogs
+    }
 }

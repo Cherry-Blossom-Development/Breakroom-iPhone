@@ -5,6 +5,7 @@ struct BlogSettingsView: View {
 
     @State private var blogName = ""
     @State private var blogUrl = ""
+    @State private var isPublic = true  // Default to discoverable
     @State private var existingSettings: BlogSettings?
     @State private var isLoading = true
     @State private var isSaving = false
@@ -61,6 +62,11 @@ struct BlogSettingsView: View {
                     }
                 }
 
+                Section("Visibility") {
+                    Toggle("Make Discoverable", isOn: $isPublic)
+                }
+                .accessibilityIdentifier("blogDiscoverabilitySection")
+
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
@@ -106,6 +112,7 @@ struct BlogSettingsView: View {
             if let settings {
                 blogName = settings.blogName
                 blogUrl = settings.blogUrl
+                isPublic = settings.isPublic
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -159,12 +166,14 @@ struct BlogSettingsView: View {
             if existingSettings != nil {
                 existingSettings = try await BlogAPIService.updateSettings(
                     blogUrl: trimmedUrl,
-                    blogName: trimmedName
+                    blogName: trimmedName,
+                    isPublic: isPublic
                 )
             } else {
                 existingSettings = try await BlogAPIService.createSettings(
                     blogUrl: trimmedUrl,
-                    blogName: trimmedName
+                    blogName: trimmedName,
+                    isPublic: isPublic
                 )
             }
             dismiss()

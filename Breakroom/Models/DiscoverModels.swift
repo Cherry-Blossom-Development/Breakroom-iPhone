@@ -83,3 +83,29 @@ struct DiscoverStorefront: Codable, Identifiable, Hashable {
 struct DiscoverStorefrontsResponse: Decodable {
     let storefronts: [DiscoverStorefront]
 }
+
+// MARK: - Public Blog
+
+struct DiscoverBlog: Codable, Identifiable, Hashable {
+    let blogUrl: String
+    let blogName: String
+    let postCount: Int
+    let latestPostTitle: String?
+    let latestPostExcerpt: String?
+    let artist: DiscoverArtist
+
+    var id: String { blogUrl }
+
+    enum CodingKeys: String, CodingKey {
+        case blogUrl = "blog_url"
+        case blogName = "blog_name"
+        case postCount = "post_count"
+        case latestPostTitle = "latest_post_title"
+        case latestPostExcerpt = "latest_post_excerpt"
+        case artist
+    }
+}
+
+struct DiscoverBlogsResponse: Decodable {
+    let blogs: [DiscoverBlog]
+}

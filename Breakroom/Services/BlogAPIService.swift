@@ -78,8 +78,8 @@ enum BlogAPIService {
         return response.settings
     }
 
-    static func createSettings(blogUrl: String, blogName: String) async throws -> BlogSettings {
-        let body = SaveBlogSettingsRequest(blogUrl: blogUrl, blogName: blogName)
+    static func createSettings(blogUrl: String, blogName: String, isPublic: Bool = true) async throws -> BlogSettings {
+        let body = SaveBlogSettingsRequest(blogUrl: blogUrl, blogName: blogName, isPublic: isPublic)
         let response: BlogSettingsResponse = try await APIClient.shared.request(
             "/api/blog/settings",
             method: "POST",
@@ -88,8 +88,8 @@ enum BlogAPIService {
         return response.settings!
     }
 
-    static func updateSettings(blogUrl: String, blogName: String) async throws -> BlogSettings {
-        let body = SaveBlogSettingsRequest(blogUrl: blogUrl, blogName: blogName)
+    static func updateSettings(blogUrl: String, blogName: String, isPublic: Bool) async throws -> BlogSettings {
+        let body = SaveBlogSettingsRequest(blogUrl: blogUrl, blogName: blogName, isPublic: isPublic)
         let response: BlogSettingsResponse = try await APIClient.shared.request(
             "/api/blog/settings",
             method: "PUT",

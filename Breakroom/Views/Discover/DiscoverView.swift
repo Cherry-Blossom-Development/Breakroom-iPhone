@@ -3,6 +3,7 @@ import SwiftUI
 struct DiscoverView: View {
     @State private var storefronts: [DiscoverStorefront] = []
     @State private var galleries: [DiscoverGallery] = []
+    @State private var blogs: [DiscoverBlog] = []
     @State private var isLoading = true
     @State private var error: String?
     @State private var searchQuery = ""
@@ -10,6 +11,7 @@ struct DiscoverView: View {
     // Navigation
     @State private var selectedStorefront: DiscoverStorefront?
     @State private var selectedGallery: DiscoverGallery?
+    @State private var selectedBlog: DiscoverBlog?
 
     private var filteredStorefronts: [DiscoverStorefront] {
         let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
@@ -28,6 +30,16 @@ struct DiscoverView: View {
             gallery.galleryName.lowercased().contains(query) ||
             gallery.artist.displayName.lowercased().contains(query) ||
             gallery.artist.handle.lowercased().contains(query)
+        }
+    }
+
+    private var filteredBlogs: [DiscoverBlog] {
+        let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return blogs }
+        return blogs.filter { blog in
+            blog.blogName.lowercased().contains(query) ||
+            blog.artist.displayName.lowercased().contains(query) ||
+            blog.artist.handle.lowercased().contains(query)
         }
     }
 
@@ -60,6 +72,9 @@ struct DiscoverView: View {
         .navigationDestination(item: $selectedGallery) { gallery in
             PublicGalleryView(galleryUrl: gallery.galleryUrl)
         }
+        .navigationDestination(item: $selectedBlog) { blog in
+            PublicBlogView(blogUrl: blog.blogUrl)
+        }
     }
 
     private var discoverContent: some View {
@@ -82,6 +97,9 @@ struct DiscoverView: View {
 
                 // Galleries Section
                 galleriesSection
+
+                // Blogs Section
+                blogsSection
             }
             .padding(.vertical)
         }
@@ -159,6 +177,37 @@ struct DiscoverView: View {
         }
     }
 
+    // MARK: - Blogs Section
+
+    private var blogsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Blogs")
+                .font(.title2.bold())
+                .padding(.horizontal)
+
+            if filteredBlogs.isEmpty {
+                emptyState(
+                    message: blogs.isEmpty
+                        ? "No blogs to discover yet."
+                        : "No blogs match your search."
+                )
+            } else {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ], spacing: 16) {
+                    ForEach(filteredBlogs) { blog in
+                        DiscoverBlogCard(blog: blog)
+                            .onTapGesture {
+                                selectedBlog = blog
+                            }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
     private func emptyState(message: String) -> some View {
         Text(message)
             .font(.subheadline)
@@ -176,10 +225,12 @@ struct DiscoverView: View {
         do {
             async let galleriesTask = DiscoverAPIService.getPublicGalleries()
             async let storefrontsTask = DiscoverAPIService.getPublicStorefronts()
+            async let blogsTask = DiscoverAPIService.getPublicBlogs()
 
-            let (loadedGalleries, loadedStorefronts) = try await (galleriesTask, storefrontsTask)
+            let (loadedGalleries, loadedStorefronts, loadedBlogs) = try await (galleriesTask, storefrontsTask, blogsTask)
             galleries = loadedGalleries
             storefronts = loadedStorefronts
+            blogs = loadedBlogs
         } catch {
             self.error = "Failed to load Discover content"
         }
@@ -375,6 +426,164 @@ struct PublicGalleryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let url = URL(string: "https://www.prosaurus.com/g/\(galleryUrl)") {
+                UIApplication.shared.open(url)
+            }
+        }
+    }
+}
+
+// MARK: - Discover Blog Card
+
+private struct DiscoverBlogCard: View {
+    let blog: DiscoverBlog
+
+    @ScaledMetric(relativeTo: .caption) private var avatarSize: CGFloat = 24
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var artistPhotoURL: URL? {
+        guard let path = blog.artist.photoPath else { return nil }
+        return URL(string: "\(APIClient.shared.baseURL)/api/uploads/\(path)")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Blog preview (shows latest post title/excerpt instead of cover image)
+            blogPreview
+                .aspectRatio(4/3, contentMode: .fit)
+                .clipped()
+
+            // Info
+            VStack(alignment: .leading, spacing: 8) {
+                Text(blog.blogName)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+
+                // Artist row
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) {
+                        artistAvatar
+                            .frame(width: avatarSize, height: avatarSize)
+                            .clipShape(Circle())
+
+                        Text(blog.artist.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        artistAvatar
+                            .frame(width: avatarSize, height: avatarSize)
+                            .clipShape(Circle())
+
+                        Text(blog.artist.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Text("\(blog.postCount) post\(blog.postCount == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(12)
+        }
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var blogPreview: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let title = blog.latestPostTitle {
+                Text("Latest post")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tint)
+                    .textCase(.uppercase)
+
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(2)
+
+                if let excerpt = blog.latestPostExcerpt, !excerpt.isEmpty {
+                    Text(excerpt)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+            } else {
+                Spacer()
+                Text("No posts yet")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(
+            LinearGradient(
+                colors: [Color(.tertiarySystemBackground), Color(.secondarySystemBackground)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
+    @ViewBuilder
+    private var artistAvatar: some View {
+        if let url = artistPhotoURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure, .empty:
+                    avatarPlaceholder
+                @unknown default:
+                    avatarPlaceholder
+                }
+            }
+        } else {
+            avatarPlaceholder
+        }
+    }
+
+    private var avatarPlaceholder: some View {
+        ZStack {
+            Color(.tertiarySystemFill)
+            Text(blog.artist.initial)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - Public Blog View (placeholder for now)
+
+struct PublicBlogView: View {
+    let blogUrl: String
+
+    var body: some View {
+        // TODO: Implement full public blog view
+        // For now, open in Safari
+        VStack(spacing: 16) {
+            Image(systemName: "text.book.closed")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+
+            Text("Opening blog...")
+                .font(.headline)
+
+            Text("@\(blogUrl)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .navigationTitle("Blog")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let url = URL(string: "https://www.prosaurus.com/b/\(blogUrl)") {
                 UIApplication.shared.open(url)
             }
         }

@@ -226,4 +226,22 @@ enum GamesAPIService {
             method: "POST"
         )
     }
+
+    // MARK: - Tracking Buoys
+
+    /// GET /api/games/haulonaut/characters/:id/buoys — get all deployed buoys.
+    static func getBuoys(characterId: Int) async throws -> [HaulonautBuoy] {
+        let response: HaulonautBuoysResponse = try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/buoys"
+        )
+        return response.buoys
+    }
+
+    /// POST /api/games/haulonaut/characters/:id/buoys/drop — drop a tracking buoy in current sector.
+    static func dropBuoy(characterId: Int) async throws -> HaulonautDropBuoyResponse {
+        try await APIClient.shared.request(
+            "/api/games/\(gameKey)/characters/\(characterId)/buoys/drop",
+            method: "POST"
+        )
+    }
 }

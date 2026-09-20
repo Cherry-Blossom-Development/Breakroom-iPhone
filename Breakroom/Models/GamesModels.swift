@@ -835,6 +835,50 @@ struct HaulonautDeployProbeResponse: Codable {
     let probe: HaulonautProbeMission?
 }
 
+// MARK: - Magnetic Tracking Buoys (see migration 075)
+
+/// A deployed tracking buoy. While status is "dropped", sectorNumber is where
+/// it was left. Once "attached", sectorNumber is the target's LIVE location.
+struct HaulonautBuoy: Codable, Identifiable {
+    let id: Int
+    let status: String
+    let sectorNumber: Int
+    let targetDisplayName: String?
+    let droppedAt: String?
+    let attachedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case status
+        case sectorNumber = "sectorNumber"
+        case targetDisplayName = "targetDisplayName"
+        case droppedAt = "droppedAt"
+        case attachedAt = "attachedAt"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        status = try container.decode(String.self, forKey: .status)
+        sectorNumber = try container.decode(Int.self, forKey: .sectorNumber)
+        targetDisplayName = try container.decodeIfPresent(String.self, forKey: .targetDisplayName)
+        droppedAt = try container.decodeIfPresent(String.self, forKey: .droppedAt)
+        attachedAt = try container.decodeIfPresent(String.self, forKey: .attachedAt)
+    }
+}
+
+/// GET /buoys response.
+struct HaulonautBuoysResponse: Codable {
+    let buoys: [HaulonautBuoy]
+}
+
+/// POST /buoys/drop response.
+struct HaulonautDropBuoyResponse: Codable {
+    let message: String
+    let inventory: [HaulonautInventoryItem]
+    let buoys: [HaulonautBuoy]
+}
+
 // MARK: - Sector Chat Message
 
 /// A chat message in the sector (via Socket.IO haulonaut_sector_message).
