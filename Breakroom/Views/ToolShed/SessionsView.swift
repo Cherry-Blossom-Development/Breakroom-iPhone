@@ -195,7 +195,7 @@ struct SessionsView: View {
             await loadAllData()
         }
         .onAppear {
-            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.sessions.rawValue) }
+            Task { _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.sessions.rawValue) }
         }
         .alert("Error", isPresented: .constant(errorMessage != nil)) {
             Button("OK") { errorMessage = nil }
@@ -581,8 +581,8 @@ struct SessionsView: View {
             shortlistSessions.removeAll { $0.id == session.id }
 
             // Update item count in local shortlists
-            if let index = shortlists.firstIndex(where: { $0.id == shortlist.id }) {
-                // Create a new shortlist with decremented count - we can't mutate directly
+            if shortlists.contains(where: { $0.id == shortlist.id }) {
+                // Reload shortlists to get updated item count
                 await loadShortlists()
             }
         } catch {

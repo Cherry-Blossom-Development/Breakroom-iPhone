@@ -568,7 +568,7 @@ struct MashupView: View {
             // Use .allowBluetoothA2DP to support Bluetooth headphones
             // Don't override output port - let iOS route to connected headphones
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothA2DP, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothA2DP])
             try audioSession.setActive(true)
 
             // Prepare recorder

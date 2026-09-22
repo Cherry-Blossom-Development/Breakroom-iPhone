@@ -27,9 +27,9 @@ struct LinkifiedText: View {
             // Convert NSRange to Swift Range<String.Index>
             guard let swiftRange = Range(match.range, in: text) else { continue }
 
-            // Get the range in the AttributedString
-            guard let lowerBound = AttributedString.Index(swiftRange.lowerBound, within: result),
-                  let upperBound = AttributedString.Index(swiftRange.upperBound, within: result) else {
+            // Verify the range exists in the AttributedString
+            guard let _ = AttributedString.Index(swiftRange.lowerBound, within: result),
+                  let _ = AttributedString.Index(swiftRange.upperBound, within: result) else {
                 continue
             }
 
@@ -93,7 +93,7 @@ struct LinkifiedText: View {
             return (url, "")
         }
 
-        var trailingRange = Range(match.range, in: url)!
+        let trailingRange = Range(match.range, in: url)!
         var trailing = String(url[trailingRange])
         var core = String(url[..<trailingRange.lowerBound])
 

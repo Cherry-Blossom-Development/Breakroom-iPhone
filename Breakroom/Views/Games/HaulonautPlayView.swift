@@ -1775,7 +1775,7 @@ struct HaulonautPlayView: View {
 
             // Refresh buoys if on buoys screen
             if viewportMode == .buoys {
-                Task { buoys = try await GamesAPIService.getBuoys(characterId: characterId) }
+                Task { buoys = (try? await GamesAPIService.getBuoys(characterId: characterId)) ?? buoys }
             }
         }
     }

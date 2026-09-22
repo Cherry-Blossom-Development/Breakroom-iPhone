@@ -1,5 +1,5 @@
 import SwiftUI
-import PhotosUI
+@preconcurrency import PhotosUI
 
 private let presetBackgroundColors = [
     "#1a1a2e", "#16213e", "#0f3460", "#533483",
@@ -110,7 +110,7 @@ struct BandPageSetupView: View {
             await viewModel.load()
         }
         .onAppear {
-            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.bandPages.rawValue) }
+            Task { _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.bandPages.rawValue) }
         }
         .onChange(of: selectedPhoto) {
             guard let item = selectedPhoto else { return }
@@ -293,19 +293,21 @@ private struct BackgroundPhotoCard: View {
                     .foregroundStyle(.secondary)
             }
 
+            let isUploading = viewModel.isUploadingBackground
+            let hasPhoto = viewModel.backgroundPhotoUrl != nil
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                 HStack {
-                    if viewModel.isUploadingBackground {
+                    if isUploading {
                         ProgressView()
                             .controlSize(.small)
                         Text("Uploading...")
                     } else {
-                        Text(viewModel.backgroundPhotoUrl != nil ? "Replace Photo" : "Upload Photo")
+                        Text(hasPhoto ? "Replace Photo" : "Upload Photo")
                     }
                 }
             }
             .buttonStyle(.bordered)
-            .disabled(viewModel.isUploadingBackground)
+            .disabled(isUploading)
         }
         .padding()
         .background(Color(.secondarySystemBackground))

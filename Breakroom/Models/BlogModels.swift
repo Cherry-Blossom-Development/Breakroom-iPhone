@@ -182,9 +182,9 @@ struct BlogSettings: Codable, Identifiable {
         blogUrl = try container.decode(String.self, forKey: .blogUrl)
         blogName = try container.decode(String.self, forKey: .blogName)
         // Backend may send 0/1 or true/false, default to true if missing
-        if let boolValue = try? container.decodeIfPresent(Bool.self, forKey: .isPublic) {
-            isPublic = boolValue ?? true
-        } else if let intValue = try? container.decodeIfPresent(Int.self, forKey: .isPublic) {
+        if let boolValue = try? container.decode(Bool.self, forKey: .isPublic) {
+            isPublic = boolValue
+        } else if let intValue = try? container.decode(Int.self, forKey: .isPublic) {
             isPublic = intValue == 1
         } else {
             isPublic = true  // Default to discoverable

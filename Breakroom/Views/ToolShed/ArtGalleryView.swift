@@ -1,5 +1,5 @@
 import SwiftUI
-import PhotosUI
+@preconcurrency import PhotosUI
 
 struct ArtGalleryView: View {
     @State private var settings: GallerySettings?
@@ -56,7 +56,7 @@ struct ArtGalleryView: View {
             await loadData()
         }
         .onAppear {
-            Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.artGallery.rawValue) }
+            Task { _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.artGallery.rawValue) }
         }
         .refreshable {
             await loadData()
@@ -621,8 +621,9 @@ struct UploadArtworkSheet: View {
         NavigationStack {
             Form {
                 Section("Image") {
+                    let imageData = selectedImageData
                     PhotosPicker(selection: $selectedItem, matching: .images) {
-                        if let data = selectedImageData, let uiImage = UIImage(data: data) {
+                        if let data = imageData, let uiImage = UIImage(data: data) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)

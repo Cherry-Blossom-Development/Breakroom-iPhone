@@ -1,5 +1,5 @@
 import SwiftUI
-import PhotosUI
+@preconcurrency import PhotosUI
 
 struct CollectionDetailView: View {
     let collection: Collection
@@ -658,6 +658,10 @@ struct CollectionItemImage: View {
 
     @State private var image: UIImage?
     @State private var failed = false
+
+    nonisolated init(path: String) {
+        self.path = path
+    }
 
     var body: some View {
         Group {

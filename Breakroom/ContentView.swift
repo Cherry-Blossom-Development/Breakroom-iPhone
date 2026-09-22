@@ -530,21 +530,21 @@ struct MainTabView: View {
             // Track feature usage when switching tabs
             Task {
                 switch newTab {
-                case 1: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.chat.rawValue)
-                case 3: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.companyPortal.rawValue)
-                case 4: await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.toolShed.rawValue)
+                case 1: _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.chat.rawValue)
+                case 3: _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.companyPortal.rawValue)
+                case 4: _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.toolShed.rawValue)
                 default: break
                 }
             }
         }
         .onChange(of: showBlogManagement) { _, isShowing in
             if isShowing {
-                Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.blog.rawValue) }
+                Task { _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.blog.rawValue) }
             }
         }
         .onChange(of: showFriends) { _, isShowing in
             if isShowing {
-                Task { await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.friends.rawValue) }
+                Task { _ = await FeatureUsageTracker.shared.recordIfNeeded(AnalyticsFeature.friends.rawValue) }
             }
         }
         } // Close VStack

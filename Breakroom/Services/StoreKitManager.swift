@@ -18,15 +18,9 @@ final class StoreKitManager {
     private(set) var isPurchasing = false
     private(set) var errorMessage: String?
 
-    private nonisolated(unsafe) var transactionListener: Task<Void, Error>?
-
     private init() {
-        // Start listening for transactions
-        transactionListener = listenForTransactions()
-    }
-
-    deinit {
-        transactionListener?.cancel()
+        // Start listening for transactions (singleton never deallocates, so no need to store/cancel)
+        _ = listenForTransactions()
     }
 
     // MARK: - Public Methods
