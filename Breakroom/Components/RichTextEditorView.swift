@@ -249,10 +249,10 @@ class FormRichTextCoordinator: NSObject, WKNavigationDelegate, ObservableObject 
         return result as? String
     }
 
-    nonisolated func webView(
+    func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
-        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void
     ) {
         if navigationAction.navigationType == .other {
             decisionHandler(.allow)

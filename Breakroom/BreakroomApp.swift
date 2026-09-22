@@ -23,12 +23,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
 
         // Try to get FCM token directly after a short delay
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(3))
             do {
                 let fcmToken = try await Messaging.messaging().token()
                 appLogger.warning("Direct FCM token fetch succeeded: \(fcmToken.prefix(20))...")
-                await PushNotificationManager.shared.handleNewToken(fcmToken)
+                PushNotificationManager.shared.handleNewToken(fcmToken)
                 if KeychainManager.token != nil {
                     appLogger.warning("User logged in, registering token...")
                     await PushNotificationManager.shared.registerTokenWithServer()
@@ -51,11 +51,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         Messaging.messaging().apnsToken = deviceToken
 
         // Explicitly fetch FCM token
-        Task {
+        Task { @MainActor in
             do {
                 let fcmToken = try await Messaging.messaging().token()
                 appLogger.warning("Got FCM token from APNs callback: \(fcmToken.prefix(20))...")
-                await PushNotificationManager.shared.handleNewToken(fcmToken)
+                PushNotificationManager.shared.handleNewToken(fcmToken)
                 if KeychainManager.token != nil {
                     await PushNotificationManager.shared.registerTokenWithServer()
                 }
@@ -92,7 +92,7 @@ struct BreakroomApp: App {
                 .environment(badgeStore)
                 .task {
                     // Request push notification permissions on launch
-                    await PushNotificationManager.shared.requestPermissions()
+                    _ = await PushNotificationManager.shared.requestPermissions()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {

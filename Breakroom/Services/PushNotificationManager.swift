@@ -38,9 +38,7 @@ final class PushNotificationManager: NSObject {
             await checkPermissionStatus()
 
             if granted {
-                await MainActor.run {
-                    UIApplication.shared.registerForRemoteNotifications()
-                }
+                UIApplication.shared.registerForRemoteNotifications()
                 pushLogger.info("Push notification permissions granted")
             } else {
                 pushLogger.info("Push notification permissions denied")
@@ -63,13 +61,13 @@ final class PushNotificationManager: NSObject {
     /// Clears all delivered notifications and resets the app badge
     func clearAllNotifications() {
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        UNUserNotificationCenter.current().setBadgeCount(0)
         pushLogger.info("Cleared all notifications and badge")
     }
 
     /// Clears the app badge only
     func clearBadge() {
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        UNUserNotificationCenter.current().setBadgeCount(0)
     }
 
     // MARK: - Token Management
