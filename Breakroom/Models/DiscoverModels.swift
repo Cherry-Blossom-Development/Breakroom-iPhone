@@ -54,6 +54,9 @@ struct DiscoverGallery: Codable, Identifiable, Hashable {
 
 struct DiscoverGalleriesResponse: Decodable {
     let galleries: [DiscoverGallery]
+    let total: Int
+    let limit: Int?
+    let offset: Int?
 }
 
 // MARK: - Public Storefront (Showcase)
@@ -82,6 +85,9 @@ struct DiscoverStorefront: Codable, Identifiable, Hashable {
 
 struct DiscoverStorefrontsResponse: Decodable {
     let storefronts: [DiscoverStorefront]
+    let total: Int
+    let limit: Int?
+    let offset: Int?
 }
 
 // MARK: - Public Blog
@@ -108,4 +114,18 @@ struct DiscoverBlog: Codable, Identifiable, Hashable {
 
 struct DiscoverBlogsResponse: Decodable {
     let blogs: [DiscoverBlog]
+    let total: Int
+    let limit: Int?
+    let offset: Int?
+}
+
+// MARK: - Pagination Helper
+
+/// Generic pagination state for a Discover section
+struct DiscoverSectionState<T> {
+    var items: [T] = []
+    var total: Int = 0
+    var isLoadingMore: Bool = false
+
+    var hasMore: Bool { items.count < total }
 }

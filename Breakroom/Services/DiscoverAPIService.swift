@@ -1,27 +1,45 @@
 import Foundation
 
+/// Default page size for Discover sections, matching web/Android clients
+private let discoverPageSize = 8
+
 enum DiscoverAPIService {
-    /// Fetch public galleries that artists have opted to make discoverable
-    static func getPublicGalleries() async throws -> [DiscoverGallery] {
-        let response: DiscoverGalleriesResponse = try await APIClient.shared.request(
-            "/api/gallery/public"
-        )
-        return response.galleries
+    /// Fetch public galleries with pagination and optional search
+    static func getPublicGalleries(
+        limit: Int = discoverPageSize,
+        offset: Int = 0,
+        query: String? = nil
+    ) async throws -> DiscoverGalleriesResponse {
+        var path = "/api/gallery/public?limit=\(limit)&offset=\(offset)"
+        if let q = query?.trimmingCharacters(in: .whitespaces), !q.isEmpty {
+            path += "&q=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q)"
+        }
+        return try await APIClient.shared.request(path)
     }
 
-    /// Fetch public storefronts (showcases) that artists have opted to make discoverable
-    static func getPublicStorefronts() async throws -> [DiscoverStorefront] {
-        let response: DiscoverStorefrontsResponse = try await APIClient.shared.request(
-            "/api/storefront/public"
-        )
-        return response.storefronts
+    /// Fetch public storefronts (showcases) with pagination and optional search
+    static func getPublicStorefronts(
+        limit: Int = discoverPageSize,
+        offset: Int = 0,
+        query: String? = nil
+    ) async throws -> DiscoverStorefrontsResponse {
+        var path = "/api/storefront/public?limit=\(limit)&offset=\(offset)"
+        if let q = query?.trimmingCharacters(in: .whitespaces), !q.isEmpty {
+            path += "&q=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q)"
+        }
+        return try await APIClient.shared.request(path)
     }
 
-    /// Fetch public blogs that authors have opted to make discoverable
-    static func getPublicBlogs() async throws -> [DiscoverBlog] {
-        let response: DiscoverBlogsResponse = try await APIClient.shared.request(
-            "/api/blog/public"
-        )
-        return response.blogs
+    /// Fetch public blogs with pagination and optional search
+    static func getPublicBlogs(
+        limit: Int = discoverPageSize,
+        offset: Int = 0,
+        query: String? = nil
+    ) async throws -> DiscoverBlogsResponse {
+        var path = "/api/blog/public?limit=\(limit)&offset=\(offset)"
+        if let q = query?.trimmingCharacters(in: .whitespaces), !q.isEmpty {
+            path += "&q=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q)"
+        }
+        return try await APIClient.shared.request(path)
     }
 }

@@ -1,60 +1,34 @@
 import SwiftUI
 
 struct DiscoverView: View {
-    @State private var storefronts: [DiscoverStorefront] = []
-    @State private var galleries: [DiscoverGallery] = []
-    @State private var blogs: [DiscoverBlog] = []
+    // Section states with pagination
+    @State private var showcaseSection = DiscoverSectionState<DiscoverStorefront>()
+    @State private var gallerySection = DiscoverSectionState<DiscoverGallery>()
+    @State private var blogSection = DiscoverSectionState<DiscoverBlog>()
+
     @State private var isLoading = true
+    @State private var hasLoadedOnce = false
     @State private var error: String?
     @State private var searchQuery = ""
+    @State private var searchTask: Task<Void, Never>?
 
     // Navigation
     @State private var selectedStorefront: DiscoverStorefront?
     @State private var selectedGallery: DiscoverGallery?
     @State private var selectedBlog: DiscoverBlog?
 
-    private var filteredStorefronts: [DiscoverStorefront] {
-        let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return storefronts }
-        return storefronts.filter { storefront in
-            storefront.displayTitle.lowercased().contains(query) ||
-            storefront.artist.displayName.lowercased().contains(query) ||
-            storefront.artist.handle.lowercased().contains(query)
-        }
-    }
-
-    private var filteredGalleries: [DiscoverGallery] {
-        let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return galleries }
-        return galleries.filter { gallery in
-            gallery.galleryName.lowercased().contains(query) ||
-            gallery.artist.displayName.lowercased().contains(query) ||
-            gallery.artist.handle.lowercased().contains(query)
-        }
-    }
-
-    private var filteredBlogs: [DiscoverBlog] {
-        let query = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return blogs }
-        return blogs.filter { blog in
-            blog.blogName.lowercased().contains(query) ||
-            blog.artist.displayName.lowercased().contains(query) ||
-            blog.artist.handle.lowercased().contains(query)
-        }
-    }
-
     var body: some View {
         Group {
-            if isLoading {
+            if isLoading && !hasLoadedOnce {
                 ProgressView("Loading...")
-            } else if let error {
+            } else if let error, !hasLoadedOnce {
                 ContentUnavailableView {
                     Label("Error", systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task { await loadAll() }
+                        Task { await loadAll(reset: true) }
                     }
                     .accessibilityInputLabels(["retry", "try again", "reload"])
                 }
@@ -64,7 +38,19 @@ struct DiscoverView: View {
         }
         .navigationTitle("Discover")
         .task {
-            await loadAll()
+            await loadAll(reset: true)
+        }
+        .onChange(of: searchQuery) { _, newValue in
+            // Debounce search - cancel previous and start new after 350ms
+            searchTask?.cancel()
+            searchTask = Task {
+                do {
+                    try await Task.sleep(for: .milliseconds(350))
+                    await loadAll(reset: true)
+                } catch {
+                    // Task cancelled, ignore
+                }
+            }
         }
         .navigationDestination(item: $selectedStorefront) { storefront in
             PublicStorefrontView(storeUrl: storefront.storeUrl)
@@ -113,9 +99,9 @@ struct DiscoverView: View {
                 .font(.title2.bold())
                 .padding(.horizontal)
 
-            if filteredStorefronts.isEmpty {
+            if showcaseSection.items.isEmpty {
                 emptyState(
-                    message: storefronts.isEmpty
+                    message: searchQuery.trimmingCharacters(in: .whitespaces).isEmpty
                         ? "No showcases to discover yet."
                         : "No showcases match your search."
                 )
@@ -124,7 +110,7 @@ struct DiscoverView: View {
                     GridItem(.flexible(), spacing: 16),
                     GridItem(.flexible(), spacing: 16)
                 ], spacing: 16) {
-                    ForEach(filteredStorefronts) { storefront in
+                    ForEach(showcaseSection.items) { storefront in
                         DiscoverCard(
                             title: storefront.displayTitle,
                             subtitle: "\(storefront.itemCount) item\(storefront.itemCount == 1 ? "" : "s")",
@@ -137,6 +123,13 @@ struct DiscoverView: View {
                     }
                 }
                 .padding(.horizontal)
+
+                // Load More button
+                if showcaseSection.hasMore {
+                    loadMoreButton(isLoading: showcaseSection.isLoadingMore) {
+                        Task { await loadMoreShowcases() }
+                    }
+                }
             }
         }
     }
@@ -149,9 +142,9 @@ struct DiscoverView: View {
                 .font(.title2.bold())
                 .padding(.horizontal)
 
-            if filteredGalleries.isEmpty {
+            if gallerySection.items.isEmpty {
                 emptyState(
-                    message: galleries.isEmpty
+                    message: searchQuery.trimmingCharacters(in: .whitespaces).isEmpty
                         ? "No galleries to discover yet."
                         : "No galleries match your search."
                 )
@@ -160,7 +153,7 @@ struct DiscoverView: View {
                     GridItem(.flexible(), spacing: 16),
                     GridItem(.flexible(), spacing: 16)
                 ], spacing: 16) {
-                    ForEach(filteredGalleries) { gallery in
+                    ForEach(gallerySection.items) { gallery in
                         DiscoverCard(
                             title: gallery.galleryName,
                             subtitle: "\(gallery.artworkCount) artwork\(gallery.artworkCount == 1 ? "" : "s")",
@@ -173,6 +166,13 @@ struct DiscoverView: View {
                     }
                 }
                 .padding(.horizontal)
+
+                // Load More button
+                if gallerySection.hasMore {
+                    loadMoreButton(isLoading: gallerySection.isLoadingMore) {
+                        Task { await loadMoreGalleries() }
+                    }
+                }
             }
         }
     }
@@ -185,9 +185,9 @@ struct DiscoverView: View {
                 .font(.title2.bold())
                 .padding(.horizontal)
 
-            if filteredBlogs.isEmpty {
+            if blogSection.items.isEmpty {
                 emptyState(
-                    message: blogs.isEmpty
+                    message: searchQuery.trimmingCharacters(in: .whitespaces).isEmpty
                         ? "No blogs to discover yet."
                         : "No blogs match your search."
                 )
@@ -196,7 +196,7 @@ struct DiscoverView: View {
                     GridItem(.flexible(), spacing: 16),
                     GridItem(.flexible(), spacing: 16)
                 ], spacing: 16) {
-                    ForEach(filteredBlogs) { blog in
+                    ForEach(blogSection.items) { blog in
                         DiscoverBlogCard(blog: blog)
                             .onTapGesture {
                                 selectedBlog = blog
@@ -204,6 +204,13 @@ struct DiscoverView: View {
                     }
                 }
                 .padding(.horizontal)
+
+                // Load More button
+                if blogSection.hasMore {
+                    loadMoreButton(isLoading: blogSection.isLoadingMore) {
+                        Task { await loadMoreBlogs() }
+                    }
+                }
             }
         }
     }
@@ -216,26 +223,117 @@ struct DiscoverView: View {
             .padding(.vertical, 20)
     }
 
+    private func loadMoreButton(isLoading: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text("Load More")
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .disabled(isLoading)
+        .padding(.horizontal)
+    }
+
     // MARK: - Data Loading
 
-    private func loadAll() async {
-        isLoading = true
+    /// Load all sections, resetting each to page 1
+    private func loadAll(reset: Bool) async {
+        let showFullSpinner = !hasLoadedOnce
+        if showFullSpinner {
+            isLoading = true
+        }
         error = nil
 
-        do {
-            async let galleriesTask = DiscoverAPIService.getPublicGalleries()
-            async let storefrontsTask = DiscoverAPIService.getPublicStorefronts()
-            async let blogsTask = DiscoverAPIService.getPublicBlogs()
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        let q: String? = query.isEmpty ? nil : query
 
-            let (loadedGalleries, loadedStorefronts, loadedBlogs) = try await (galleriesTask, storefrontsTask, blogsTask)
-            galleries = loadedGalleries
-            storefronts = loadedStorefronts
-            blogs = loadedBlogs
+        do {
+            async let galleriesTask = DiscoverAPIService.getPublicGalleries(offset: 0, query: q)
+            async let storefrontsTask = DiscoverAPIService.getPublicStorefronts(offset: 0, query: q)
+            async let blogsTask = DiscoverAPIService.getPublicBlogs(offset: 0, query: q)
+
+            let (galleriesResponse, storefrontsResponse, blogsResponse) = try await (galleriesTask, storefrontsTask, blogsTask)
+
+            gallerySection = DiscoverSectionState(items: galleriesResponse.galleries, total: galleriesResponse.total)
+            showcaseSection = DiscoverSectionState(items: storefrontsResponse.storefronts, total: storefrontsResponse.total)
+            blogSection = DiscoverSectionState(items: blogsResponse.blogs, total: blogsResponse.total)
+            hasLoadedOnce = true
         } catch {
-            self.error = "Failed to load Discover content"
+            if !hasLoadedOnce {
+                self.error = "Failed to load Discover content"
+            }
         }
 
         isLoading = false
+    }
+
+    /// Load more showcases (next page)
+    private func loadMoreShowcases() async {
+        guard showcaseSection.hasMore && !showcaseSection.isLoadingMore else { return }
+        showcaseSection.isLoadingMore = true
+
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        let q: String? = query.isEmpty ? nil : query
+
+        do {
+            let response = try await DiscoverAPIService.getPublicStorefronts(
+                offset: showcaseSection.items.count,
+                query: q
+            )
+            showcaseSection.items.append(contentsOf: response.storefronts)
+            showcaseSection.total = response.total
+        } catch {
+            // Non-fatal
+        }
+        showcaseSection.isLoadingMore = false
+    }
+
+    /// Load more galleries (next page)
+    private func loadMoreGalleries() async {
+        guard gallerySection.hasMore && !gallerySection.isLoadingMore else { return }
+        gallerySection.isLoadingMore = true
+
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        let q: String? = query.isEmpty ? nil : query
+
+        do {
+            let response = try await DiscoverAPIService.getPublicGalleries(
+                offset: gallerySection.items.count,
+                query: q
+            )
+            gallerySection.items.append(contentsOf: response.galleries)
+            gallerySection.total = response.total
+        } catch {
+            // Non-fatal
+        }
+        gallerySection.isLoadingMore = false
+    }
+
+    /// Load more blogs (next page)
+    private func loadMoreBlogs() async {
+        guard blogSection.hasMore && !blogSection.isLoadingMore else { return }
+        blogSection.isLoadingMore = true
+
+        let query = searchQuery.trimmingCharacters(in: .whitespaces)
+        let q: String? = query.isEmpty ? nil : query
+
+        do {
+            let response = try await DiscoverAPIService.getPublicBlogs(
+                offset: blogSection.items.count,
+                query: q
+            )
+            blogSection.items.append(contentsOf: response.blogs)
+            blogSection.total = response.total
+        } catch {
+            // Non-fatal
+        }
+        blogSection.isLoadingMore = false
     }
 }
 
