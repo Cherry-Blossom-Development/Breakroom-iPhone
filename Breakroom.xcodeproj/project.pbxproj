@@ -91,6 +91,7 @@
 		7CE96892285A2CD9C863A5CB /* KanbanRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEDBBBAE9F399FBA99BDC31 /* KanbanRedirectView.swift */; };
 		7CFD44B40F5AC0D3F71EF3D1 /* presence.wav in Resources */ = {isa = PBXBuildFile; fileRef = F631C93CB6E639B6EDE77184 /* presence.wav */; };
 		7E3C5091A1D3E2EAD7A89536 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540F3088B58164BD096499C8 /* PaywallView.swift */; };
+		7F439319772E5DBD77B9A7F5 /* TicketAttachmentsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66816326ABE25A7311B14A9C /* TicketAttachmentsSection.swift */; };
 		7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CEED3E11E64EEDC2E45139 /* ProfileView.swift */; };
 		8104417291596650AADA807B /* GalleryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33066537C65EE3DB5A792F8 /* GalleryModels.swift */; };
 		81A275AB2AB85F97A2B8A48A /* AudioMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4B69CF67E47D0EFAD97E12 /* AudioMixer.swift */; };
@@ -248,6 +249,7 @@
 		62688D07C58868B21C15A0A5 /* AdminModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminModels.swift; sourceTree = "<group>"; };
 		63EA48B5699C1A4037B78EFF /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
 		664D6C1E857ACE07479BED4B /* BreakroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakroomView.swift; sourceTree = "<group>"; };
+		66816326ABE25A7311B14A9C /* TicketAttachmentsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketAttachmentsSection.swift; sourceTree = "<group>"; };
 		66CE9484D8A4723250F2973D /* FlagDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagDialogView.swift; sourceTree = "<group>"; };
 		6A95A0603DFE6BD63AEA7801 /* TicketAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketAPIService.swift; sourceTree = "<group>"; };
 		6A9EB2ABB7D103B81F1E7AE1 /* FriendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsView.swift; sourceTree = "<group>"; };
@@ -410,6 +412,7 @@
 				8AE094EB25F9EBB7F753CE91 /* Chat */,
 				001E92E6EDE990C782AAF532 /* Collections */,
 				DD6EE17AE2DD8CCBED7A2625 /* Company */,
+				94D2B498FA20CEDC913A3A1F /* Components */,
 				7B991C04BF53271DFE4D1BBF /* Discover */,
 				F80DEE2EB9A8D15C04843203 /* Employment */,
 				D15A831D02FE70184711F26C /* Friends */,
@@ -629,6 +632,14 @@
 				8D554405256E06D96E8B2E54 /* ScrollCoordinator.swift */,
 			);
 			path = Breakroom;
+			sourceTree = "<group>";
+		};
+		94D2B498FA20CEDC913A3A1F /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				66816326ABE25A7311B14A9C /* TicketAttachmentsSection.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		978B519445ACE4C665BAC269 /* Sounds */ = {
@@ -968,6 +979,7 @@
 				E8433A811007573EB50101B9 /* SubscriptionModels.swift in Sources */,
 				3EEF84274CB7C43242CFF356 /* TermsOfUseView.swift in Sources */,
 				DFC9B224556F272EEC3718E1 /* TicketAPIService.swift in Sources */,
+				7F439319772E5DBD77B9A7F5 /* TicketAttachmentsSection.swift in Sources */,
 				52B4EA17D8D733F30C75D4B9 /* TicketModels.swift in Sources */,
 				1562F93BEBF3921C1C495B77 /* ToolShedView.swift in Sources */,
 				FE1EF55A761C9A80859ABE56 /* User.swift in Sources */,

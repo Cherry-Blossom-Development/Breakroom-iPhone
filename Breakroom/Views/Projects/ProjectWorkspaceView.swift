@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Project-level workspace with its own navigation menu.
 /// Contains Kanban Board, Gantt Chart, Burndown Chart, and Settings sections.
@@ -561,6 +562,14 @@ struct TicketDetailView: View {
     @State private var addedDependencyIds: Set<Int> = []
     @State private var removedDependencyIds: Set<Int> = []
 
+    // Attachments state
+    @State private var attachments: [TicketAttachment] = []
+    @State private var pendingFiles: [PendingFile] = []
+    @State private var pendingRemovals: Set<Int> = []
+    @State private var isLoadingAttachments = false
+    @State private var attachmentError: String?
+    @State private var isOpeningAttachment = false
+
     // UI state
     @State private var isSaving = false
     @State private var error: String?
@@ -603,7 +612,9 @@ struct TicketDetailView: View {
         editedEstimateAmount != (ticket.estimateAmount ?? "") ||
         editedEstimateUnit != (ticket.estimateUnit ?? "hours") ||
         !addedDependencyIds.isEmpty ||
-        !removedDependencyIds.isEmpty
+        !removedDependencyIds.isEmpty ||
+        !pendingFiles.isEmpty ||
+        !pendingRemovals.isEmpty
     }
 
     /// Current dependencies including staged changes
@@ -773,6 +784,36 @@ struct TicketDetailView: View {
                     Text("Blocked By")
                 }
 
+                // Attachments section
+                Section {
+                    if isLoadingAttachments {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading attachments...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        TicketAttachmentsSection(
+                            attachments: attachments,
+                            pendingFiles: $pendingFiles,
+                            pendingRemovals: $pendingRemovals,
+                            canAttach: canWork,
+                            canRemove: { _ in canWork },
+                            busy: isSaving || isOpeningAttachment,
+                            error: attachmentError,
+                            onOpen: { attachment in
+                                Task { await openAttachment(attachment) }
+                            }
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    }
+                } header: {
+                    Text("Attachments")
+                }
+
                 // Info section
                 Section {
                     LabeledContent("Created by", value: ticket.creatorDisplayName)
@@ -832,7 +873,53 @@ struct TicketDetailView: View {
                     }
                 )
             }
+            .task {
+                await loadAttachments()
+            }
         }
+    }
+
+    private func loadAttachments() async {
+        isLoadingAttachments = true
+        attachmentError = nil
+
+        do {
+            attachments = try await ProjectAPIService.getAttachments(ticketId: ticket.id)
+        } catch {
+            attachmentError = "Failed to load attachments"
+        }
+
+        isLoadingAttachments = false
+    }
+
+    private func openAttachment(_ attachment: TicketAttachment) async {
+        isOpeningAttachment = true
+        attachmentError = nil
+
+        do {
+            let data = try await ProjectAPIService.downloadAttachment(attachmentId: attachment.id)
+
+            // Save to temp directory
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(attachment.fileName)
+            try data.write(to: fileURL)
+
+            // Open with system
+            await MainActor.run {
+                #if os(iOS)
+                // Use UIActivityViewController on iOS
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = windowScene.windows.first?.rootViewController {
+                    let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+                    rootVC.present(activityVC, animated: true)
+                }
+                #endif
+            }
+        } catch {
+            attachmentError = "Failed to open attachment"
+        }
+
+        isOpeningAttachment = false
     }
 
     private func saveChanges() async {
@@ -879,6 +966,17 @@ struct TicketDetailView: View {
             }
             for dependsOnId in removedDependencyIds {
                 _ = try await ProjectAPIService.removeDependency(ticketId: ticket.id, dependsOnId: dependsOnId)
+            }
+
+            // Upload new attachments
+            if !pendingFiles.isEmpty {
+                let files = pendingFiles.map { (data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
+                _ = try await ProjectAPIService.uploadAttachments(ticketId: ticket.id, files: files)
+            }
+
+            // Delete removed attachments
+            for attachmentId in pendingRemovals {
+                _ = try await ProjectAPIService.deleteAttachment(attachmentId: attachmentId)
             }
 
             onUpdate(updated)
