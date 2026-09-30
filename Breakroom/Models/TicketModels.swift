@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Ticket Status
 
@@ -41,6 +42,15 @@ enum TicketPriority: String, Codable, CaseIterable {
 
     var displayName: String {
         rawValue.capitalized
+    }
+
+    var color: SwiftUI.Color {
+        switch self {
+        case .low: return .green
+        case .medium: return .blue
+        case .high: return .orange
+        case .urgent: return .red
+        }
     }
 }
 

@@ -31,6 +31,7 @@
 		2B66AE743C85F1CFFDC1F5B4 /* LinkifiedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B46F92B41F7887C613E375B /* LinkifiedText.swift */; };
 		2D33B0587F2A463461D6EE21 /* CompanyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */; };
 		2D8FEBD8FDA87BDB04FEFF57 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4AAFB2C1950FFB0B83A13E /* AuthModels.swift */; };
+		2DADBE8B52CB2A7A2CA622C2 /* ProjectWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */; };
 		30C3F0EFC19412CB59CD0054 /* BreakroomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3491AEA29BD6F8A50CFEB027 /* BreakroomApp.swift */; };
 		315DFD6BD2D5DD752F107FBC /* CreateRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8025FE9D557ABCB435B436 /* CreateRoomView.swift */; };
 		315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC374D30CE9C2D552045FAF /* BreakroomModels.swift */; };
@@ -313,6 +314,7 @@
 		F0468F552AE1E04579A6E80D /* ui-error.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "ui-error.wav"; sourceTree = "<group>"; };
 		F1060F730986E198DF8031BB /* arrival.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = arrival.wav; sourceTree = "<group>"; };
 		F3797FB4B813F7A2E2F9D261 /* HaulonautSoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HaulonautSoundService.swift; sourceTree = "<group>"; };
+		F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectWorkspaceView.swift; sourceTree = "<group>"; };
 		F631C93CB6E639B6EDE77184 /* presence.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = presence.wav; sourceTree = "<group>"; };
 		F7CE43F1CCD5DB1A23239AF2 /* npc-presence.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "npc-presence.wav"; sourceTree = "<group>"; };
 		FD2A7DEA7811D2E6DDBDDAC2 /* HelpDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpDeskView.swift; sourceTree = "<group>"; };
@@ -352,6 +354,7 @@
 			isa = PBXGroup;
 			children = (
 				30598AC7FDDE3DF5B632223A /* ProjectsView.swift */,
+				F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */,
 			);
 			path = Projects;
 			sourceTree = "<group>";
@@ -920,6 +923,7 @@
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */,
 				ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */,
+				2DADBE8B52CB2A7A2CA622C2 /* ProjectWorkspaceView.swift in Sources */,
 				EC339D6FDBA75B2BF7B7C1B0 /* ProjectsView.swift in Sources */,
 				5F49987A81C1579AA6E3A5AE /* PublicProfileView.swift in Sources */,
 				3F10014E174AB41C4CD6BAA3 /* PushNotificationManager.swift in Sources */,

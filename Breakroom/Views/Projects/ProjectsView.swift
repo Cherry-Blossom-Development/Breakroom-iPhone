@@ -57,8 +57,8 @@ struct ProjectsView: View {
             if project.isHelpDeskProject {
                 HelpDeskView(companyId: project.companyId, companyName: project.companyName ?? "Company")
             } else {
-                // For now, navigate to KanbanBoardView. Later this will be ProjectWorkspaceView.
-                KanbanBoardView(projectId: project.id, projectTitle: project.title)
+                
+                ProjectWorkspaceView(projectId: project.id)
             }
         }
     }
