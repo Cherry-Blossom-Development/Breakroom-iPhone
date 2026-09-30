@@ -237,6 +237,7 @@ struct MainTabView: View {
     @State private var showLegal = false
     @State private var showSettings = false
     @State private var showBilling = false
+    @State private var showProjects = false
 
     // Account deletion
     @State private var showDeleteAccountConfirmation = false
@@ -287,6 +288,9 @@ struct MainTabView: View {
                     }
                     .navigationDestination(isPresented: $showBilling) {
                         BillingView()
+                    }
+                    .navigationDestination(isPresented: $showProjects) {
+                        ProjectsView()
                     }
                     .navigationDestination(item: $selectedShortcut) { shortcut in
                         shortcutDestination(shortcut)
@@ -354,6 +358,11 @@ struct MainTabView: View {
                                 }
                                 .accessibilityIdentifier("menuDiscover")
                                 .accessibilityInputLabels(["discover", "search", "explore"])
+                                Button("Projects", systemImage: "list.clipboard") {
+                                    showProjects = true
+                                }
+                                .accessibilityIdentifier("menuProjects")
+                                .accessibilityInputLabels(["projects", "my projects", "view projects"])
                                 Button("Legal", systemImage: "doc.text") {
                                     showLegal = true
                                 }

@@ -151,6 +151,7 @@
 		E8433A811007573EB50101B9 /* SubscriptionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2428E68F16AB686DA57EB9AE /* SubscriptionModels.swift */; };
 		EA51FF556853F473D7080AC5 /* StorefrontSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFABB6360DC6CA565659940B /* StorefrontSetupView.swift */; };
 		EA86F43DC257C19525C4834B /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */; };
+		EC339D6FDBA75B2BF7B7C1B0 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30598AC7FDDE3DF5B632223A /* ProjectsView.swift */; };
 		ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6F960546E5BD685FB4ED2E /* ProjectModels.swift */; };
 		ED53A07F88EEF9E2F5CFA4A2 /* HaulonautSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81C0F0A98BC638C79E59760 /* HaulonautSocketManager.swift */; };
 		EEABD8F022BC2D0EB6C9C2F7 /* GamesModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC6B9C54651303FCC87CBF7 /* GamesModels.swift */; };
@@ -206,6 +207,7 @@
 		2CB940588B6ED324FFEFB7A7 /* danger.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = danger.wav; sourceTree = "<group>"; };
 		2DEF35DD888AA3F1ADE0E330 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryAPIService.swift; sourceTree = "<group>"; };
+		30598AC7FDDE3DF5B632223A /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
 		319BB438E5D2DE8B9A00BB30 /* TicketModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketModels.swift; sourceTree = "<group>"; };
 		32F069DEE7A28A6182917BB1 /* TermsOfUseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsOfUseView.swift; sourceTree = "<group>"; };
 		3328C5A13A1A5AC915109CE5 /* SettingsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsModels.swift; sourceTree = "<group>"; };
@@ -346,6 +348,14 @@
 			path = Collections;
 			sourceTree = "<group>";
 		};
+		06E0F6E92311918DC05B4F0E /* Projects */ = {
+			isa = PBXGroup;
+			children = (
+				30598AC7FDDE3DF5B632223A /* ProjectsView.swift */,
+			);
+			path = Projects;
+			sourceTree = "<group>";
+		};
 		06E491AEF5205165C54BF1C7 /* ToolShed */ = {
 			isa = PBXGroup;
 			children = (
@@ -389,6 +399,7 @@
 				D15A831D02FE70184711F26C /* Friends */,
 				EC737C12F0919D99A5A34CF2 /* Games */,
 				0D93BC3388A3D11FF70C13C0 /* Profile */,
+				06E0F6E92311918DC05B4F0E /* Projects */,
 				8545231B3F97F86098323AF7 /* Settings */,
 				A999508EEF2C5F26776CA025 /* Tickets */,
 				06E491AEF5205165C54BF1C7 /* ToolShed */,
@@ -909,6 +920,7 @@
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */,
 				ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */,
+				EC339D6FDBA75B2BF7B7C1B0 /* ProjectsView.swift in Sources */,
 				5F49987A81C1579AA6E3A5AE /* PublicProfileView.swift in Sources */,
 				3F10014E174AB41C4CD6BAA3 /* PushNotificationManager.swift in Sources */,
 				E03E83B70214C37CE72A1A9D /* RichTextEditorView.swift in Sources */,

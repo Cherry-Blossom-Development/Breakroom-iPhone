@@ -371,7 +371,7 @@ struct TicketAttachmentsResponse: Decodable {
 
 // MARK: - Project List (extends existing Project model)
 
-struct Project: Codable, Identifiable {
+struct Project: Codable, Identifiable, Hashable {
     let id: Int
     let title: String
     let description: String?
