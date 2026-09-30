@@ -327,6 +327,7 @@ struct EditTicketSheet: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var showUnsavedChangesAlert = false
 
     // Comments state
     @State private var comments: [TicketComment] = []
@@ -338,6 +339,13 @@ struct EditTicketSheet: View {
 
     private var currentUsername: String? {
         authViewModel.currentUsername
+    }
+
+    private var hasUnsavedChanges: Bool {
+        title != ticket.title ||
+        description != (ticket.description?.strippingHTML() ?? "") ||
+        status != ticket.ticketStatus ||
+        priority != ticket.ticketPriority
     }
 
     init(ticket: Ticket, onSave: @escaping (Ticket) -> Void) {
@@ -389,7 +397,13 @@ struct EditTicketSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") {
+                        if hasUnsavedChanges {
+                            showUnsavedChangesAlert = true
+                        } else {
+                            dismiss()
+                        }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -401,8 +415,15 @@ struct EditTicketSheet: View {
                             Text("Save")
                         }
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving || !hasUnsavedChanges)
                 }
+            }
+            .interactiveDismissDisabled(hasUnsavedChanges)
+            .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
+                Button("Discard", role: .destructive) { dismiss() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You have unsaved changes. Do you want to discard them?")
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK") { }

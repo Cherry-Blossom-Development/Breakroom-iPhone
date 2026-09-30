@@ -531,7 +531,7 @@ struct ClosedTicketsView: View {
     }
 }
 
-// MARK: - Ticket Detail View (placeholder)
+// MARK: - Ticket Detail View (Editable with Staged Changes)
 
 struct TicketDetailView: View {
     let ticket: Ticket
@@ -544,30 +544,151 @@ struct TicketDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    // Staged edits - local state until Save is clicked
+    @State private var editedTitle: String
+    @State private var editedDescription: String
+    @State private var editedStatus: TicketStatus
+    @State private var editedPriority: TicketPriority
+    @State private var editedAssigneeId: Int?
+    @State private var editedEstimateAmount: String
+    @State private var editedEstimateUnit: String
+
+    // UI state
+    @State private var isSaving = false
+    @State private var error: String?
+    @State private var showUnsavedChangesAlert = false
+
+    init(
+        ticket: Ticket,
+        assignees: [ProjectAssignee],
+        dependencies: [TicketDependency],
+        allTickets: [Ticket],
+        canWork: Bool,
+        canManage: Bool,
+        onUpdate: @escaping (Ticket) -> Void
+    ) {
+        self.ticket = ticket
+        self.assignees = assignees
+        self.dependencies = dependencies
+        self.allTickets = allTickets
+        self.canWork = canWork
+        self.canManage = canManage
+        self.onUpdate = onUpdate
+
+        // Initialize staged edits from ticket
+        _editedTitle = State(initialValue: ticket.title)
+        _editedDescription = State(initialValue: ticket.description ?? "")
+        _editedStatus = State(initialValue: ticket.ticketStatus)
+        _editedPriority = State(initialValue: ticket.ticketPriority)
+        _editedAssigneeId = State(initialValue: ticket.assignedTo)
+        _editedEstimateAmount = State(initialValue: ticket.estimateAmount ?? "")
+        _editedEstimateUnit = State(initialValue: ticket.estimateUnit ?? "hours")
+    }
+
+    private var hasUnsavedChanges: Bool {
+        editedTitle != ticket.title ||
+        editedDescription != (ticket.description ?? "") ||
+        editedStatus != ticket.ticketStatus ||
+        editedPriority != ticket.ticketPriority ||
+        editedAssigneeId != ticket.assignedTo ||
+        editedEstimateAmount != (ticket.estimateAmount ?? "") ||
+        editedEstimateUnit != (ticket.estimateUnit ?? "hours")
+    }
+
+    private var estimateValidation: String? {
+        EstimateUnits.validate(amountText: editedEstimateAmount)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
+                // Details section
                 Section("Details") {
-                    LabeledContent("Title", value: ticket.title)
-                    if let description = ticket.description, !description.isEmpty {
-                        LabeledContent("Description", value: description)
+                    if canWork {
+                        TextField("Title *", text: $editedTitle)
+                        TextField("Description", text: $editedDescription, axis: .vertical)
+                            .lineLimit(3...6)
+                    } else {
+                        LabeledContent("Title", value: editedTitle)
+                        if !editedDescription.isEmpty {
+                            LabeledContent("Description", value: editedDescription)
+                        }
                     }
-                    LabeledContent("Status", value: ticket.ticketStatus.displayName)
-                    LabeledContent("Priority", value: ticket.ticketPriority.displayName)
                 }
 
-                if ticket.hasEstimate {
-                    Section("Estimate") {
+                // Status section
+                Section("Status") {
+                    if canWork {
+                        Picker("Status", selection: $editedStatus) {
+                            ForEach(TicketStatus.allCases, id: \.self) { s in
+                                Text(s.displayName).tag(s)
+                            }
+                        }
+                    } else {
+                        LabeledContent("Status", value: editedStatus.displayName)
+                    }
+                }
+
+                // Priority section
+                Section("Priority") {
+                    if canWork {
+                        Picker("Priority", selection: $editedPriority) {
+                            ForEach(TicketPriority.allCases, id: \.self) { p in
+                                Text(p.displayName).tag(p)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    } else {
+                        LabeledContent("Priority", value: editedPriority.displayName)
+                    }
+                }
+
+                // Estimate section
+                Section("Estimate") {
+                    if canWork {
+                        HStack {
+                            TextField("Amount", text: $editedEstimateAmount)
+                                .keyboardType(.decimalPad)
+                                .frame(width: 80)
+
+                            Picker("Unit", selection: $editedEstimateUnit) {
+                                ForEach(EstimateUnits.all, id: \.self) { unit in
+                                    Text(unit.capitalized).tag(unit)
+                                }
+                            }
+                        }
+
+                        if let validation = estimateValidation {
+                            Text(validation)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    } else if ticket.hasEstimate {
                         LabeledContent("Time", value: ticket.formattedEstimate)
+                    } else {
+                        Text("No estimate set")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
-                if let assignee = ticket.assigneeDisplayName {
-                    Section("Assigned To") {
+                // Assignee section
+                Section("Assigned To") {
+                    if canWork && !assignees.isEmpty {
+                        Picker("Assignee", selection: $editedAssigneeId) {
+                            Text("Unassigned").tag(nil as Int?)
+                            ForEach(assignees) { assignee in
+                                Text(assignee.displayName).tag(assignee.userId as Int?)
+                            }
+                        }
+                    } else if let assignee = ticket.assigneeDisplayName {
                         Text(assignee)
+                    } else {
+                        Text("Unassigned")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
+                // Dependencies section
                 if !dependencies.isEmpty {
                     Section("Blocked By") {
                         ForEach(dependencies) { dep in
@@ -579,15 +700,103 @@ struct TicketDetailView: View {
                         }
                     }
                 }
+
+                // Info section
+                Section {
+                    LabeledContent("Created by", value: ticket.creatorDisplayName)
+                    if let createdAt = ticket.createdAt {
+                        LabeledContent("Created", value: createdAt)
+                    }
+                }
+
+                // Error display
+                if let error = error {
+                    Section {
+                        Text(error)
+                            .foregroundStyle(.red)
+                    }
+                }
             }
             .navigationTitle("Ticket #\(ticket.id)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        if hasUnsavedChanges {
+                            showUnsavedChangesAlert = true
+                        } else {
+                            dismiss()
+                        }
+                    }
+                }
+
+                if canWork {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button {
+                            Task { await saveChanges() }
+                        } label: {
+                            if isSaving {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Text("Save")
+                            }
+                        }
+                        .disabled(!hasUnsavedChanges || isSaving || editedTitle.isEmpty || estimateValidation != nil)
+                    }
                 }
             }
+            .interactiveDismissDisabled(hasUnsavedChanges)
+            .alert("Unsaved Changes", isPresented: $showUnsavedChangesAlert) {
+                Button("Discard", role: .destructive) { dismiss() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You have unsaved changes. Do you want to discard them?")
+            }
         }
+    }
+
+    private func saveChanges() async {
+        isSaving = true
+        error = nil
+
+        // Build fields dictionary with only changed values
+        var fields: [String: Any?] = [:]
+
+        if editedTitle != ticket.title {
+            fields["title"] = editedTitle
+        }
+        if editedDescription != (ticket.description ?? "") {
+            fields["description"] = editedDescription.isEmpty ? nil : editedDescription
+        }
+        if editedStatus != ticket.ticketStatus {
+            fields["status"] = editedStatus.rawValue
+        }
+        if editedPriority != ticket.ticketPriority {
+            fields["priority"] = editedPriority.rawValue
+        }
+        if editedAssigneeId != ticket.assignedTo {
+            fields["assigned_to"] = editedAssigneeId
+        }
+
+        // Handle estimate
+        let newAmount = editedEstimateAmount.isEmpty ? nil : Double(editedEstimateAmount)
+        let oldAmount = ticket.estimateAmountDouble
+        if newAmount != oldAmount || editedEstimateUnit != (ticket.estimateUnit ?? "hours") {
+            fields["estimate_amount"] = newAmount
+            fields["estimate_unit"] = newAmount != nil ? editedEstimateUnit : nil
+        }
+
+        do {
+            let updated = try await ProjectAPIService.updateTicketFields(ticketId: ticket.id, fields: fields)
+            onUpdate(updated)
+            dismiss()
+        } catch let error as APIError {
+            self.error = error.localizedDescription
+        } catch {
+            self.error = "Failed to save changes"
+        }
+
+        isSaving = false
     }
 }
 
