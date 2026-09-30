@@ -18,6 +18,7 @@ struct ProjectWorkspaceView: View {
     // Kanban data
     @State private var tickets: [Ticket] = []
     @State private var dependencies: [TicketDependency] = []
+    @State private var timeline: [TicketTimelineEntry] = []
     @State private var assignees: [ProjectAssignee] = []
     @State private var canWork = false
     @State private var canManage = false
@@ -123,8 +124,12 @@ struct ProjectWorkspaceView: View {
                 onRefresh: { await loadProject() }
             )
         case .gantt:
-            // Placeholder until GANTT is implemented
-            placeholderView(title: "GANTT Chart", message: "Coming soon")
+            ProjectGanttView(
+                projectId: projectId,
+                tickets: tickets,
+                dependencies: dependencies,
+                timeline: timeline
+            )
         case .burndown:
             ProjectBurndownView(projectId: projectId)
         case .settings:
@@ -168,6 +173,7 @@ struct ProjectWorkspaceView: View {
             project = response.project
             tickets = response.tickets
             dependencies = response.dependencies ?? []
+            timeline = response.timeline ?? []
             assignees = response.assignees ?? []
             canWork = response.canWorkBool
             canManage = response.canManageBool

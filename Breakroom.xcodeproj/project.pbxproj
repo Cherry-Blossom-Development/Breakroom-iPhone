@@ -80,6 +80,7 @@
 		6586E14356EC070B6367F1B8 /* arrival.wav in Resources */ = {isa = PBXBuildFile; fileRef = F1060F730986E198DF8031BB /* arrival.wav */; };
 		67ECFE615F05386727874EEF /* hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = B24FC732CF3BE37E97950248 /* hit.wav */; };
 		6815FC2F54103DFCF5D138EA /* ProjectBurndownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2AF26143CDA0EC8D02306F /* ProjectBurndownView.swift */; };
+		692C3AFC872001EB88EF2DB9 /* ProjectGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7D7BDF6AC32E4C56E0CF97 /* ProjectGanttView.swift */; };
 		6C8A2B0F0DE5E48D3A64624A /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4CA5A27A8C73E34E5E7E16 /* DiscoverView.swift */; };
 		71510AFB5FDD8E7E2DE20E5A /* trade-success.wav in Resources */ = {isa = PBXBuildFile; fileRef = 083245D53A40E4A2D201EBAA /* trade-success.wav */; };
 		74CA770CD8B0AFB4A7B79E94 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05769385EC924F9C434488B0 /* ForgotPasswordView.swift */; };
@@ -120,6 +121,7 @@
 		B903EFE34AE2CA79BD4C5100 /* EditRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F163E417C694785B9F62DA9 /* EditRoomView.swift */; };
 		BBBF4227B234CE3F60FC31D7 /* ArtGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F61C941989489C1B54449D /* ArtGalleryView.swift */; };
 		BBFC943C029D0EC43FEE9AC9 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D5DA280B22FD3520032DE8 /* DiscoverModels.swift */; };
+		BD8C4D54D2C0A93FC6DF248C /* GanttScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB89C3AEEEF4B7D7B3A9DCF /* GanttScheduler.swift */; };
 		BE662380BF8A44C3D9B240E6 /* OnlineStatusDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96660832EE4F53E83F470FB2 /* OnlineStatusDot.swift */; };
 		BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */; };
 		C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C281F071A507584EFED7EAC /* ProjectAPIService.swift */; };
@@ -239,6 +241,7 @@
 		5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyAPIService.swift; sourceTree = "<group>"; };
 		5C2A0C832EE5C73504EBFD6C /* warp.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = warp.wav; sourceTree = "<group>"; };
 		5E6A7AB807A923430F64364A /* FriendsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsModels.swift; sourceTree = "<group>"; };
+		5E7D7BDF6AC32E4C56E0CF97 /* ProjectGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGanttView.swift; sourceTree = "<group>"; };
 		5F163E417C694785B9F62DA9 /* EditRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRoomView.swift; sourceTree = "<group>"; };
 		5F23465B955ECBC090E8C06E /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		5FB57CE1D061C3414AF0E0CD /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
@@ -273,6 +276,7 @@
 		985FDA43EDA113CC6FFDA1DA /* ShippingSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShippingSetupView.swift; sourceTree = "<group>"; };
 		99DF02304D718C0B38800258 /* ModerationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationStore.swift; sourceTree = "<group>"; };
 		9A8F316629F225A6CD5E4914 /* entry.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = entry.wav; sourceTree = "<group>"; };
+		9AB89C3AEEEF4B7D7B3A9DCF /* GanttScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GanttScheduler.swift; sourceTree = "<group>"; };
 		9EDB85ECE64C81E38FD18ECF /* notify.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = notify.wav; sourceTree = "<group>"; };
 		A3620C9CA4480F805E75A34A /* BlogEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlogEditorView.swift; sourceTree = "<group>"; };
 		A39F9F2C83840B00966C88C4 /* RichTextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditorView.swift; sourceTree = "<group>"; };
@@ -360,6 +364,7 @@
 			isa = PBXGroup;
 			children = (
 				FE2AF26143CDA0EC8D02306F /* ProjectBurndownView.swift */,
+				5E7D7BDF6AC32E4C56E0CF97 /* ProjectGanttView.swift */,
 				F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */,
 				30598AC7FDDE3DF5B632223A /* ProjectsView.swift */,
 				F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */,
@@ -490,6 +495,7 @@
 				4D1F9C4270D3406479ECC4A9 /* FriendsAPIService.swift */,
 				2E338BF0C12A5C227A15A223 /* GalleryAPIService.swift */,
 				205429A333660E38E47BF0DB /* GamesAPIService.swift */,
+				9AB89C3AEEEF4B7D7B3A9DCF /* GanttScheduler.swift */,
 				A81C0F0A98BC638C79E59760 /* HaulonautSocketManager.swift */,
 				F3797FB4B813F7A2E2F9D261 /* HaulonautSoundService.swift */,
 				EBEBCF770DE226656F2EEB53 /* KeychainManager.swift */,
@@ -901,6 +907,7 @@
 				E5EE7FAED780E468DB636D75 /* GamesAPIService.swift in Sources */,
 				EEABD8F022BC2D0EB6C9C2F7 /* GamesModels.swift in Sources */,
 				C1685DAD4727AF04676A1F1B /* GamesView.swift in Sources */,
+				BD8C4D54D2C0A93FC6DF248C /* GanttScheduler.swift in Sources */,
 				CCB2437A297025DF7D8E363A /* HaulonautPlayView.swift in Sources */,
 				ED53A07F88EEF9E2F5CFA4A2 /* HaulonautSocketManager.swift in Sources */,
 				3EDE76D274B68114F4185B07 /* HaulonautSoundService.swift in Sources */,
@@ -933,6 +940,7 @@
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */,
 				6815FC2F54103DFCF5D138EA /* ProjectBurndownView.swift in Sources */,
+				692C3AFC872001EB88EF2DB9 /* ProjectGanttView.swift in Sources */,
 				ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */,
 				C0B41B5182C4125EDC7DB994 /* ProjectSettingsView.swift in Sources */,
 				2DADBE8B52CB2A7A2CA622C2 /* ProjectWorkspaceView.swift in Sources */,
