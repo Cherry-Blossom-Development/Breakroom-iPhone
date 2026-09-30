@@ -14,6 +14,7 @@ struct KanbanBoardView: View {
     @State private var showError = false
     @State private var showAddTicket = false
     @State private var editingTicket: Ticket?
+    @State private var showClosedTickets = false
 
     var body: some View {
         Group {
@@ -37,8 +38,16 @@ struct KanbanBoardView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("New Ticket", systemImage: "plus") {
-                    showAddTicket = true
+                HStack(spacing: 12) {
+                    Button {
+                        showClosedTickets = true
+                    } label: {
+                        Label("Closed", systemImage: "checkmark.circle")
+                    }
+
+                    Button("New Ticket", systemImage: "plus") {
+                        showAddTicket = true
+                    }
                 }
             }
         }
@@ -66,6 +75,18 @@ struct KanbanBoardView: View {
             Button("OK") { }
         } message: {
             Text(errorMessage ?? "An unknown error occurred")
+        }
+        .sheet(isPresented: $showClosedTickets) {
+            KanbanClosedTicketsSheet(
+                tickets: tickets.filter { $0.isResolved },
+                onReopen: { ticket in
+                    Task { await moveTicket(ticket, to: .inProgress) }
+                },
+                onEdit: { ticket in
+                    showClosedTickets = false
+                    editingTicket = ticket
+                }
+            )
         }
     }
 
@@ -285,6 +306,98 @@ struct KanbanBoardView: View {
             errorMessage = error.localizedDescription
             showError = true
             AccessibilityNotification.Announcement("Failed to move ticket").post()
+        }
+    }
+}
+
+// MARK: - Closed Tickets Sheet
+
+struct KanbanClosedTicketsSheet: View {
+    let tickets: [Ticket]
+    let onReopen: (Ticket) -> Void
+    let onEdit: (Ticket) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var closedCount: Int {
+        tickets.filter { $0.ticketStatus == .closed }.count
+    }
+
+    private var resolvedCount: Int {
+        tickets.filter { $0.ticketStatus == .resolved }.count
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if tickets.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Closed Tickets", systemImage: "checkmark.circle")
+                    } description: {
+                        Text("Resolved and closed tickets will appear here.")
+                    }
+                } else {
+                    List {
+                        if resolvedCount > 0 {
+                            Section("Resolved (\(resolvedCount))") {
+                                ForEach(tickets.filter { $0.ticketStatus == .resolved }) { ticket in
+                                    closedTicketRow(ticket)
+                                }
+                            }
+                        }
+
+                        if closedCount > 0 {
+                            Section("Closed (\(closedCount))") {
+                                ForEach(tickets.filter { $0.ticketStatus == .closed }) { ticket in
+                                    closedTicketRow(ticket)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Closed Tickets (\(tickets.count))")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func closedTicketRow(_ ticket: Ticket) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(ticket.title)
+                    .font(.body)
+
+                HStack(spacing: 8) {
+                    Text(ticket.ticketPriority.displayName)
+                        .font(.caption2)
+                        .foregroundStyle(ticket.ticketPriority.color)
+
+                    if let assignee = ticket.assigneeDisplayName {
+                        Text(assignee)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Menu {
+                Button("View Details") {
+                    onEdit(ticket)
+                }
+                Button("Reopen") {
+                    onReopen(ticket)
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

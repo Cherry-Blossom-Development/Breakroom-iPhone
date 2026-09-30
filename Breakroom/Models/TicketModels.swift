@@ -26,9 +26,14 @@ enum TicketStatus: String, Codable, CaseIterable {
         self == .resolved || self == .closed
     }
 
-    /// Kanban board columns (excludes legacy 'open')
+    /// Kanban board columns (excludes terminal statuses resolved/closed)
     static var kanbanStatuses: [TicketStatus] {
-        [.backlog, .onDeck, .inProgress, .resolved, .closed]
+        [.backlog, .onDeck, .inProgress]
+    }
+
+    /// Terminal statuses shown in the Closed Tickets list
+    static var closedStatuses: [TicketStatus] {
+        [.resolved, .closed]
     }
 }
 
