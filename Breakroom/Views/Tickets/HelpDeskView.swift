@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UniformTypeIdentifiers
 
 struct HelpDeskView: View {
     let companyId: Int
@@ -337,6 +339,13 @@ struct EditTicketSheet: View {
     @State private var editingCommentId: Int?
     @State private var editCommentText = ""
 
+    // Attachments state (immediate upload in Help Desk)
+    @State private var attachments: [TicketAttachment] = []
+    @State private var isLoadingAttachments = false
+    @State private var isUploadingAttachment = false
+    @State private var attachmentError: String?
+    @State private var isOpeningAttachment = false
+
     private var currentUsername: String? {
         authViewModel.currentUsername
     }
@@ -391,6 +400,8 @@ struct EditTicketSheet: View {
                     }
                 }
 
+                attachmentsSection
+
                 commentsSection
             }
             .navigationTitle("Edit Ticket")
@@ -432,9 +443,49 @@ struct EditTicketSheet: View {
             }
             .task {
                 await loadComments()
+                await loadAttachments()
             }
         }
     }
+
+    // MARK: - Attachments Section
+
+    @ViewBuilder
+    private var attachmentsSection: some View {
+        Section {
+            if isLoadingAttachments {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading attachments...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                HelpDeskAttachmentsView(
+                    attachments: attachments,
+                    isUploading: isUploadingAttachment,
+                    isOpening: isOpeningAttachment,
+                    error: attachmentError,
+                    onAdd: { files in
+                        Task { await uploadAttachments(files) }
+                    },
+                    onRemove: { attachment in
+                        Task { await deleteAttachment(attachment) }
+                    },
+                    onOpen: { attachment in
+                        Task { await openAttachment(attachment) }
+                    }
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+        } header: {
+            Text("Attachments")
+        }
+    }
+
+    // MARK: - Comments Section
 
     @ViewBuilder
     private var commentsSection: some View {
@@ -676,6 +727,76 @@ struct EditTicketSheet: View {
         } catch {
             // Could show error alert
         }
+    }
+
+    // MARK: - Attachments
+
+    private func loadAttachments() async {
+        isLoadingAttachments = true
+        attachmentError = nil
+
+        do {
+            attachments = try await ProjectAPIService.getAttachments(ticketId: ticket.id)
+        } catch {
+            attachmentError = "Failed to load attachments"
+        }
+
+        isLoadingAttachments = false
+    }
+
+    private func uploadAttachments(_ files: [PendingFile]) async {
+        isUploadingAttachment = true
+        attachmentError = nil
+
+        do {
+            let uploadFiles = files.map { (data: $0.data, fileName: $0.fileName, mimeType: $0.mimeType) }
+            let updated = try await ProjectAPIService.uploadAttachments(ticketId: ticket.id, files: uploadFiles)
+            attachments = updated
+        } catch {
+            attachmentError = "Failed to upload attachments"
+        }
+
+        isUploadingAttachment = false
+    }
+
+    private func deleteAttachment(_ attachment: TicketAttachment) async {
+        attachmentError = nil
+
+        do {
+            let updated = try await ProjectAPIService.deleteAttachment(attachmentId: attachment.id)
+            attachments = updated
+        } catch {
+            attachmentError = "Failed to delete attachment"
+        }
+    }
+
+    private func openAttachment(_ attachment: TicketAttachment) async {
+        isOpeningAttachment = true
+        attachmentError = nil
+
+        do {
+            let data = try await ProjectAPIService.downloadAttachment(attachmentId: attachment.id)
+
+            // Save to temp directory
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(attachment.fileName)
+            try data.write(to: fileURL)
+
+            // Open with system
+            await MainActor.run {
+                #if os(iOS)
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = windowScene.windows.first?.rootViewController {
+                    let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+                    rootVC.present(activityVC, animated: true)
+                }
+                #endif
+            }
+        } catch {
+            attachmentError = "Failed to open attachment"
+        }
+
+        isOpeningAttachment = false
     }
 }
 
@@ -965,3 +1086,163 @@ struct ViewTicketSheet: View {
         }
     }
 }
+
+
+// MARK: - Help Desk Attachments View (Immediate Upload)
+
+struct HelpDeskAttachmentsView: View {
+    let attachments: [TicketAttachment]
+    let isUploading: Bool
+    let isOpening: Bool
+    let error: String?
+    let onAdd: ([PendingFile]) -> Void
+    let onRemove: (TicketAttachment) -> Void
+    let onOpen: (TicketAttachment) -> Void
+
+    @State private var showFilePicker = false
+    @State private var localError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Text("Attachments")
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer()
+
+                Button {
+                    localError = nil
+                    showFilePicker = true
+                } label: {
+                    Label(isUploading ? "Uploading..." : "Attach files", systemImage: "paperclip")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isUploading || isOpening)
+            }
+
+            // Empty state
+            if attachments.isEmpty {
+                Text("No attachments. Tap Attach files (up to 25 MB each).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Attachments list
+            ForEach(attachments) { attachment in
+                attachmentRow(attachment)
+            }
+
+            // Error message
+            if let error = localError ?? error {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .fileImporter(
+            isPresented: $showFilePicker,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: true
+        ) { result in
+            handleFilePicked(result)
+        }
+    }
+
+    private func attachmentRow(_ attachment: TicketAttachment) -> some View {
+        HStack(spacing: 12) {
+            // Icon
+            Image(systemName: attachment.isImage ? "photo" : "doc")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .frame(width: 40, height: 40)
+                .background(Color(.tertiarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            // File info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+
+                HStack(spacing: 4) {
+                    Text(attachment.formattedSize)
+                    if let uploader = attachment.uploaderHandle {
+                        Text("·")
+                        Text("@\(uploader)")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            // Remove button
+            Button {
+                onRemove(attachment)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(isUploading || isOpening)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onOpen(attachment)
+        }
+    }
+
+    private func handleFilePicked(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            var newFiles: [PendingFile] = []
+
+            for url in urls {
+                guard url.startAccessingSecurityScopedResource() else { continue }
+                defer { url.stopAccessingSecurityScopedResource() }
+
+                do {
+                    let data = try Data(contentsOf: url)
+                    let fileName = url.lastPathComponent
+                    let mimeType = mimeTypeForURL(url)
+
+                    newFiles.append(PendingFile(
+                        data: data,
+                        fileName: fileName,
+                        mimeType: mimeType
+                    ))
+                } catch {
+                    localError = "Failed to read file: \(url.lastPathComponent)"
+                    return
+                }
+            }
+
+            // Check limits
+            if let limitError = attachmentLimitError(newFiles, alreadyPending: 0) {
+                localError = limitError
+                return
+            }
+
+            onAdd(newFiles)
+
+        case .failure(let error):
+            localError = "Failed to pick files: \(error.localizedDescription)"
+        }
+    }
+
+    private func mimeTypeForURL(_ url: URL) -> String {
+        if let uti = UTType(filenameExtension: url.pathExtension) {
+            return uti.preferredMIMEType ?? "application/octet-stream"
+        }
+        return "application/octet-stream"
+    }
+}
+
