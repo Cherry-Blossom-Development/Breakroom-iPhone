@@ -553,10 +553,15 @@ struct TicketDetailView: View {
     @State private var editedEstimateAmount: String
     @State private var editedEstimateUnit: String
 
+    // Staged dependency changes
+    @State private var addedDependencyIds: Set<Int> = []
+    @State private var removedDependencyIds: Set<Int> = []
+
     // UI state
     @State private var isSaving = false
     @State private var error: String?
     @State private var showUnsavedChangesAlert = false
+    @State private var showAddDependency = false
 
     init(
         ticket: Ticket,
@@ -592,7 +597,21 @@ struct TicketDetailView: View {
         editedPriority != ticket.ticketPriority ||
         editedAssigneeId != ticket.assignedTo ||
         editedEstimateAmount != (ticket.estimateAmount ?? "") ||
-        editedEstimateUnit != (ticket.estimateUnit ?? "hours")
+        editedEstimateUnit != (ticket.estimateUnit ?? "hours") ||
+        !addedDependencyIds.isEmpty ||
+        !removedDependencyIds.isEmpty
+    }
+
+    /// Current dependencies including staged changes
+    private var currentDependencies: [TicketDependency] {
+        dependencies.filter { !removedDependencyIds.contains($0.dependsOnTicketId) }
+    }
+
+    /// Tickets that can be added as dependencies (not already a dependency, not this ticket)
+    private var availableDependencies: [Ticket] {
+        let existingIds = Set(dependencies.map { $0.dependsOnTicketId })
+        let currentIds = existingIds.union(addedDependencyIds).subtracting(removedDependencyIds)
+        return allTickets.filter { $0.id != ticket.id && !currentIds.contains($0.id) }
     }
 
     private var estimateValidation: String? {
@@ -689,16 +708,65 @@ struct TicketDetailView: View {
                 }
 
                 // Dependencies section
-                if !dependencies.isEmpty {
-                    Section("Blocked By") {
-                        ForEach(dependencies) { dep in
-                            HStack {
-                                Image(systemName: dep.isSatisfied ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(dep.isSatisfied ? .green : .orange)
-                                Text(dep.dependsOnTitle ?? "Ticket #\(dep.dependsOnTicketId)")
+                Section {
+                    // Existing dependencies (not removed)
+                    ForEach(currentDependencies) { dep in
+                        HStack {
+                            Image(systemName: dep.isSatisfied ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(dep.isSatisfied ? .green : .orange)
+                            Text(dep.dependsOnTitle ?? "Ticket #\(dep.dependsOnTicketId)")
+
+                            if canWork {
+                                Spacer()
+                                Button {
+                                    removedDependencyIds.insert(dep.dependsOnTicketId)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
+
+                    // Newly added dependencies (from staged changes)
+                    ForEach(Array(addedDependencyIds), id: \.self) { ticketId in
+                        if let depTicket = allTickets.first(where: { $0.id == ticketId }) {
+                            HStack {
+                                Image(systemName: "circle")
+                                    .foregroundStyle(.orange)
+                                Text(depTicket.title)
+                                Text("(new)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+                                Button {
+                                    addedDependencyIds.remove(ticketId)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    // Add dependency button
+                    if canWork && !availableDependencies.isEmpty {
+                        Button {
+                            showAddDependency = true
+                        } label: {
+                            Label("Add Blocker", systemImage: "plus")
+                        }
+                    }
+
+                    if currentDependencies.isEmpty && addedDependencyIds.isEmpty && !canWork {
+                        Text("No dependencies")
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Blocked By")
                 }
 
                 // Info section
@@ -752,6 +820,14 @@ struct TicketDetailView: View {
             } message: {
                 Text("You have unsaved changes. Do you want to discard them?")
             }
+            .sheet(isPresented: $showAddDependency) {
+                AddDependencySheet(
+                    availableTickets: availableDependencies,
+                    onSelect: { selectedTicket in
+                        addedDependencyIds.insert(selectedTicket.id)
+                    }
+                )
+            }
         }
     }
 
@@ -787,7 +863,20 @@ struct TicketDetailView: View {
         }
 
         do {
-            let updated = try await ProjectAPIService.updateTicketFields(ticketId: ticket.id, fields: fields)
+            // Save field changes
+            var updated = ticket
+            if !fields.isEmpty {
+                updated = try await ProjectAPIService.updateTicketFields(ticketId: ticket.id, fields: fields)
+            }
+
+            // Save dependency changes
+            for dependsOnId in addedDependencyIds {
+                _ = try await ProjectAPIService.addDependency(ticketId: ticket.id, dependsOnId: dependsOnId)
+            }
+            for dependsOnId in removedDependencyIds {
+                _ = try await ProjectAPIService.removeDependency(ticketId: ticket.id, dependsOnId: dependsOnId)
+            }
+
             onUpdate(updated)
             dismiss()
         } catch let error as APIError {
@@ -797,6 +886,70 @@ struct TicketDetailView: View {
         }
 
         isSaving = false
+    }
+}
+
+// MARK: - Add Dependency Sheet
+
+struct AddDependencySheet: View {
+    let availableTickets: [Ticket]
+    let onSelect: (Ticket) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredTickets: [Ticket] {
+        if searchText.isEmpty {
+            return availableTickets
+        }
+        return availableTickets.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if availableTickets.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Tickets", systemImage: "ticket")
+                    } description: {
+                        Text("No other tickets available to add as blockers.")
+                    }
+                } else {
+                    List {
+                        ForEach(filteredTickets) { ticket in
+                            Button {
+                                onSelect(ticket)
+                                dismiss()
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(ticket.title)
+                                        .font(.body)
+                                    HStack {
+                                        Text(ticket.ticketStatus.displayName)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text("·")
+                                            .foregroundStyle(.secondary)
+                                        Text(ticket.ticketPriority.displayName)
+                                            .font(.caption)
+                                            .foregroundStyle(ticket.ticketPriority.color)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    }
+                    .searchable(text: $searchText, prompt: "Search tickets")
+                }
+            }
+            .navigationTitle("Add Blocker")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }
 
