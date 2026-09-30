@@ -122,6 +122,7 @@
 		BE662380BF8A44C3D9B240E6 /* OnlineStatusDot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96660832EE4F53E83F470FB2 /* OnlineStatusDot.swift */; };
 		BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */; };
 		C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C281F071A507584EFED7EAC /* ProjectAPIService.swift */; };
+		C0B41B5182C4125EDC7DB994 /* ProjectSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */; };
 		C1685DAD4727AF04676A1F1B /* GamesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2313FB8F6BB65311AC286A36 /* GamesView.swift */; };
 		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
@@ -312,6 +313,7 @@
 		EFABB6360DC6CA565659940B /* StorefrontSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorefrontSetupView.swift; sourceTree = "<group>"; };
 		EFC036B11D3A8C46F7D860A6 /* ChatWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatWidget.swift; sourceTree = "<group>"; };
 		F0468F552AE1E04579A6E80D /* ui-error.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "ui-error.wav"; sourceTree = "<group>"; };
+		F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettingsView.swift; sourceTree = "<group>"; };
 		F1060F730986E198DF8031BB /* arrival.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = arrival.wav; sourceTree = "<group>"; };
 		F3797FB4B813F7A2E2F9D261 /* HaulonautSoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HaulonautSoundService.swift; sourceTree = "<group>"; };
 		F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectWorkspaceView.swift; sourceTree = "<group>"; };
@@ -353,6 +355,7 @@
 		06E0F6E92311918DC05B4F0E /* Projects */ = {
 			isa = PBXGroup;
 			children = (
+				F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */,
 				30598AC7FDDE3DF5B632223A /* ProjectsView.swift */,
 				F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */,
 			);
@@ -923,6 +926,7 @@
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */,
 				ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */,
+				C0B41B5182C4125EDC7DB994 /* ProjectSettingsView.swift in Sources */,
 				2DADBE8B52CB2A7A2CA622C2 /* ProjectWorkspaceView.swift in Sources */,
 				EC339D6FDBA75B2BF7B7C1B0 /* ProjectsView.swift in Sources */,
 				5F49987A81C1579AA6E3A5AE /* PublicProfileView.swift in Sources */,

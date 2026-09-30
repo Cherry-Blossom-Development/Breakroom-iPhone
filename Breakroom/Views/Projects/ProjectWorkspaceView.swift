@@ -129,8 +129,7 @@ struct ProjectWorkspaceView: View {
             // Placeholder until Burndown is implemented
             placeholderView(title: "Burndown Chart", message: "Coming soon")
         case .settings:
-            // Placeholder until Settings is implemented
-            placeholderView(title: "Project Settings", message: "Coming soon")
+            ProjectSettingsView(projectId: projectId)
         }
     }
 
