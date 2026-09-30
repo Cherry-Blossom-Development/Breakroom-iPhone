@@ -59,6 +59,11 @@ struct Ticket: Codable, Identifiable {
     let updatedAt: String?
     let resolvedAt: String?
 
+    // Estimate as entered: amount + unit ("3" + "days"). DECIMAL comes back
+    // from MariaDB as a string ("3.00"), so the amount is kept as text.
+    let estimateAmount: String?
+    let estimateUnit: String?  // hours, days, weeks, months
+
     // Denormalized creator info
     let creatorHandle: String?
     let creatorFirstName: String?
@@ -78,6 +83,8 @@ struct Ticket: Codable, Identifiable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case resolvedAt = "resolved_at"
+        case estimateAmount = "estimate_amount"
+        case estimateUnit = "estimate_unit"
         case creatorHandle = "creator_handle"
         case creatorFirstName = "creator_first_name"
         case creatorLastName = "creator_last_name"
@@ -108,6 +115,30 @@ struct Ticket: Codable, Identifiable {
 
     var isResolved: Bool {
         ticketStatus == .resolved || ticketStatus == .closed
+    }
+
+    // MARK: - Estimate Helpers
+
+    var estimateAmountDouble: Double? {
+        guard let amount = estimateAmount else { return nil }
+        return Double(amount)
+    }
+
+    var hasEstimate: Bool {
+        estimateAmountDouble != nil && estimateUnit?.isEmpty == false
+    }
+
+    /// "3 days", "1 week", "0.5 hours"
+    var formattedEstimate: String {
+        guard let amount = estimateAmountDouble, let unit = estimateUnit else { return "" }
+        let label = amount == 1.0 ? EstimateUnits.singular(unit) : unit
+        return "\(EstimateUnits.formatAmount(amount)) \(label)"
+    }
+
+    /// "3d", "4h", "2mo" -- for Kanban card chips
+    var shortEstimate: String {
+        guard let amount = estimateAmountDouble, let unit = estimateUnit else { return "" }
+        return "\(EstimateUnits.formatAmount(amount))\(EstimateUnits.short(unit))"
     }
 }
 
@@ -161,6 +192,25 @@ struct TicketResponse: Decodable {
 struct ProjectWithTicketsResponse: Decodable {
     let project: ProjectDetail
     let tickets: [Ticket]
+    // Added with dependencies / status history / project members
+    let dependencies: [TicketDependency]?
+    let timeline: [TicketTimelineEntry]?
+    let assignees: [ProjectAssignee]?
+    let isEmployee: Bool?
+    let memberRole: String?
+    let canWork: Bool?
+    let canManage: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case project, tickets, dependencies, timeline, assignees
+        case isEmployee = "is_employee"
+        case memberRole = "member_role"
+        case canWork = "can_work"
+        case canManage = "can_manage"
+    }
+
+    var canWorkBool: Bool { canWork ?? (isEmployee ?? false) }
+    var canManageBool: Bool { canManage ?? false }
 }
 
 struct ProjectDetail: Decodable {
@@ -171,6 +221,7 @@ struct ProjectDetail: Decodable {
     let isActive: Int?
     let isPublic: Int?
     let companyId: Int?
+    let sprintDurationDays: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description
@@ -178,9 +229,12 @@ struct ProjectDetail: Decodable {
         case isActive = "is_active"
         case isPublic = "is_public"
         case companyId = "company_id"
+        case sprintDurationDays = "sprint_duration_days"
     }
 
     var isDefaultBool: Bool { (isDefault ?? 0) != 0 }
+    var isActiveBool: Bool { (isActive ?? 1) != 0 }
+    var isPublicBool: Bool { (isPublic ?? 0) != 0 }
 }
 
 // MARK: - API Request Types

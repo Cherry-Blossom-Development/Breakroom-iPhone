@@ -107,6 +107,40 @@ final class APIClient: @unchecked Sendable {
             authenticated: authenticated
         )
 
+        return try await executeRequest(request)
+    }
+
+    /// Make a request with raw JSON dictionary body (for dynamic fields)
+    func request<T: Decodable>(
+        _ path: String,
+        method: String = "GET",
+        jsonBody: [String: Any?],
+        authenticated: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("ios", forHTTPHeaderField: "X-Client-Platform")
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        // Convert [String: Any?] to JSON, mapping nil to NSNull
+        var jsonDict: [String: Any] = [:]
+        for (key, value) in jsonBody {
+            jsonDict[key] = value ?? NSNull()
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: jsonDict)
+
+        return try await executeRequest(request)
+    }
+
+    private func executeRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await session.data(for: request)
@@ -323,6 +357,112 @@ final class APIClient: @unchecked Sendable {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
             throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+        }
+    }
+
+    /// Upload multiple files via multipart form data
+    func uploadMultipart<T: Decodable>(
+        _ path: String,
+        files: [(fieldName: String, data: Data, fileName: String, mimeType: String)],
+        authenticated: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+
+        // Add each file
+        for file in files {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(file.fieldName)\"; filename=\"\(file.fileName)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)
+            body.append(file.data)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+
+        // Close boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        handleTokenRefresh(httpResponse)
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingError(error)
+            }
+        case 401:
+            await handleUnauthorized()
+            throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
+        default:
+            if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
+                throw APIError.serverError(errorResponse.displayMessage)
+            }
+            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+        }
+    }
+
+    /// Download raw data from an endpoint
+    func downloadData(_ path: String, authenticated: Bool = true) async throws -> Data {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        if authenticated, let bearerToken = KeychainManager.bearerToken {
+            request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        handleTokenRefresh(httpResponse)
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return data
+        case 401:
+            await handleUnauthorized()
+            throw APIError.unauthorized
+        case 402:
+            throw APIError.subscriptionRequired
+        default:
+            throw APIError.serverError("Download failed with status \(httpResponse.statusCode)")
         }
     }
 
