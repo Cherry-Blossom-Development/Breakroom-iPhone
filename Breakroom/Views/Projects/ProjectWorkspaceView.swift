@@ -126,8 +126,7 @@ struct ProjectWorkspaceView: View {
             // Placeholder until GANTT is implemented
             placeholderView(title: "GANTT Chart", message: "Coming soon")
         case .burndown:
-            // Placeholder until Burndown is implemented
-            placeholderView(title: "Burndown Chart", message: "Coming soon")
+            ProjectBurndownView(projectId: projectId)
         case .settings:
             ProjectSettingsView(projectId: projectId)
         }

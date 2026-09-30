@@ -79,6 +79,7 @@
 		62668FF4CE7AB705BA98C472 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93641ABA680BAA7434EC3C66 /* Assets.xcassets */; };
 		6586E14356EC070B6367F1B8 /* arrival.wav in Resources */ = {isa = PBXBuildFile; fileRef = F1060F730986E198DF8031BB /* arrival.wav */; };
 		67ECFE615F05386727874EEF /* hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = B24FC732CF3BE37E97950248 /* hit.wav */; };
+		6815FC2F54103DFCF5D138EA /* ProjectBurndownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2AF26143CDA0EC8D02306F /* ProjectBurndownView.swift */; };
 		6C8A2B0F0DE5E48D3A64624A /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4CA5A27A8C73E34E5E7E16 /* DiscoverView.swift */; };
 		71510AFB5FDD8E7E2DE20E5A /* trade-success.wav in Resources */ = {isa = PBXBuildFile; fileRef = 083245D53A40E4A2D201EBAA /* trade-success.wav */; };
 		74CA770CD8B0AFB4A7B79E94 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05769385EC924F9C434488B0 /* ForgotPasswordView.swift */; };
@@ -123,6 +124,7 @@
 		BEDD659655BC07C9F67A3C71 /* AdminAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */; };
 		C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C281F071A507584EFED7EAC /* ProjectAPIService.swift */; };
 		C0B41B5182C4125EDC7DB994 /* ProjectSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */; };
+		C0F18DFC5B941A64F141A607 /* BurndownCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D96294F9FA5AA5982718229A /* BurndownCalculator.swift */; };
 		C1685DAD4727AF04676A1F1B /* GamesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2313FB8F6BB65311AC286A36 /* GamesView.swift */; };
 		C1F1DA269292A6B5D11BD3FE /* CompanyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C9D810EC9CB606B26AFE39 /* CompanyModels.swift */; };
 		C378A1293790E7F2854BDF66 /* FriendsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6A7AB807A923430F64364A /* FriendsModels.swift */; };
@@ -299,6 +301,7 @@
 		D3F61C941989489C1B54449D /* ArtGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGalleryView.swift; sourceTree = "<group>"; };
 		D43E56E8CF1F36F47BE3F98E /* AdminAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAPIService.swift; sourceTree = "<group>"; };
 		D7B4B3CB776F4FF533F31177 /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
+		D96294F9FA5AA5982718229A /* BurndownCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurndownCalculator.swift; sourceTree = "<group>"; };
 		DC33A89F5D678F7EFF1F5556 /* CompanyPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyPortalView.swift; sourceTree = "<group>"; };
 		DE3DF549F06647717B82C21D /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		DED8FDFB3748D4E3B76B622F /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
@@ -321,6 +324,7 @@
 		F7CE43F1CCD5DB1A23239AF2 /* npc-presence.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "npc-presence.wav"; sourceTree = "<group>"; };
 		FD2A7DEA7811D2E6DDBDDAC2 /* HelpDeskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpDeskView.swift; sourceTree = "<group>"; };
 		FDD12F5074FF49E759466C6A /* BadgeAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeAPIService.swift; sourceTree = "<group>"; };
+		FE2AF26143CDA0EC8D02306F /* ProjectBurndownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBurndownView.swift; sourceTree = "<group>"; };
 		FF50369064D4E76F991AA5D0 /* FeaturesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -355,6 +359,7 @@
 		06E0F6E92311918DC05B4F0E /* Projects */ = {
 			isa = PBXGroup;
 			children = (
+				FE2AF26143CDA0EC8D02306F /* ProjectBurndownView.swift */,
 				F07B89DDF52302D4B66CC364 /* ProjectSettingsView.swift */,
 				30598AC7FDDE3DF5B632223A /* ProjectsView.swift */,
 				F53FA999532F0B8214DD4324 /* ProjectWorkspaceView.swift */,
@@ -476,6 +481,7 @@
 				FDD12F5074FF49E759466C6A /* BadgeAPIService.swift */,
 				A77C18853F8F4E57876C8998 /* BlogAPIService.swift */,
 				1E713F0271C86DF90989F178 /* BreakroomAPIService.swift */,
+				D96294F9FA5AA5982718229A /* BurndownCalculator.swift */,
 				837C577D69014B7BE3E8B0A3 /* ChatAPIService.swift */,
 				1D573EAEA720CD16A33553D5 /* CollectionsAPIService.swift */,
 				5469D7E51CE4C1C31C07B718 /* CompanyAPIService.swift */,
@@ -856,6 +862,7 @@
 				315F439ED108EB006F597A77 /* BreakroomModels.swift in Sources */,
 				CEBB32AFE49C571E8BDC1511 /* BreakroomView.swift in Sources */,
 				9CB6DD631C40F07AC1A7B9EA /* BreakroomViewModel.swift in Sources */,
+				C0F18DFC5B941A64F141A607 /* BurndownCalculator.swift in Sources */,
 				B57F768D5DB8E0B17D2D0903 /* ChatAPIService.swift in Sources */,
 				3B07A4A54C73526FAA378C63 /* ChatCarouselWidget.swift in Sources */,
 				A74769456CE90C1D9159FBF9 /* ChatListView.swift in Sources */,
@@ -925,6 +932,7 @@
 				C98BFD94D3E8C3440A47DF97 /* ProfileModels.swift in Sources */,
 				7F6E36601F22FCAFFF8D3975 /* ProfileView.swift in Sources */,
 				C00A60DF1DFF5D611725736F /* ProjectAPIService.swift in Sources */,
+				6815FC2F54103DFCF5D138EA /* ProjectBurndownView.swift in Sources */,
 				ECD05169C65286D72D95C8F3 /* ProjectModels.swift in Sources */,
 				C0B41B5182C4125EDC7DB994 /* ProjectSettingsView.swift in Sources */,
 				2DADBE8B52CB2A7A2CA622C2 /* ProjectWorkspaceView.swift in Sources */,
