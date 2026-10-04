@@ -18,6 +18,7 @@ struct ProjectWorkspaceView: View {
 
     // Kanban data
     @State private var tickets: [Ticket] = []
+    @State private var splitParents: [Ticket] = []  // Tickets split into subtasks
     @State private var dependencies: [TicketDependency] = []
     @State private var timeline: [TicketTimelineEntry] = []
     @State private var assignees: [ProjectAssignee] = []
@@ -117,11 +118,22 @@ struct ProjectWorkspaceView: View {
                 projectId: projectId,
                 project: project,
                 tickets: $tickets,
+                splitParents: splitParents,
                 dependencies: $dependencies,
                 assignees: assignees,
                 canWork: canWork,
                 canManage: canManage,
                 hasUnsavedChanges: $hasUnsavedChanges,
+                onBacklog: { currentSection = .backlog },
+                onRefresh: { await loadProject() }
+            )
+        case .backlog:
+            ProjectBacklogView(
+                projectId: projectId,
+                tickets: $tickets,
+                splitParents: splitParents,
+                assignees: assignees,
+                canWork: canWork,
                 onRefresh: { await loadProject() }
             )
         case .gantt:
@@ -173,6 +185,7 @@ struct ProjectWorkspaceView: View {
             let response = try await ProjectAPIService.getProjectWithTickets(projectId: projectId)
             project = response.project
             tickets = response.tickets
+            splitParents = response.splitParents ?? []
             dependencies = response.dependencies ?? []
             timeline = response.timeline ?? []
             assignees = response.assignees ?? []
@@ -192,6 +205,7 @@ struct ProjectWorkspaceView: View {
 
 enum ProjectSection: String, CaseIterable {
     case kanban
+    case backlog
     case gantt
     case burndown
     case settings
@@ -199,6 +213,7 @@ enum ProjectSection: String, CaseIterable {
     var label: String {
         switch self {
         case .kanban: return "Kanban Board"
+        case .backlog: return "Backlog"
         case .gantt: return "GANTT Chart"
         case .burndown: return "Burndown Chart"
         case .settings: return "Settings"
@@ -208,6 +223,7 @@ enum ProjectSection: String, CaseIterable {
     var icon: String {
         switch self {
         case .kanban: return "rectangle.split.3x1"
+        case .backlog: return "list.bullet"
         case .gantt: return "calendar.day.timeline.left"
         case .burndown: return "chart.line.downtrend.xyaxis"
         case .settings: return "gearshape"
@@ -223,11 +239,13 @@ struct ProjectKanbanView: View {
     let projectId: Int
     let project: ProjectDetail
     @Binding var tickets: [Ticket]
+    let splitParents: [Ticket]
     @Binding var dependencies: [TicketDependency]
     let assignees: [ProjectAssignee]
     let canWork: Bool
     let canManage: Bool
     @Binding var hasUnsavedChanges: Bool
+    let onBacklog: () -> Void
     let onRefresh: () async -> Void
 
     @State private var selectedTicket: Ticket?
@@ -249,6 +267,15 @@ struct ProjectKanbanView: View {
                 }
 
                 Spacer()
+
+                Button {
+                    onBacklog()
+                } label: {
+                    let backlogCount = tickets.filter { $0.ticketStatus == .backlog && !$0.isSplit }.count
+                    Label("Backlog (\(backlogCount))", systemImage: "list.bullet")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
 
                 Button {
                     showClosedTickets = true
@@ -292,12 +319,12 @@ struct ProjectKanbanView: View {
     }
 
     private var kanbanBoard: some View {
-        let openTickets = tickets.filter { !$0.isResolved }
+        // Kanban shows On Deck and In Progress only; Backlog is a separate view
+        // Filter out split parents (they're shown in backlog with their subtasks)
+        let activeTickets = tickets.filter { !$0.isResolved && !$0.isSplit }
         let columns: [(status: TicketStatus, tickets: [Ticket])] = [
-            (.backlog, openTickets.filter { $0.ticketStatus == .backlog }),
-            (.open, openTickets.filter { $0.ticketStatus == .open }),
-            (.onDeck, openTickets.filter { $0.ticketStatus == .onDeck }),
-            (.inProgress, openTickets.filter { $0.ticketStatus == .inProgress })
+            (.onDeck, activeTickets.filter { $0.ticketStatus == .onDeck }),
+            (.inProgress, activeTickets.filter { $0.ticketStatus == .inProgress })
         ]
 
         return ScrollView(.horizontal, showsIndicators: false) {
@@ -1051,6 +1078,272 @@ struct AddDependencySheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+// MARK: - Project Backlog View
+
+/// Backlog list grouped by split parents, with subtasks nested under their parent.
+struct ProjectBacklogView: View {
+    let projectId: Int
+    @Binding var tickets: [Ticket]
+    let splitParents: [Ticket]
+    let assignees: [ProjectAssignee]
+    let canWork: Bool
+    let onRefresh: () async -> Void
+
+    @State private var selectedTicket: Ticket?
+    @State private var collapsedParents: Set<Int> = []
+    @State private var searchText = ""
+
+    /// Backlog items: tickets in backlog status, excluding split parents (they're shown as group headers)
+    private var backlogTickets: [Ticket] {
+        tickets.filter { $0.ticketStatus == .backlog && !$0.isSplit }
+    }
+
+    /// Build backlog structure: top-level items and grouped subtasks
+    private var backlogStructure: [BacklogItem] {
+        // Index split parents by ID
+        let parentById = Dictionary(uniqueKeysWithValues: splitParents.map { ($0.id, $0) })
+
+        // Group subtasks by their parent
+        var subtasksByParent: [Int: [Ticket]] = [:]
+        var topLevel: [Ticket] = []
+
+        for ticket in backlogTickets {
+            if let parentId = ticket.parentTicketId, parentById[parentId] != nil {
+                subtasksByParent[parentId, default: []].append(ticket)
+            } else {
+                topLevel.append(ticket)
+            }
+        }
+
+        // Build items
+        var items: [BacklogItem] = []
+
+        // Sort top-level by backlog rank, then by ID
+        let sortedTop = topLevel.sorted {
+            if let r1 = $0.backlogRank, let r2 = $1.backlogRank {
+                return r1 < r2
+            }
+            if $0.backlogRank != nil { return true }
+            if $1.backlogRank != nil { return false }
+            return $0.id < $1.id
+        }
+
+        for ticket in sortedTop {
+            if ticket.isSplit {
+                // This shouldn't happen since we filter out split tickets, but just in case
+                continue
+            }
+
+            // Check if this ticket is a split parent with backlog subtasks
+            if let parent = parentById[ticket.id], let subtasks = subtasksByParent[ticket.id], !subtasks.isEmpty {
+                items.append(.group(parent: parent, children: subtasks.sorted { $0.id < $1.id }))
+            } else {
+                items.append(.ticket(ticket))
+            }
+        }
+
+        // Add groups for split parents that have backlog subtasks but aren't in backlog themselves
+        for (parentId, subtasks) in subtasksByParent {
+            if let parent = parentById[parentId], !backlogTickets.contains(where: { $0.id == parentId }) {
+                items.append(.group(parent: parent, children: subtasks.sorted { $0.id < $1.id }))
+            }
+        }
+
+        return items
+    }
+
+    /// Filtered by search
+    private var filteredItems: [BacklogItem] {
+        guard !searchText.isEmpty else { return backlogStructure }
+
+        return backlogStructure.compactMap { item in
+            switch item {
+            case .ticket(let ticket):
+                if ticket.title.localizedCaseInsensitiveContains(searchText) {
+                    return item
+                }
+                return nil
+            case .group(let parent, let children):
+                let matchingChildren = children.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+                if parent.title.localizedCaseInsensitiveContains(searchText) || !matchingChildren.isEmpty {
+                    return .group(parent: parent, children: matchingChildren.isEmpty ? children : matchingChildren)
+                }
+                return nil
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Summary bar
+            HStack {
+                Text("\(backlogTickets.count) ticket\(backlogTickets.count == 1 ? "" : "s") in backlog")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            // Backlog list
+            if backlogTickets.isEmpty {
+                ContentUnavailableView {
+                    Label("Backlog Empty", systemImage: "tray")
+                } description: {
+                    Text("No tickets in the backlog. Move tickets here to plan future work.")
+                }
+            } else {
+                List {
+                    ForEach(filteredItems) { item in
+                        switch item {
+                        case .ticket(let ticket):
+                            backlogRow(ticket: ticket)
+                                .onTapGesture { selectedTicket = ticket }
+
+                        case .group(let parent, let children):
+                            backlogGroup(parent: parent, children: children)
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .searchable(text: $searchText, prompt: "Search backlog")
+            }
+        }
+        .sheet(item: $selectedTicket) { ticket in
+            TicketDetailView(
+                ticket: ticket,
+                assignees: assignees,
+                dependencies: [],  // TODO: pass dependencies
+                allTickets: tickets,
+                canWork: canWork,
+                canManage: false
+            ) { updatedTicket in
+                if let index = tickets.firstIndex(where: { $0.id == updatedTicket.id }) {
+                    tickets[index] = updatedTicket
+                }
+            }
+        }
+        .refreshable {
+            await onRefresh()
+        }
+    }
+
+    private func backlogRow(ticket: Ticket) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("#\(ticket.id)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(ticket.title)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                }
+
+                HStack(spacing: 8) {
+                    // Priority
+                    Text(ticket.ticketPriority.displayName)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(ticket.ticketPriority.color.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                    // Estimate
+                    if ticket.hasEstimate {
+                        Text(ticket.shortEstimate)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    // Assignee
+                    if let assignee = ticket.assigneeDisplayName {
+                        Text(assignee)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+    }
+
+    private func backlogGroup(parent: Ticket, children: [Ticket]) -> some View {
+        let isCollapsed = collapsedParents.contains(parent.id)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            // Group header
+            HStack {
+                Button {
+                    withAnimation {
+                        if isCollapsed {
+                            collapsedParents.remove(parent.id)
+                        } else {
+                            collapsedParents.insert(parent.id)
+                        }
+                    }
+                } label: {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20)
+                }
+                .buttonStyle(.plain)
+
+                Text("#\(parent.id)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(parent.title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+
+                Spacer()
+
+                Text("\(children.count) subtask\(children.count == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                Text(parent.splitMode == "category" ? "Category" : "Split")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.purple.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .onTapGesture { selectedTicket = parent }
+
+            // Subtasks (when expanded)
+            if !isCollapsed {
+                ForEach(children) { child in
+                    HStack {
+                        Spacer().frame(width: 24)  // Indent
+                        backlogRow(ticket: child)
+                    }
+                    .onTapGesture { selectedTicket = child }
+                }
+            }
+        }
+    }
+}
+
+/// Backlog list item: either a single ticket or a group with parent and children
+enum BacklogItem: Identifiable {
+    case ticket(Ticket)
+    case group(parent: Ticket, children: [Ticket])
+
+    var id: String {
+        switch self {
+        case .ticket(let t): return "ticket-\(t.id)"
+        case .group(let p, _): return "group-\(p.id)"
         }
     }
 }
