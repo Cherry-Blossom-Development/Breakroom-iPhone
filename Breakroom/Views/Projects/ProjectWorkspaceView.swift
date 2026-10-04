@@ -306,12 +306,16 @@ struct ProjectKanbanView: View {
                 dependencies: dependencies.filter { $0.ticketId == ticket.id },
                 allTickets: tickets,
                 canWork: canWork,
-                canManage: canManage
-            ) { updatedTicket in
-                if let index = tickets.firstIndex(where: { $0.id == updatedTicket.id }) {
-                    tickets[index] = updatedTicket
+                canManage: canManage,
+                onUpdate: { updatedTicket in
+                    if let index = tickets.firstIndex(where: { $0.id == updatedTicket.id }) {
+                        tickets[index] = updatedTicket
+                    }
+                },
+                onSplit: {
+                    Task { await onRefresh() }
                 }
-            }
+            )
         }
         .refreshable {
             await onRefresh()
@@ -573,6 +577,7 @@ struct TicketDetailView: View {
     let canWork: Bool
     let canManage: Bool
     let onUpdate: (Ticket) -> Void
+    var onSplit: (() -> Void)? = nil  // Called when ticket is split, to trigger refresh
 
     @Environment(\.dismiss) private var dismiss
 
@@ -602,6 +607,7 @@ struct TicketDetailView: View {
     @State private var error: String?
     @State private var showUnsavedChangesAlert = false
     @State private var showAddDependency = false
+    @State private var showSplitTicket = false
 
     init(
         ticket: Ticket,
@@ -610,7 +616,8 @@ struct TicketDetailView: View {
         allTickets: [Ticket],
         canWork: Bool,
         canManage: Bool,
-        onUpdate: @escaping (Ticket) -> Void
+        onUpdate: @escaping (Ticket) -> Void,
+        onSplit: (() -> Void)? = nil
     ) {
         self.ticket = ticket
         self.assignees = assignees
@@ -619,6 +626,7 @@ struct TicketDetailView: View {
         self.canWork = canWork
         self.canManage = canManage
         self.onUpdate = onUpdate
+        self.onSplit = onSplit
 
         // Initialize staged edits from ticket
         _editedTitle = State(initialValue: ticket.title)
@@ -847,6 +855,25 @@ struct TicketDetailView: View {
                     if let createdAt = ticket.createdAt {
                         LabeledContent("Created", value: createdAt)
                     }
+                    if ticket.isSubtask, let parentId = ticket.parentTicketId {
+                        LabeledContent("Parent ticket", value: "#\(parentId)")
+                    }
+                }
+
+                // Actions section
+                if canWork && !ticket.isResolved {
+                    Section {
+                        Button {
+                            showSplitTicket = true
+                        } label: {
+                            Label(
+                                ticket.isSplit ? "Add Subtasks" : "Split into Subtasks",
+                                systemImage: "arrow.branch"
+                            )
+                        }
+                    } header: {
+                        Text("Actions")
+                    }
                 }
 
                 // Error display
@@ -899,6 +926,12 @@ struct TicketDetailView: View {
                         addedDependencyIds.insert(selectedTicket.id)
                     }
                 )
+            }
+            .sheet(isPresented: $showSplitTicket) {
+                SplitTicketSheet(ticket: ticket) {
+                    onSplit?()
+                    dismiss()
+                }
             }
             .task {
                 await loadAttachments()
@@ -1220,12 +1253,16 @@ struct ProjectBacklogView: View {
                 dependencies: [],  // TODO: pass dependencies
                 allTickets: tickets,
                 canWork: canWork,
-                canManage: false
-            ) { updatedTicket in
-                if let index = tickets.firstIndex(where: { $0.id == updatedTicket.id }) {
-                    tickets[index] = updatedTicket
+                canManage: false,
+                onUpdate: { updatedTicket in
+                    if let index = tickets.firstIndex(where: { $0.id == updatedTicket.id }) {
+                        tickets[index] = updatedTicket
+                    }
+                },
+                onSplit: {
+                    Task { await onRefresh() }
                 }
-            }
+            )
         }
         .refreshable {
             await onRefresh()
@@ -1346,6 +1383,240 @@ enum BacklogItem: Identifiable {
         case .group(let p, _): return "group-\(p.id)"
         }
     }
+}
+
+// MARK: - Split Ticket Sheet
+
+/// Sheet for splitting a ticket into subtasks (migration 086)
+struct SplitTicketSheet: View {
+    let ticket: Ticket
+    let onSplit: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    // Form state
+    @State private var mode: String
+    @State private var subtasks: [SubtaskRow]
+    @State private var estimatesEdited = false
+    @State private var isSplitting = false
+    @State private var error: String?
+
+    private let maxSubtasks = 20
+
+    init(ticket: Ticket, onSplit: @escaping () -> Void) {
+        self.ticket = ticket
+        self.onSplit = onSplit
+
+        // If already split, keep the mode; otherwise default to hidden
+        let initialMode = ticket.splitMode ?? "hidden"
+        _mode = State(initialValue: initialMode)
+
+        // Start with 2 empty rows (or 1 if already split)
+        let unit = ticket.estimateUnit ?? "hours"
+        let initialRows = ticket.isSplit
+            ? [SubtaskRow(title: "", estimateAmount: "", estimateUnit: unit)]
+            : [
+                SubtaskRow(title: "", estimateAmount: "", estimateUnit: unit),
+                SubtaskRow(title: "", estimateAmount: "", estimateUnit: unit)
+              ]
+        _subtasks = State(initialValue: initialRows)
+    }
+
+    private var hasEstimate: Bool {
+        ticket.estimateAmountDouble != nil && ticket.estimateUnit != nil
+    }
+
+    private var canAddMore: Bool {
+        subtasks.count < maxSubtasks
+    }
+
+    private var canRemove: Bool {
+        subtasks.count > (ticket.isSplit ? 1 : 2)
+    }
+
+    private var isValid: Bool {
+        subtasks.allSatisfy { !$0.title.trimmingCharacters(in: .whitespaces).isEmpty }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                // Mode picker (only for new splits)
+                if !ticket.isSplit {
+                    Section {
+                        Picker("Split mode", selection: $mode) {
+                            Text("Hidden (off all views)").tag("hidden")
+                            Text("Category (shown on charts)").tag("category")
+                        }
+                    } header: {
+                        Text("Parent Behavior")
+                    } footer: {
+                        Text(mode == "hidden"
+                             ? "The parent ticket will be hidden from the board and charts. Only its subtasks will be visible."
+                             : "The parent will appear as a category on the GANTT chart and as a filter on the Burndown chart.")
+                    }
+                }
+
+                // Subtasks list
+                Section {
+                    ForEach(Array(subtasks.enumerated()), id: \.offset) { index, _ in
+                        subtaskRow(index: index)
+                    }
+                    .onDelete { indices in
+                        subtasks.remove(atOffsets: indices)
+                    }
+
+                    if canAddMore {
+                        Button {
+                            subtasks.append(SubtaskRow(
+                                title: "",
+                                estimateAmount: "",
+                                estimateUnit: ticket.estimateUnit ?? "hours"
+                            ))
+                        } label: {
+                            Label("Add Subtask", systemImage: "plus")
+                        }
+                    }
+                } header: {
+                    Text("Subtasks")
+                } footer: {
+                    if !ticket.isSplit && hasEstimate {
+                        Text("Estimates will be divided evenly from the parent's \(ticket.formattedEstimate). Edit any estimate to stop auto-dividing.")
+                    }
+                }
+
+                // Total estimate (if all same unit)
+                if let total = subtaskTotal {
+                    Section {
+                        LabeledContent("Total estimate", value: total)
+                        if hasEstimate {
+                            LabeledContent("Parent estimate", value: ticket.formattedEstimate)
+                        }
+                    }
+                }
+
+                // Error
+                if let error = error {
+                    Section {
+                        Text(error)
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+            .navigationTitle(ticket.isSplit ? "Add Subtasks" : "Split Ticket")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await split() }
+                    } label: {
+                        if isSplitting {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Split")
+                        }
+                    }
+                    .disabled(!isValid || isSplitting)
+                }
+            }
+            .onAppear {
+                if !ticket.isSplit && hasEstimate && !estimatesEdited {
+                    divideEstimatesEvenly()
+                }
+            }
+            .onChange(of: subtasks.count) {
+                if !ticket.isSplit && hasEstimate && !estimatesEdited {
+                    divideEstimatesEvenly()
+                }
+            }
+        }
+    }
+
+    private func subtaskRow(index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("Subtask title", text: $subtasks[index].title)
+
+            HStack {
+                TextField("Estimate", text: $subtasks[index].estimateAmount)
+                    .keyboardType(.decimalPad)
+                    .frame(width: 60)
+                    .onChange(of: subtasks[index].estimateAmount) { _, _ in
+                        estimatesEdited = true
+                    }
+
+                Picker("Unit", selection: $subtasks[index].estimateUnit) {
+                    ForEach(EstimateUnits.all, id: \.self) { unit in
+                        Text(unit.capitalized).tag(unit)
+                    }
+                }
+                .labelsHidden()
+                .onChange(of: subtasks[index].estimateUnit) { _, _ in
+                    estimatesEdited = true
+                }
+            }
+        }
+    }
+
+    /// Divide the parent's estimate evenly among subtasks
+    private func divideEstimatesEvenly() {
+        guard let amount = ticket.estimateAmountDouble, let unit = ticket.estimateUnit else { return }
+        let count = Double(subtasks.count)
+        let each = (amount / count * 100).rounded() / 100
+
+        for i in 0..<subtasks.count {
+            subtasks[i].estimateAmount = EstimateUnits.formatAmount(each)
+            subtasks[i].estimateUnit = unit
+        }
+    }
+
+    /// Total of subtask estimates when they share the same unit
+    private var subtaskTotal: String? {
+        let filled = subtasks.filter { !$0.estimateAmount.isEmpty }
+        guard !filled.isEmpty else { return nil }
+
+        let units = Set(filled.map { $0.estimateUnit })
+        guard units.count == 1, let unit = units.first else { return "mixed units" }
+
+        let sum = filled.compactMap { Double($0.estimateAmount) }.reduce(0, +)
+        let rounded = (sum * 100).rounded() / 100
+        return "\(EstimateUnits.formatAmount(rounded)) \(rounded == 1 ? EstimateUnits.singular(unit) : unit)"
+    }
+
+    private func split() async {
+        isSplitting = true
+        error = nil
+
+        let entries: [(title: String, estimateAmount: String?, estimateUnit: String?)] = subtasks.map { row in
+            let amount = row.estimateAmount.isEmpty ? nil : row.estimateAmount
+            let unit = amount != nil ? row.estimateUnit : nil
+            return (row.title.trimmingCharacters(in: .whitespaces), amount, unit)
+        }
+
+        do {
+            _ = try await TicketAPIService.splitTicket(
+                ticketId: ticket.id,
+                mode: mode,
+                subtasks: entries
+            )
+            onSplit()
+        } catch let error as APIError {
+            self.error = error.localizedDescription
+        } catch {
+            self.error = "Failed to split ticket"
+        }
+
+        isSplitting = false
+    }
+}
+
+/// A row in the split ticket form
+private struct SubtaskRow {
+    var title: String
+    var estimateAmount: String
+    var estimateUnit: String
 }
 
 #Preview {
