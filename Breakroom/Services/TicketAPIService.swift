@@ -143,6 +143,64 @@ enum TicketAPIService {
             method: "DELETE"
         )
     }
+
+    // MARK: - Ticket Contributors (Migration 088)
+
+    /// Get contributors for a ticket
+    static func getContributors(ticketId: Int) async throws -> [TicketContributor] {
+        let response: ContributorsResponse = try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/contributors"
+        )
+        return response.contributors
+    }
+
+    /// Get suggested roles used on other tickets in the company
+    static func getContributorRoles(ticketId: Int) async throws -> [String] {
+        let response: ContributorRolesResponse = try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/contributor-roles"
+        )
+        return response.roles
+    }
+
+    /// Save contributors for a ticket (replaces existing list)
+    static func saveContributors(ticketId: Int, contributors: [(userId: Int, role: String)]) async throws -> [TicketContributor] {
+        let entries = contributors.map { SaveContributorsRequest.ContributorEntry(userId: $0.userId, role: $0.role) }
+        let response: ContributorsResponse = try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/contributors",
+            method: "PUT",
+            body: SaveContributorsRequest(contributors: entries)
+        )
+        return response.contributors
+    }
+
+    // MARK: - Split Ticket (Migration 086)
+
+    /// Split a ticket into subtasks
+    static func splitTicket(
+        ticketId: Int,
+        mode: String,
+        subtasks: [(title: String, estimateAmount: String?, estimateUnit: String?)]
+    ) async throws -> SplitTicketResponse {
+        let entries = subtasks.map {
+            SplitTicketRequest.SubtaskEntry(title: $0.title, estimateAmount: $0.estimateAmount, estimateUnit: $0.estimateUnit)
+        }
+        return try await APIClient.shared.request(
+            "/api/helpdesk/ticket/\(ticketId)/split",
+            method: "POST",
+            body: SplitTicketRequest(mode: mode, subtasks: entries)
+        )
+    }
+
+    // MARK: - Backlog Order (Migration 087)
+
+    /// Save backlog order for a project
+    static func saveBacklogOrder(projectId: Int, order: [Int]) async throws {
+        let _: MessageResponse = try await APIClient.shared.request(
+            "/api/projects/\(projectId)/backlog-order",
+            method: "PUT",
+            body: BacklogOrderRequest(order: order)
+        )
+    }
 }
 
 // MARK: - Helper Request Type

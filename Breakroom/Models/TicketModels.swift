@@ -299,6 +299,87 @@ struct UpdateTicketRequest: Encodable {
     }
 }
 
+// MARK: - Ticket Contributors (Migration 088)
+
+struct TicketContributor: Codable, Identifiable, Equatable {
+    let userId: Int
+    let role: String
+    let handle: String?
+    let firstName: String?
+    let lastName: String?
+
+    var id: Int { userId }
+
+    enum CodingKeys: String, CodingKey {
+        case role, handle
+        case userId = "user_id"
+        case firstName = "first_name"
+        case lastName = "last_name"
+    }
+
+    var displayName: String {
+        let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? (handle ?? "Unknown") : parts.joined(separator: " ")
+    }
+}
+
+struct ContributorsResponse: Decodable {
+    let contributors: [TicketContributor]
+}
+
+struct ContributorRolesResponse: Decodable {
+    let roles: [String]
+}
+
+struct SaveContributorsRequest: Encodable {
+    let contributors: [ContributorEntry]
+
+    struct ContributorEntry: Encodable {
+        let userId: Int
+        let role: String
+
+        enum CodingKeys: String, CodingKey {
+            case userId = "user_id"
+            case role
+        }
+    }
+}
+
+// MARK: - Split Ticket (Migration 086)
+
+struct SplitTicketRequest: Encodable {
+    let mode: String  // "hidden" or "category"
+    let subtasks: [SubtaskEntry]
+
+    struct SubtaskEntry: Encodable {
+        let title: String
+        let estimateAmount: String?
+        let estimateUnit: String?
+
+        enum CodingKeys: String, CodingKey {
+            case title
+            case estimateAmount = "estimate_amount"
+            case estimateUnit = "estimate_unit"
+        }
+    }
+}
+
+struct SplitTicketResponse: Decodable {
+    let splitMode: String
+    let subtaskIds: [Int]
+
+    enum CodingKeys: String, CodingKey {
+        case splitMode = "split_mode"
+        case subtaskIds = "subtask_ids"
+    }
+}
+
+// MARK: - Backlog Order (Migration 087)
+
+struct BacklogOrderRequest: Encodable {
+    let order: [Int]  // Ticket IDs in display order
+}
+
 // MARK: - Help Desk Response
 
 struct HelpDeskCompanyResponse: Decodable {
