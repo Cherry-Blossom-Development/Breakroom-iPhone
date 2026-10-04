@@ -64,6 +64,8 @@ enum TicketPriority: String, Codable, CaseIterable {
 struct Ticket: Codable, Identifiable {
     let id: Int
     let companyId: Int?
+    let parentTicketId: Int?  // Subtask's parent (migration 086)
+    let splitMode: String?    // "hidden" or "category" if this ticket was split
     let creatorId: Int?
     let assignedTo: Int?
     let title: String
@@ -79,6 +81,9 @@ struct Ticket: Codable, Identifiable {
     let estimateAmount: String?
     let estimateUnit: String?  // hours, days, weeks, months
 
+    // Backlog ordering per project (migration 087)
+    let backlogRank: Int?
+
     // Denormalized creator info
     let creatorHandle: String?
     let creatorFirstName: String?
@@ -93,6 +98,8 @@ struct Ticket: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, title, description, status, priority
         case companyId = "company_id"
+        case parentTicketId = "parent_ticket_id"
+        case splitMode = "split_mode"
         case creatorId = "creator_id"
         case assignedTo = "assigned_to"
         case createdAt = "created_at"
@@ -100,6 +107,7 @@ struct Ticket: Codable, Identifiable {
         case resolvedAt = "resolved_at"
         case estimateAmount = "estimate_amount"
         case estimateUnit = "estimate_unit"
+        case backlogRank = "backlog_rank"
         case creatorHandle = "creator_handle"
         case creatorFirstName = "creator_first_name"
         case creatorLastName = "creator_last_name"
@@ -130,6 +138,16 @@ struct Ticket: Codable, Identifiable {
 
     var isResolved: Bool {
         ticketStatus == .resolved || ticketStatus == .closed
+    }
+
+    /// True if this ticket was split into subtasks
+    var isSplit: Bool {
+        splitMode != nil
+    }
+
+    /// True if this ticket is a subtask of another ticket
+    var isSubtask: Bool {
+        parentTicketId != nil
     }
 
     // MARK: - Estimate Helpers
@@ -207,6 +225,7 @@ struct TicketResponse: Decodable {
 struct ProjectWithTicketsResponse: Decodable {
     let project: ProjectDetail
     let tickets: [Ticket]
+    let splitParents: [Ticket]?  // Tickets that were split (migration 086)
     // Added with dependencies / status history / project members
     let dependencies: [TicketDependency]?
     let timeline: [TicketTimelineEntry]?
@@ -218,6 +237,7 @@ struct ProjectWithTicketsResponse: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case project, tickets, dependencies, timeline, assignees
+        case splitParents = "split_parents"
         case isEmployee = "is_employee"
         case memberRole = "member_role"
         case canWork = "can_work"
