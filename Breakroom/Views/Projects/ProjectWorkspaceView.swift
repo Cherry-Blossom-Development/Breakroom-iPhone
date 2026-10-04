@@ -1272,6 +1272,8 @@ struct ProjectBacklogView: View {
     @State private var selectedTicket: Ticket?
     @State private var collapsedParents: Set<Int> = []
     @State private var searchText = ""
+    @State private var orderedItems: [BacklogItem] = []
+    @State private var isSavingOrder = false
 
     /// Backlog items: tickets in backlog status, excluding split parents (they're shown as group headers)
     private var backlogTickets: [Ticket] {
@@ -1353,14 +1355,31 @@ struct ProjectBacklogView: View {
         }
     }
 
+    /// Items for display (filtered if searching, otherwise ordered)
+    private var displayItems: [BacklogItem] {
+        guard searchText.isEmpty else { return filteredItems }
+        return orderedItems.isEmpty ? backlogStructure : orderedItems
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Summary bar
+            // Summary bar with reorder button
             HStack {
                 Text("\(backlogTickets.count) ticket\(backlogTickets.count == 1 ? "" : "s") in backlog")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
                 Spacer()
+
+                if canWork && !backlogTickets.isEmpty && searchText.isEmpty {
+                    if isSavingOrder {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        EditButton()
+                            .font(.subheadline)
+                    }
+                }
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
@@ -1374,7 +1393,7 @@ struct ProjectBacklogView: View {
                 }
             } else {
                 List {
-                    ForEach(filteredItems) { item in
+                    ForEach(displayItems) { item in
                         switch item {
                         case .ticket(let ticket):
                             backlogRow(ticket: ticket)
@@ -1384,10 +1403,18 @@ struct ProjectBacklogView: View {
                             backlogGroup(parent: parent, children: children)
                         }
                     }
+                    .onMove { source, destination in
+                        if canWork && searchText.isEmpty {
+                            moveItems(from: source, to: destination)
+                        }
+                    }
                 }
                 .listStyle(.plain)
                 .searchable(text: $searchText, prompt: "Search backlog")
             }
+        }
+        .onAppear {
+            orderedItems = backlogStructure
         }
         .sheet(item: $selectedTicket) { ticket in
             TicketDetailView(
@@ -1513,10 +1540,41 @@ struct ProjectBacklogView: View {
             }
         }
     }
+
+    // MARK: - Drag to Reorder
+
+    private func moveItems(from source: IndexSet, to destination: Int) {
+        orderedItems.move(fromOffsets: source, toOffset: destination)
+        Task { await saveBacklogOrder() }
+    }
+
+    private func saveBacklogOrder() async {
+        isSavingOrder = true
+
+        // Build flat list of ticket IDs in display order
+        var ticketIds: [Int] = []
+        for item in orderedItems {
+            switch item {
+            case .ticket(let ticket):
+                ticketIds.append(ticket.id)
+            case .group(let parent, let children):
+                ticketIds.append(parent.id)
+                ticketIds.append(contentsOf: children.map { $0.id })
+            }
+        }
+
+        do {
+            try await TicketAPIService.saveBacklogOrder(projectId: projectId, order: ticketIds)
+        } catch {
+            // Silently fail - order will be reset on next refresh
+        }
+
+        isSavingOrder = false
+    }
 }
 
 /// Backlog list item: either a single ticket or a group with parent and children
-enum BacklogItem: Identifiable {
+enum BacklogItem: Identifiable, Equatable {
     case ticket(Ticket)
     case group(parent: Ticket, children: [Ticket])
 
@@ -1525,6 +1583,10 @@ enum BacklogItem: Identifiable {
         case .ticket(let t): return "ticket-\(t.id)"
         case .group(let p, _): return "group-\(p.id)"
         }
+    }
+
+    static func == (lhs: BacklogItem, rhs: BacklogItem) -> Bool {
+        lhs.id == rhs.id
     }
 }
 
