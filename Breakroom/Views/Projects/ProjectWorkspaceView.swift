@@ -602,6 +602,12 @@ struct TicketDetailView: View {
     @State private var attachmentError: String?
     @State private var isOpeningAttachment = false
 
+    // Contributors state (migration 088)
+    @State private var contributors: [TicketContributor] = []
+    @State private var roleSuggestions: [String] = []
+    @State private var isLoadingContributors = false
+    @State private var stagedContributors: [StagedContributor] = []  // Staged changes
+
     // UI state
     @State private var isSaving = false
     @State private var error: String?
@@ -649,7 +655,21 @@ struct TicketDetailView: View {
         !addedDependencyIds.isEmpty ||
         !removedDependencyIds.isEmpty ||
         !pendingFiles.isEmpty ||
-        !pendingRemovals.isEmpty
+        !pendingRemovals.isEmpty ||
+        hasContributorChanges
+    }
+
+    private var hasContributorChanges: Bool {
+        // Compare stagedContributors to original contributors
+        guard contributors.count == stagedContributors.count else { return true }
+        for original in contributors {
+            if let staged = stagedContributors.first(where: { $0.userId == original.userId }) {
+                if staged.role != original.role { return true }
+            } else {
+                return true  // User was removed
+            }
+        }
+        return false
     }
 
     /// Current dependencies including staged changes
@@ -849,6 +869,22 @@ struct TicketDetailView: View {
                     Text("Attachments")
                 }
 
+                // Contributors section (migration 088)
+                Section {
+                    if isLoadingContributors {
+                        HStack {
+                            ProgressView().controlSize(.small)
+                            Text("Loading contributors...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        contributorsSection
+                    }
+                } header: {
+                    Text("Contributors")
+                }
+
                 // Info section
                 Section {
                     LabeledContent("Created by", value: ticket.creatorDisplayName)
@@ -935,8 +971,109 @@ struct TicketDetailView: View {
             }
             .task {
                 await loadAttachments()
+                await loadContributors()
             }
         }
+    }
+
+    // MARK: - Contributors Section
+
+    @ViewBuilder
+    private var contributorsSection: some View {
+        // Current contributors
+        ForEach(stagedContributors.indices, id: \.self) { index in
+            contributorRow(index: index)
+        }
+
+        // Add contributor (only show people not already added)
+        if canWork {
+            let addedIds = Set(stagedContributors.map { $0.userId })
+            let available = assignees.filter { !addedIds.contains($0.userId) && $0.userId != ticket.assignedTo }
+
+            if !available.isEmpty {
+                Menu {
+                    ForEach(available) { person in
+                        Button(person.displayName) {
+                            stagedContributors.append(StagedContributor(
+                                userId: person.userId,
+                                role: "",
+                                handle: person.handle,
+                                firstName: person.firstName,
+                                lastName: person.lastName
+                            ))
+                        }
+                    }
+                } label: {
+                    Label("Add Contributor", systemImage: "plus")
+                }
+            }
+        }
+
+        if stagedContributors.isEmpty && !canWork {
+            Text("No contributors")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func contributorRow(index: Int) -> some View {
+        let contributor = stagedContributors[index]
+
+        return HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(contributor.displayName)
+                    .font(.subheadline)
+
+                if canWork {
+                    TextField("Role (optional)", text: $stagedContributors[index].role)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !contributor.role.isEmpty {
+                    Text(contributor.role)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            if canWork {
+                Button {
+                    stagedContributors.remove(at: index)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Data Loading
+
+    private func loadContributors() async {
+        isLoadingContributors = true
+
+        do {
+            async let contributorsTask = TicketAPIService.getContributors(ticketId: ticket.id)
+            async let rolesTask = TicketAPIService.getContributorRoles(ticketId: ticket.id)
+
+            let (loadedContributors, loadedRoles) = try await (contributorsTask, rolesTask)
+            contributors = loadedContributors
+            roleSuggestions = loadedRoles
+            stagedContributors = loadedContributors.map { c in
+                StagedContributor(
+                    userId: c.userId,
+                    role: c.role,
+                    handle: c.handle,
+                    firstName: c.firstName,
+                    lastName: c.lastName
+                )
+            }
+        } catch {
+            // Silently fail - contributors are optional
+        }
+
+        isLoadingContributors = false
     }
 
     private func loadAttachments() async {
@@ -1037,6 +1174,12 @@ struct TicketDetailView: View {
             // Delete removed attachments
             for attachmentId in pendingRemovals {
                 _ = try await ProjectAPIService.deleteAttachment(attachmentId: attachmentId)
+            }
+
+            // Save contributors if changed
+            if hasContributorChanges {
+                let entries = stagedContributors.map { (userId: $0.userId, role: $0.role) }
+                _ = try await TicketAPIService.saveContributors(ticketId: ticket.id, contributors: entries)
             }
 
             onUpdate(updated)
@@ -1617,6 +1760,20 @@ private struct SubtaskRow {
     var title: String
     var estimateAmount: String
     var estimateUnit: String
+}
+
+/// A staged contributor change (before Save)
+struct StagedContributor: Equatable {
+    let userId: Int
+    var role: String
+    let handle: String?
+    let firstName: String?
+    let lastName: String?
+
+    var displayName: String {
+        let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? (handle ?? "Unknown") : parts.joined(separator: " ")
+    }
 }
 
 #Preview {
