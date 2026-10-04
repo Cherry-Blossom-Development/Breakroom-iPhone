@@ -38,6 +38,12 @@ struct ProjectSettingsView: View {
     @State private var inviteMessage: String?
     @State private var inviteError: String?
 
+    // Invite autocomplete
+    @State private var inviteSuggestions: [InviteSuggestion] = []
+    @State private var isSearchingSuggestions = false
+    @State private var showSuggestions = false
+    @State private var searchTask: Task<Void, Never>?
+
     var body: some View {
         Group {
             if isLoading {
@@ -262,11 +268,50 @@ struct ProjectSettingsView: View {
             Text("Invite someone")
                 .font(.subheadline.weight(.semibold))
 
-            TextField("Handle or email", text: $inviteIdentifier)
-                .textFieldStyle(.roundedBorder)
-                .disabled(isInviting)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            // TextField with autocomplete
+            VStack(alignment: .leading, spacing: 0) {
+                TextField("Handle or email", text: $inviteIdentifier)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(isInviting)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onChange(of: inviteIdentifier) { _, newValue in
+                        searchInviteSuggestions(query: newValue)
+                    }
+
+                // Suggestions dropdown
+                if showSuggestions && !inviteSuggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(inviteSuggestions) { suggestion in
+                            Button {
+                                selectSuggestion(suggestion)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(suggestion.displayName)
+                                            .font(.subheadline)
+                                        Text("@\(suggestion.handle)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if suggestion.id != inviteSuggestions.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                }
+            }
 
             HStack {
                 Picker("Role", selection: $inviteRole) {
@@ -305,6 +350,49 @@ struct ProjectSettingsView: View {
                     .foregroundStyle(.red)
             }
         }
+    }
+
+    // MARK: - Invite Autocomplete
+
+    private func searchInviteSuggestions(query: String) {
+        // Cancel any pending search
+        searchTask?.cancel()
+
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+
+        // Don't search if too short or looks like an email
+        guard trimmed.count >= 2, !trimmed.contains("@") else {
+            inviteSuggestions = []
+            showSuggestions = false
+            return
+        }
+
+        // Debounce: wait 200ms before searching
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+
+            isSearchingSuggestions = true
+            do {
+                let suggestions = try await ProjectAPIService.getInviteSuggestions(
+                    projectId: projectId,
+                    query: trimmed
+                )
+                guard !Task.isCancelled else { return }
+                inviteSuggestions = suggestions
+                showSuggestions = !suggestions.isEmpty
+            } catch {
+                inviteSuggestions = []
+                showSuggestions = false
+            }
+            isSearchingSuggestions = false
+        }
+    }
+
+    private func selectSuggestion(_ suggestion: InviteSuggestion) {
+        inviteIdentifier = suggestion.handle
+        inviteSuggestions = []
+        showSuggestions = false
     }
 
     // MARK: - Helpers

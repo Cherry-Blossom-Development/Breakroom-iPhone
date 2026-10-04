@@ -180,4 +180,41 @@ enum ProjectAPIService {
     static func downloadAttachment(attachmentId: Int) async throws -> Data {
         try await APIClient.shared.downloadData("/api/helpdesk/attachments/\(attachmentId)/download")
     }
+
+    // MARK: - Invite Suggestions
+
+    /// Search for people to invite to a project
+    static func getInviteSuggestions(projectId: Int, query: String) async throws -> [InviteSuggestion] {
+        let response: InviteSuggestionsResponse = try await APIClient.shared.request(
+            "/api/projects/\(projectId)/invite-suggestions?q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query)"
+        )
+        return response.users
+    }
+}
+
+// MARK: - Invite Suggestions Response
+
+struct InviteSuggestion: Codable, Identifiable {
+    let id: Int
+    let handle: String
+    let firstName: String?
+    let lastName: String?
+    let email: String?
+    let photoPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, handle, email
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case photoPath = "photo_path"
+    }
+
+    var displayName: String {
+        let parts = [firstName, lastName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? handle : parts.joined(separator: " ")
+    }
+}
+
+struct InviteSuggestionsResponse: Codable {
+    let users: [InviteSuggestion]
 }
