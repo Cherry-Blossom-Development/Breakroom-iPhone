@@ -3160,36 +3160,50 @@ struct SetlistCard: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(setlist.songs.enumerated()), id: \.offset) { index, song in
-                    HStack {
+                    HStack(spacing: 8) {
                         Text(song)
                             .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .lineLimit(2)
 
-                        Spacer()
+                        // Up/down buttons stacked vertically to save horizontal space
+                        VStack(spacing: 0) {
+                            Button {
+                                moveSong(at: index, direction: -1)
+                            } label: {
+                                Image(systemName: "chevron.up")
+                                    .font(.caption.weight(.semibold))
+                                    .frame(width: 36, height: 28)
+                                    .contentShape(Rectangle())
+                            }
+                            .disabled(index == 0)
+                            .opacity(index == 0 ? 0.3 : 1)
 
-                        Button {
-                            moveSong(at: index, direction: -1)
-                        } label: {
-                            Image(systemName: "chevron.up")
-                                .font(.caption)
+                            Button {
+                                moveSong(at: index, direction: 1)
+                            } label: {
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .frame(width: 36, height: 28)
+                                    .contentShape(Rectangle())
+                            }
+                            .disabled(index == setlist.songs.count - 1)
+                            .opacity(index == setlist.songs.count - 1 ? 0.3 : 1)
                         }
-                        .disabled(index == 0)
+                        .background(Color(.systemGray5))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
 
-                        Button {
-                            moveSong(at: index, direction: 1)
-                        } label: {
-                            Image(systemName: "chevron.down")
-                                .font(.caption)
-                        }
-                        .disabled(index == setlist.songs.count - 1)
-
-                        Button {
+                        // Delete button with proper touch target
+                        Button(role: .destructive) {
                             removeSong(at: index)
                         } label: {
-                            Image(systemName: "xmark")
+                            Image(systemName: "trash")
                                 .font(.caption)
+                                .frame(width: 36, height: 36)
+                                .contentShape(Rectangle())
                         }
                     }
-                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
                 }
             }
 
