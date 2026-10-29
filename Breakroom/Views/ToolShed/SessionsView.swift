@@ -629,30 +629,30 @@ struct SessionsView: View {
     private func recordingHeader(context: String) -> some View {
         let isRecordingThisContext = (recordingState == .recording || recordingState == .saving) && recordingContext == context
 
-        return HStack {
-            Text(context == "band" ? "Sessions" : "Record")
-                .font(.title2.bold())
-                .foregroundStyle(.purple)
+        return HStack(spacing: 8) {
+            // Record button
+            recordButton(context: context)
 
-            Spacer()
-
-            // Upload button (Band Practice and Individual, when not recording)
-            if (context == "band" || context == "individual") && !isRecordingThisContext {
+            // Upload File button (when not recording)
+            if !isRecordingThisContext {
                 Button {
                     uploadContext = context
                     showFilePicker = true
                 } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.title3)
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Upload File")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("sessionsUploadButton")
                 .accessibilityLabel("Upload a recording")
                 .accessibilityInputLabels(["upload", "upload recording", "import"])
             }
-
-            recordButton(context: context)
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -669,10 +669,10 @@ struct SessionsView: View {
                     Image(systemName: "mic.fill")
                     Text("Record")
                 }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)
-            .fixedSize()
             .accessibilityIdentifier("sessionsRecordButton")
             .accessibilityInputLabels(["record", "start recording", "begin recording"])
 
@@ -691,13 +691,14 @@ struct SessionsView: View {
                         Image(systemName: "stop.fill")
                         Text("Stop")
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-                .fixedSize()
                 .accessibilityIdentifier("sessionsStopButton")
                 .accessibilityInputLabels(["stop", "stop recording", "finish recording"])
             }
+            .frame(maxWidth: .infinity)
 
         case .saving where isThisContext:
             ProgressView()
@@ -710,10 +711,10 @@ struct SessionsView: View {
                     Image(systemName: "mic.fill")
                     Text("Record")
                 }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)
-            .fixedSize()
             .disabled(true)
         }
     }
