@@ -43,7 +43,7 @@ struct SessionsView: View {
     @State private var selectedYear: Int?
     @State private var indivSelectedYear: Int?
     @State private var bandMemberSelectedYear: Int?
-    @State private var bandMemberBandFilter: Int?
+    @State private var bandPracticeBandFilter: Int?
 
     // Recording
     @State private var recordingState: RecordingState = .idle
@@ -272,6 +272,9 @@ struct SessionsView: View {
         ZStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    // Band picker at top
+                    bandPickerHeader
+
                     // Header with record button
                     recordingHeader(context: "band")
 
@@ -340,13 +343,19 @@ struct SessionsView: View {
                     // Band Members section
                     sectionHeader("Band Members")
 
-                    if !bandMemberSessions.isEmpty {
-                        bandMemberFilters
+                    // Use the same band picker as Band Practice
+                    if !activeBands.isEmpty {
+                        bandPickerHeader
                     }
 
-                    if bandMemberSessions.isEmpty {
-                        emptyState(message: "No band member recordings", subtitle: "Join a band to see their sessions")
-                            .padding(.bottom, 24)
+                    if filteredBandMemberSessions.isEmpty {
+                        emptyState(
+                            message: selectedBandName != "No Band" 
+                                ? "No recordings from \(selectedBandName) members" 
+                                : "No band member recordings",
+                            subtitle: "Join a band to see their sessions"
+                        )
+                        .padding(.bottom, 24)
                     } else {
                         bandMemberSessionsList
                     }
@@ -785,16 +794,16 @@ struct SessionsView: View {
             // Band filter
             Menu {
                 Button("All Bands") {
-                    bandMemberBandFilter = nil
+                    bandPracticeBandFilter = nil
                 }
                 ForEach(bandMemberBands, id: \.id) { band in
                     Button(band.name) {
-                        bandMemberBandFilter = band.id
+                        bandPracticeBandFilter = band.id
                     }
                 }
             } label: {
                 HStack {
-                    Text(bandMemberBandFilter == nil ? "All Bands" : (bandMemberBands.first { $0.id == bandMemberBandFilter }?.name ?? "All Bands"))
+                    Text(bandPracticeBandFilter == nil ? "All Bands" : (bandMemberBands.first { $0.id == bandPracticeBandFilter }?.name ?? "All Bands"))
                         .font(.subheadline)
                     Image(systemName: "chevron.down")
                         .font(.caption)
@@ -857,7 +866,7 @@ struct SessionsView: View {
     }
 
     private var filteredBandMemberSessions: [Session] {
-        if let bandId = bandMemberBandFilter {
+        if let bandId = bandPracticeBandFilter {
             return bandMemberSessions.filter { $0.bandId == bandId }
         }
         return bandMemberSessions
@@ -916,6 +925,47 @@ struct SessionsView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 8)
             }
+    }
+
+    /// Band picker header showing "Band [name] ▾" - used in Band Practice and Band Members sections
+    private var bandPickerHeader: some View {
+        HStack {
+            Text("Band")
+                .font(.headline)
+            
+            if !activeBands.isEmpty {
+                Menu {
+                    ForEach(activeBands, id: \.id) { band in
+                        Button(band.name) {
+                            bandPracticeBandFilter = band.id
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedBandName)
+                            .foregroundStyle(.purple)
+                        if activeBands.count > 1 {
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.purple)
+                        }
+                    }
+                }
+                .disabled(activeBands.count <= 1)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 12)
+    }
+
+    private var selectedBandName: String {
+        if let bandId = bandPracticeBandFilter,
+           let band = activeBands.first(where: { $0.id == bandId }) {
+            return band.name
+        }
+        return activeBands.first?.name ?? "No Band"
     }
 
     private func emptyState(message: String, subtitle: String) -> some View {
@@ -1475,6 +1525,10 @@ struct SessionsView: View {
     private func loadBands() async {
         do {
             bands = try await SessionsAPIService.getBands()
+            // Set initial band filter if not already set
+            if bandPracticeBandFilter == nil, let firstActiveBand = activeBands.first {
+                bandPracticeBandFilter = firstActiveBand.id
+            }
         } catch {
             // Non-critical
         }
