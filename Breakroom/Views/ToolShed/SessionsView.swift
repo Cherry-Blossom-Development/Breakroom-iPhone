@@ -3153,7 +3153,7 @@ struct SetlistCard: View {
                 }
             }
 
-            // Songs list
+            // Songs list - drag handle on left, trash on right
             if setlist.songs.isEmpty {
                 Text("No songs yet.")
                     .font(.caption)
@@ -3161,39 +3161,19 @@ struct SetlistCard: View {
             } else {
                 ForEach(Array(setlist.songs.enumerated()), id: \.offset) { index, song in
                     HStack(spacing: 8) {
+                        // Drag handle on left
+                        Image(systemName: "line.3.horizontal")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                            .accessibilityHidden(true)
+
                         Text(song)
                             .font(.subheadline)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(2)
 
-                        // Up/down buttons stacked vertically to save horizontal space
-                        VStack(spacing: 0) {
-                            Button {
-                                moveSong(at: index, direction: -1)
-                            } label: {
-                                Image(systemName: "chevron.up")
-                                    .font(.caption.weight(.semibold))
-                                    .frame(width: 36, height: 28)
-                                    .contentShape(Rectangle())
-                            }
-                            .disabled(index == 0)
-                            .opacity(index == 0 ? 0.3 : 1)
-
-                            Button {
-                                moveSong(at: index, direction: 1)
-                            } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
-                                    .frame(width: 36, height: 28)
-                                    .contentShape(Rectangle())
-                            }
-                            .disabled(index == setlist.songs.count - 1)
-                            .opacity(index == setlist.songs.count - 1 ? 0.3 : 1)
-                        }
-                        .background(Color(.systemGray5))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                        // Delete button with proper touch target
+                        // Delete button on right
                         Button(role: .destructive) {
                             removeSong(at: index)
                         } label: {
@@ -3204,6 +3184,30 @@ struct SetlistCard: View {
                         }
                     }
                     .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                    .draggable(song) {
+                        Text(song)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .shadow(radius: 4)
+                    }
+                    .dropDestination(for: String.self) { items, _ in
+                        guard let droppedSong = items.first,
+                              let fromIndex = setlist.songs.firstIndex(of: droppedSong),
+                              fromIndex != index else { return false }
+                        moveSongDirect(from: fromIndex, to: index)
+                        return true
+                    }
+                    .accessibilityActions {
+                        if index > 0 {
+                            Button("Move up") { moveSong(at: index, direction: -1) }
+                        }
+                        if index < setlist.songs.count - 1 {
+                            Button("Move down") { moveSong(at: index, direction: 1) }
+                        }
+                    }
                 }
             }
 
@@ -3287,6 +3291,23 @@ struct SetlistCard: View {
 
         var songs = setlist.songs
         songs.swapAt(index, newIndex)
+
+        Task {
+            do {
+                let updatedSongs = try await SessionsAPIService.setSetlistSongs(bandId: bandId, setlistId: setlist.id, songs: songs)
+                setlist.songs = updatedSongs
+            } catch {
+                // Revert on error
+            }
+        }
+    }
+
+    private func moveSongDirect(from: Int, to: Int) {
+        guard from != to, from >= 0, from < setlist.songs.count, to >= 0, to < setlist.songs.count else { return }
+
+        var songs = setlist.songs
+        let song = songs.remove(at: from)
+        songs.insert(song, at: to)
 
         Task {
             do {
