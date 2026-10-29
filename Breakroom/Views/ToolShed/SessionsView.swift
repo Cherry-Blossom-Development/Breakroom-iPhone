@@ -127,6 +127,22 @@ struct SessionsView: View {
         bands.filter { $0.isInvited }
     }
 
+    /// Shortlists filtered by the selected band
+    private var filteredShortlists: [Shortlist] {
+        guard let bandId = bandPracticeBandFilter else {
+            return shortlists
+        }
+        return shortlists.filter { $0.bandId == bandId }
+    }
+
+    /// Band practice sessions filtered by selected band
+    private var practiceBandSessions: [Session] {
+        guard let bandId = bandPracticeBandFilter else {
+            return bandSessions
+        }
+        return bandSessions.filter { $0.bandId == bandId }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -278,9 +294,24 @@ struct SessionsView: View {
                     // Header with record button
                     recordingHeader(context: "band")
 
+                    // Shortlists section (filtered by selected band)
+                    if !filteredShortlists.isEmpty {
+                        shortlistsSection
+                        
+                        Divider()
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                        
+                        Text("Your Sessions (\(practiceBandSessions.count))")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .padding(.horizontal)
+                    }
+
                     // Year tabs
                     yearTabs(
-                        sessions: bandSessions,
+                        sessions: practiceBandSessions,
                         selectedYear: $selectedYear
                     )
 
@@ -288,11 +319,11 @@ struct SessionsView: View {
                     if isLoading && sessions.isEmpty {
                         ProgressView()
                             .frame(maxWidth: .infinity, minHeight: 200)
-                    } else if bandSessions.isEmpty {
+                    } else if practiceBandSessions.isEmpty {
                         emptyState(message: "No sessions yet", subtitle: "Tap Record to get started")
                     } else {
                         sessionsList(
-                            sessions: bandSessions,
+                            sessions: practiceBandSessions,
                             selectedYear: selectedYear,
                             showBandPicker: true,
                             showInstrumentPicker: false
@@ -493,13 +524,7 @@ struct SessionsView: View {
                     bandDetailView(band)
                 }
 
-                // Shortlists section
-                if !shortlists.isEmpty {
-                    Divider()
-                        .padding(.vertical, 8)
 
-                    shortlistsSection
-                }
             }
             .padding(.vertical)
         }
