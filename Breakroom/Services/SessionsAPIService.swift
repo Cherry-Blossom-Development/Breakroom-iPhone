@@ -48,19 +48,26 @@ enum SessionsAPIService {
     }
 
     /// Build the streaming URL for a session (streams through backend with auth)
+    /// This serves the compressed AAC copy for playback.
     static func buildStreamURL(sessionId: Int) -> URL? {
         return URL(string: "\(APIClient.shared.baseURL)/api/sessions/\(sessionId)/stream")
     }
 
-    /// Download a session's audio file to a local temporary file
+    /// Build the master WAV URL for a session (lossless, for mixing mashups)
+    /// The server decodes the FLAC master to WAV, or returns the stored WAV for older sessions.
+    static func buildMasterWavURL(sessionId: Int) -> URL? {
+        return URL(string: "\(APIClient.shared.baseURL)/api/sessions/\(sessionId)/master.wav")
+    }
+
+    /// Download a session's lossless master as WAV for mixing
     /// - Parameter sessionId: The session ID to download
-    /// - Returns: URL to the downloaded file in the temp directory
+    /// - Returns: URL to the downloaded WAV file in the temp directory
     static func downloadSession(sessionId: Int) async throws -> URL {
-        guard let streamURL = buildStreamURL(sessionId: sessionId) else {
+        guard let masterURL = buildMasterWavURL(sessionId: sessionId) else {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: streamURL)
+        var request = URLRequest(url: masterURL)
         request.httpMethod = "GET"
         if let bearerToken = KeychainManager.bearerToken {
             request.setValue(bearerToken, forHTTPHeaderField: "Authorization")
@@ -79,9 +86,9 @@ enum SessionsAPIService {
             throw APIError.serverError("Download failed with status \(httpResponse.statusCode)")
         }
 
-        // Move to a more permanent temp location with proper extension
+        // Move to a more permanent temp location with .wav extension
         let destURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("session_\(sessionId)_\(UUID().uuidString).m4a")
+            .appendingPathComponent("session_\(sessionId)_\(UUID().uuidString).wav")
         try FileManager.default.moveItem(at: tempURL, to: destURL)
 
         return destURL
