@@ -11,6 +11,48 @@ private let monthNames = [
 /// Sentinel value for "No band" option in the band picker (0 is never a valid band ID)
 private let NO_BAND = 0
 
+/// Minimum valid recording date (matches server-side validation)
+private let MIN_RECORDED_DATE: Date = {
+    var components = DateComponents()
+    components.year = 1950
+    components.month = 1
+    components.day = 1
+    return Calendar.current.date(from: components) ?? Date.distantPast
+}()
+
+/// Returns an error message if the recording date is invalid, or nil if valid.
+/// Dates must be between 1950 and today. Catches common typos like year "26" instead of "2026".
+private func recordedDateError(_ value: String?) -> String? {
+    guard let text = value?.trimmingCharacters(in: .whitespaces), !text.isEmpty else {
+        return nil // Empty is allowed (optional field)
+    }
+
+    // Validate format: YYYY-MM-DD
+    let regex = try? NSRegularExpression(pattern: "^\\d{4}-\\d{2}-\\d{2}$")
+    let range = NSRange(text.startIndex..., in: text)
+    guard regex?.firstMatch(in: text, range: range) != nil else {
+        return "The recording date is not valid. Use YYYY-MM-DD."
+    }
+
+    // Parse the date
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    guard let date = formatter.date(from: text) else {
+        return "The recording date is not valid. Use YYYY-MM-DD."
+    }
+
+    // Check range
+    if date < MIN_RECORDED_DATE {
+        return "The recording date (\(text)) is before 1950. Please check the year."
+    }
+    if date > Date() {
+        return "The recording date (\(text)) is in the future. Please check the date."
+    }
+
+    return nil
+}
+
 struct SessionsView: View {
     // MARK: - State
 
@@ -2836,9 +2878,17 @@ private struct SaveRecordingView: View {
                         }
                     }
 
-                    TextField("Date (YYYY-MM-DD)", text: $date)
-                        .accessibilityIdentifier("sessionsSessionDateField")
-                        .disabled(isSaving)
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("Date (YYYY-MM-DD)", text: $date)
+                            .accessibilityIdentifier("sessionsSessionDateField")
+                            .disabled(isSaving)
+
+                        if let dateError = recordedDateError(date) {
+                            Text(dateError)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
                 }
             }
 
@@ -2894,7 +2944,7 @@ private struct SaveRecordingView: View {
                         Text(isUpload ? "Upload" : "Save")
                     }
                 }
-                .disabled((showNameDateFields && name.isEmpty) || isSaving)
+                .disabled((showNameDateFields && name.isEmpty) || isSaving || (showNameDateFields && recordedDateError(date) != nil))
                 .accessibilityIdentifier("sessionsSaveRecordingButton")
             }
         }
@@ -2988,7 +3038,15 @@ private struct EditSessionView: View {
         Form {
             Section {
                 TextField("Session name", text: $name)
-                TextField("Date (YYYY-MM-DD)", text: $date)
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Date (YYYY-MM-DD)", text: $date)
+
+                    if let dateError = recordedDateError(date) {
+                        Text(dateError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
             }
         }
         .navigationTitle("Edit Session")
@@ -3001,7 +3059,7 @@ private struct EditSessionView: View {
                 Button("Save") {
                     onSave(name, date.isEmpty ? nil : date)
                 }
-                .disabled(name.isEmpty)
+                .disabled(name.isEmpty || recordedDateError(date) != nil)
             }
         }
     }
