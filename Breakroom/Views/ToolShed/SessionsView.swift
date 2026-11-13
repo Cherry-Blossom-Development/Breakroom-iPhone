@@ -8,6 +8,9 @@ private let monthNames = [
     "July", "August", "September", "October", "November", "December"
 ]
 
+/// Sentinel value for "No band" option in the band picker (0 is never a valid band ID)
+private let NO_BAND = 0
+
 struct SessionsView: View {
     // MARK: - State
 
@@ -127,18 +130,26 @@ struct SessionsView: View {
         bands.filter { $0.isInvited }
     }
 
-    /// Shortlists filtered by the selected band
+    /// Shortlists filtered by the selected band (NO_BAND has no shortlists)
     private var filteredShortlists: [Shortlist] {
         guard let bandId = bandPracticeBandFilter else {
             return shortlists
         }
+        if bandId == NO_BAND {
+            return []
+        }
         return shortlists.filter { $0.bandId == bandId }
     }
 
-    /// Band practice sessions filtered by selected band
+    /// Band practice sessions filtered by selected band.
+    /// NO_BAND shows sessions without a band or from bands the user has left.
     private var practiceBandSessions: [Session] {
         guard let bandId = bandPracticeBandFilter else {
             return bandSessions
+        }
+        if bandId == NO_BAND {
+            let activeIds = Set(activeBands.map { $0.id })
+            return bandSessions.filter { $0.bandId == nil || !activeIds.contains($0.bandId!) }
         }
         return bandSessions.filter { $0.bandId == bandId }
     }
@@ -893,6 +904,10 @@ struct SessionsView: View {
 
     private var filteredBandMemberSessions: [Session] {
         if let bandId = bandPracticeBandFilter {
+            // "No band" has no band members
+            if bandId == NO_BAND {
+                return []
+            }
             return bandMemberSessions.filter { $0.bandId == bandId }
         }
         return bandMemberSessions
@@ -958,7 +973,7 @@ struct SessionsView: View {
         HStack {
             Text("Band")
                 .font(.headline)
-            
+
             if !activeBands.isEmpty {
                 Menu {
                     ForEach(activeBands, id: \.id) { band in
@@ -966,20 +981,20 @@ struct SessionsView: View {
                             bandPracticeBandFilter = band.id
                         }
                     }
+                    Button("No band") {
+                        bandPracticeBandFilter = NO_BAND
+                    }
                 } label: {
                     HStack(spacing: 4) {
                         Text(selectedBandName)
                             .foregroundStyle(.purple)
-                        if activeBands.count > 1 {
-                            Image(systemName: "chevron.down")
-                                .font(.caption)
-                                .foregroundStyle(.purple)
-                        }
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.purple)
                     }
                 }
-                .disabled(activeBands.count <= 1)
             }
-            
+
             Spacer()
         }
         .padding(.horizontal)
@@ -987,9 +1002,13 @@ struct SessionsView: View {
     }
 
     private var selectedBandName: String {
-        if let bandId = bandPracticeBandFilter,
-           let band = activeBands.first(where: { $0.id == bandId }) {
-            return band.name
+        if let bandId = bandPracticeBandFilter {
+            if bandId == NO_BAND {
+                return "No band"
+            }
+            if let band = activeBands.first(where: { $0.id == bandId }) {
+                return band.name
+            }
         }
         return activeBands.first?.name ?? "No Band"
     }
