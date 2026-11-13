@@ -48,6 +48,10 @@ struct SessionsView: View {
     @State private var bandMemberSelectedYear: Int?
     @State private var bandPracticeBandFilter: Int?
 
+    // Month collapse state: key -> collapsed. Months not in here use their default.
+    // Only the newest month starts open by default; others are collapsed.
+    @State private var monthCollapseOverrides: [String: Bool] = [:]
+
     // Recording
     @State private var recordingState: RecordingState = .idle
     @State private var recordingSeconds = 0
@@ -774,55 +778,86 @@ struct SessionsView: View {
         sessions: [Session],
         selectedYear: Int?,
         showBandPicker: Bool,
-        showInstrumentPicker: Bool
+        showInstrumentPicker: Bool,
+        keyPrefix: String = "own"
     ) -> some View {
         let filtered = selectedYear == nil ? sessions : sessions.filter { $0.year == selectedYear }
         let grouped = groupSessions(filtered)
 
-        return ForEach(grouped, id: \.year) { yearGroup in
-            Text(String(yearGroup.year))
-                .font(.title2.weight(.bold))
-                .padding(.horizontal)
-                .padding(.top, 16)
-                .padding(.bottom, 4)
+        // Track whether we've seen the first (newest) month
+        var isNewest = true
+        var monthViews: [(key: String, view: AnyView)] = []
 
-            ForEach(yearGroup.months, id: \.month) { monthGroup in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(monthNames[monthGroup.month])
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.purple)
+        for yearGroup in grouped {
+            // Year heading
+            monthViews.append((
+                key: "\(keyPrefix)-y\(yearGroup.year)",
+                view: AnyView(
+                    Text(yearGroup.year == 0 ? "Unknown Date" : String(yearGroup.year))
+                        .font(.title2.weight(.bold))
                         .padding(.horizontal)
-                        .padding(.top, 12)
+                        .padding(.top, 16)
                         .padding(.bottom, 4)
+                )
+            ))
 
-                    Divider()
-                        .padding(.horizontal)
+            for monthGroup in yearGroup.months {
+                let monthKey = "\(keyPrefix)-\(yearGroup.year)-\(monthGroup.month)"
+                let collapsedByDefault = !isNewest
+                isNewest = false
+                let collapsed = isMonthCollapsed(key: monthKey, collapsedByDefault: collapsedByDefault)
 
-                    ForEach(monthGroup.sessions) { session in
-                        SessionRow(
-                            session: session,
-                            isPlaying: nowPlayingId == session.id,
-                            bands: activeBands,
-                            instruments: instruments,
-                            showBandPicker: showBandPicker,
-                            showInstrumentPicker: showInstrumentPicker,
-                            onPlay: { playSession(session) },
-                            onRate: { openRatingPopup(session, source: "own") },
-                            onEdit: { editingSession = session },
-                            onDelete: { sessionToDelete = session },
-                            onBandChange: { bandId in
-                                Task { await updateSessionBand(session, bandId: bandId) }
-                            },
-                            onInstrumentChange: { instrumentId in
-                                Task { await updateSessionInstrument(session, instrumentId: instrumentId) }
-                            }
+                // Month header (always visible)
+                monthViews.append((
+                    key: monthKey,
+                    view: AnyView(
+                        MonthHeader(
+                            monthName: monthNames[monthGroup.month],
+                            count: monthGroup.sessions.count,
+                            collapsed: collapsed,
+                            onToggle: { toggleMonth(key: monthKey, collapsedByDefault: collapsedByDefault) }
                         )
+                    )
+                ))
 
-                        Divider()
-                            .padding(.leading, 56)
+                // Sessions (only if not collapsed)
+                if !collapsed {
+                    for session in monthGroup.sessions {
+                        monthViews.append((
+                            key: "\(keyPrefix)-s\(session.id)",
+                            view: AnyView(
+                                VStack(spacing: 0) {
+                                    SessionRow(
+                                        session: session,
+                                        isPlaying: nowPlayingId == session.id,
+                                        bands: activeBands,
+                                        instruments: instruments,
+                                        showBandPicker: showBandPicker,
+                                        showInstrumentPicker: showInstrumentPicker,
+                                        onPlay: { playSession(session) },
+                                        onRate: { openRatingPopup(session, source: "own") },
+                                        onEdit: { editingSession = session },
+                                        onDelete: { sessionToDelete = session },
+                                        onBandChange: { bandId in
+                                            Task { await updateSessionBand(session, bandId: bandId) }
+                                        },
+                                        onInstrumentChange: { instrumentId in
+                                            Task { await updateSessionInstrument(session, instrumentId: instrumentId) }
+                                        }
+                                    )
+
+                                    Divider()
+                                        .padding(.leading, 56)
+                                }
+                            )
+                        ))
                     }
                 }
             }
+        }
+
+        return ForEach(monthViews, id: \.key) { item in
+            item.view
         }
     }
 
@@ -916,38 +951,70 @@ struct SessionsView: View {
     private var bandMemberSessionsList: some View {
         let filtered = bandMemberSelectedYear == nil ? filteredBandMemberSessions : filteredBandMemberSessions.filter { $0.year == bandMemberSelectedYear }
         let grouped = groupSessions(filtered)
+        let keyPrefix = "bm"
 
-        return ForEach(grouped, id: \.year) { yearGroup in
-            Text(String(yearGroup.year))
-                .font(.title3.weight(.bold))
-                .padding(.horizontal)
-                .padding(.top, 12)
+        // Track whether we've seen the first (newest) month
+        var isNewest = true
+        var monthViews: [(key: String, view: AnyView)] = []
 
-            ForEach(yearGroup.months, id: \.month) { monthGroup in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(monthNames[monthGroup.month])
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.purple)
+        for yearGroup in grouped {
+            // Year heading
+            monthViews.append((
+                key: "\(keyPrefix)-y\(yearGroup.year)",
+                view: AnyView(
+                    Text(yearGroup.year == 0 ? "Unknown Date" : String(yearGroup.year))
+                        .font(.title3.weight(.bold))
                         .padding(.horizontal)
-                        .padding(.top, 8)
+                        .padding(.top, 12)
+                )
+            ))
 
-                    Divider()
-                        .padding(.horizontal)
+            for monthGroup in yearGroup.months {
+                let monthKey = "\(keyPrefix)-\(yearGroup.year)-\(monthGroup.month)"
+                let collapsedByDefault = !isNewest
+                isNewest = false
+                let collapsed = isMonthCollapsed(key: monthKey, collapsedByDefault: collapsedByDefault)
 
-                    ForEach(monthGroup.sessions) { session in
-                        BandMemberSessionRow(
-                            session: session,
-                            isPlaying: nowPlayingId == session.id,
-                            bands: activeBands,
-                            onPlay: { playSession(session) },
-                            onRate: { openRatingPopup(session, source: "bandMember") }
+                // Month header (always visible)
+                monthViews.append((
+                    key: monthKey,
+                    view: AnyView(
+                        MonthHeader(
+                            monthName: monthNames[monthGroup.month],
+                            count: monthGroup.sessions.count,
+                            collapsed: collapsed,
+                            onToggle: { toggleMonth(key: monthKey, collapsedByDefault: collapsedByDefault) }
                         )
+                    )
+                ))
 
-                        Divider()
-                            .padding(.leading, 56)
+                // Sessions (only if not collapsed)
+                if !collapsed {
+                    for session in monthGroup.sessions {
+                        monthViews.append((
+                            key: "\(keyPrefix)-s\(session.id)",
+                            view: AnyView(
+                                VStack(spacing: 0) {
+                                    BandMemberSessionRow(
+                                        session: session,
+                                        isPlaying: nowPlayingId == session.id,
+                                        bands: activeBands,
+                                        onPlay: { playSession(session) },
+                                        onRate: { openRatingPopup(session, source: "bandMember") }
+                                    )
+
+                                    Divider()
+                                        .padding(.leading, 56)
+                                }
+                            )
+                        ))
                     }
                 }
             }
+        }
+
+        return ForEach(monthViews, id: \.key) { item in
+            item.view
         }
     }
 
@@ -2098,6 +2165,56 @@ struct SessionsView: View {
                 (month: month, sessions: byMonth[month]!.sorted { ($0.recordedAt ?? $0.uploadedAt) > ($1.recordedAt ?? $1.uploadedAt) })
             }
             return (year: year, months: months)
+        }
+    }
+
+    // MARK: - Month Collapse Helpers
+
+    private func isMonthCollapsed(key: String, collapsedByDefault: Bool) -> Bool {
+        monthCollapseOverrides[key] ?? collapsedByDefault
+    }
+
+    private func toggleMonth(key: String, collapsedByDefault: Bool) {
+        monthCollapseOverrides[key] = !isMonthCollapsed(key: key, collapsedByDefault: collapsedByDefault)
+    }
+}
+
+// MARK: - Collapsible Month Header
+
+private struct MonthHeader: View {
+    let monthName: String
+    let count: Int
+    let collapsed: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: onToggle) {
+                HStack(spacing: 4) {
+                    Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.purple)
+                        .frame(width: 16)
+                    Text(monthName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.purple)
+                    Spacer()
+                    Text("\(count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(monthName), \(count) recordings")
+            .accessibilityHint(collapsed ? "Double tap to show recordings" : "Double tap to hide recordings")
+            .accessibilityAddTraits(.isButton)
+
+            Divider()
+                .padding(.horizontal)
         }
     }
 }
