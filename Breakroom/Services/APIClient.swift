@@ -36,6 +36,36 @@ enum APIError: LocalizedError {
     }
 }
 
+/// User-friendly error messages for common HTTP status codes.
+/// Useful when nginx or the server returns HTML instead of JSON.
+private func userFriendlyErrorMessage(statusCode: Int, data: Data?) -> String {
+    switch statusCode {
+    case 400:
+        return "Invalid request. Please try again."
+    case 403:
+        return "You don't have permission to do this."
+    case 404:
+        return "The requested resource was not found."
+    case 408:
+        return "The request timed out. Please try again."
+    case 413:
+        // nginx returns HTML for this, so we provide a helpful message
+        return "The file is too large to upload. Try a smaller file or compress it first."
+    case 429:
+        return "Too many requests. Please wait a moment and try again."
+    case 500:
+        return "Server error. Please try again later."
+    case 502:
+        return "The server is temporarily unavailable. Please try again later."
+    case 503:
+        return "The server is under maintenance. Please try again later."
+    case 504:
+        return "The server took too long to respond. Please try again."
+    default:
+        return "Request failed (error \(statusCode)). Please try again."
+    }
+}
+
 final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
@@ -176,7 +206,7 @@ final class APIClient: @unchecked Sendable {
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
-            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: data))
         }
     }
 
@@ -238,7 +268,7 @@ final class APIClient: @unchecked Sendable {
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
-            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: data))
         }
     }
 
@@ -280,7 +310,7 @@ final class APIClient: @unchecked Sendable {
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
-            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: data))
         }
     }
 
@@ -356,7 +386,7 @@ final class APIClient: @unchecked Sendable {
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
-            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: data))
         }
     }
 
@@ -423,7 +453,7 @@ final class APIClient: @unchecked Sendable {
             if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
                 throw APIError.serverError(errorResponse.displayMessage)
             }
-            throw APIError.serverError("Request failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: data))
         }
     }
 
@@ -462,7 +492,7 @@ final class APIClient: @unchecked Sendable {
         case 402:
             throw APIError.subscriptionRequired
         default:
-            throw APIError.serverError("Download failed with status \(httpResponse.statusCode)")
+            throw APIError.serverError(userFriendlyErrorMessage(statusCode: httpResponse.statusCode, data: nil))
         }
     }
 
