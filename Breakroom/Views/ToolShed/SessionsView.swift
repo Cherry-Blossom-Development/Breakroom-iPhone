@@ -11,6 +11,18 @@ private let monthNames = [
 /// Sentinel value for "No band" option in the band picker (0 is never a valid band ID)
 private let NO_BAND = 0
 
+/// Maximum upload size in MB (must match nginx client_max_body_size for /api)
+private let MAX_UPLOAD_MB = 100
+
+/// Maximum upload size in bytes (leave a bit of headroom for multipart overhead)
+private let MAX_UPLOAD_BYTES: Int64 = Int64(MAX_UPLOAD_MB - 1) * 1024 * 1024
+
+/// Returns a user-friendly error message for a file that's too large
+private func fileTooLargeMessage(sizeBytes: Int64) -> String {
+    let mb = Int(round(Double(sizeBytes) / (1024 * 1024)))
+    return "This file is \(mb) MB, which is over the \(MAX_UPLOAD_MB) MB upload limit. Try exporting it as an MP3 or another compressed format, or split it into shorter recordings."
+}
+
 /// Minimum valid recording date (matches server-side validation)
 private let MIN_RECORDED_DATE: Date = {
     var components = DateComponents()
@@ -2007,6 +2019,14 @@ struct SessionsView: View {
         isSavingSession = true
 
         do {
+            // Check file size before uploading
+            let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+            if let fileSize = attributes[.size] as? Int64, fileSize > MAX_UPLOAD_BYTES {
+                errorMessage = fileTooLargeMessage(sizeBytes: fileSize)
+                isSavingSession = false
+                return
+            }
+
             let audioData = try Data(contentsOf: fileURL)
             let filename = fileURL.lastPathComponent
 
@@ -2065,6 +2085,17 @@ struct SessionsView: View {
             }
 
             defer { sourceURL.stopAccessingSecurityScopedResource() }
+
+            // Check file size before copying
+            do {
+                let attributes = try FileManager.default.attributesOfItem(atPath: sourceURL.path)
+                if let fileSize = attributes[.size] as? Int64, fileSize > MAX_UPLOAD_BYTES {
+                    errorMessage = fileTooLargeMessage(sizeBytes: fileSize)
+                    return
+                }
+            } catch {
+                // Continue anyway if we can't read size; let server reject if too large
+            }
 
             // Copy to temp directory
             let fileName = sourceURL.lastPathComponent
