@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import AVKit
+import AVFoundation
 
 struct ChatWidget: View {
     let block: BreakroomBlock
@@ -822,6 +823,11 @@ struct AuthenticatedVideoPlayer: View {
             let tempFile = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString + ".mp4")
             try data.write(to: tempFile)
+
+            // Configure audio session for video playback with sound
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try? AVAudioSession.sharedInstance().setActive(true)
+
             self.localURL = tempFile
         } catch {
             failed = true
