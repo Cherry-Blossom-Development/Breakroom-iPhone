@@ -783,6 +783,8 @@ struct AuthenticatedVideoPlayer: View {
 
     @State private var localURL: URL?
     @State private var failed = false
+    @State private var showFullScreen = false
+    @State private var player: AVPlayer?
 
     // Dynamic Type scaling
     @ScaledMetric(relativeTo: .body) private var placeholderSize: CGFloat = 60
@@ -790,9 +792,26 @@ struct AuthenticatedVideoPlayer: View {
     var body: some View {
         Group {
             if let localURL {
-                VideoPlayer(player: AVPlayer(url: localURL))
-                    .frame(width: width, height: height)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                // Thumbnail view - tap to expand
+                ZStack {
+                    VideoPlayer(player: player)
+                        .frame(width: width, height: height)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        .disabled(true) // Disable inline controls, tap opens full screen
+
+                    // Expand button overlay
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .padding(8)
+                        .background(.black.opacity(0.5))
+                        .clipShape(Circle())
+                }
+                .onTapGesture {
+                    showFullScreen = true
+                }
+                .accessibilityLabel("Video")
+                .accessibilityHint("Double tap to view full screen")
             } else if failed {
                 Image(systemName: "video.slash")
                     .foregroundStyle(.secondary)
@@ -804,6 +823,11 @@ struct AuthenticatedVideoPlayer: View {
         }
         .task(id: path) {
             await load()
+        }
+        .fullScreenCover(isPresented: $showFullScreen) {
+            if let localURL {
+                FullScreenVideoPlayer(url: localURL)
+            }
         }
     }
 
@@ -829,8 +853,57 @@ struct AuthenticatedVideoPlayer: View {
             try? AVAudioSession.sharedInstance().setActive(true)
 
             self.localURL = tempFile
+            self.player = AVPlayer(url: tempFile)
         } catch {
             failed = true
+        }
+    }
+}
+
+// MARK: - Full Screen Video Player
+
+private struct FullScreenVideoPlayer: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if let player {
+                VideoPlayer(player: player)
+                    .ignoresSafeArea()
+            }
+
+            // Close button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        player?.pause()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding()
+                    }
+                    .accessibilityLabel("Close video")
+                }
+                Spacer()
+            }
+        }
+        .onAppear {
+            // Configure audio session
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try? AVAudioSession.sharedInstance().setActive(true)
+
+            player = AVPlayer(url: url)
+            player?.play()
+        }
+        .onDisappear {
+            player?.pause()
         }
     }
 }
