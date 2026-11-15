@@ -223,10 +223,23 @@ struct ChatCarouselWidget: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            // Show image if present
+            if let imagePath = message.imagePath, !imagePath.isEmpty {
+                AuthenticatedImage(path: imagePath, maxWidth: 150, maxHeight: 80, cornerRadius: 6)
+            }
+
+            // Show video if present
+            if let videoPath = message.videoPath, !videoPath.isEmpty {
+                AuthenticatedVideoPlayer(path: videoPath, width: 150, height: 80, cornerRadius: 6)
+            }
+
+            // Show text if present
             if let text = message.message, !text.isEmpty {
                 LinkifiedText(text, linkColor: .accentColor, textColor: .primary)
                     .font(.caption)
             }
+
             Divider().padding(.top, 4)
         }
         .padding(.horizontal, 10)
